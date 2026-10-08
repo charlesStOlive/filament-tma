@@ -2,7 +2,11 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Grid;
@@ -44,6 +48,13 @@ class TicketInfolist
                         TextEntry::make('due_on')->label(__('Échéance'))->date('d/m/Y')->placeholder('—'),
                         TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                             ->visible(fn (Ticket $record): bool => $record->paused_until !== null),
+                        TextEntry::make('time_total')->label(__('Temps passé'))
+                            ->state(fn (Ticket $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
+                        TextEntry::make('sourceInstance.name')->label(__('Application'))
+                            ->visible(fn (): bool => Tma::isMaster()),
+                        TextEntry::make('sync_status')->label(__('Synchro'))->badge()
+                            ->visible(fn (Ticket $record): bool => $record->handling_mode === HandlingMode::ServiceDesk)
+                            ->helperText(fn (Ticket $record): ?string => $record->last_sync_error),
                         TextEntry::make('created_at')->label(__('Créé le'))->dateTime('d/m/Y H:i'),
                         TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
                     ]),

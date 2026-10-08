@@ -79,13 +79,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | user : le modèle des utilisateurs.
-    | client : en mode maître, le modèle des organisations clientes (App\Models\Company dans Filbreeze).
+    | client : en mode maître, le modèle des organisations clientes (App\Models\Company dans Filbreeze), et
+    | client_title, la colonne qui le nomme (`title` pour Company).
     |
     */
 
     'models' => [
         'user' => env('TMA_USER_MODEL', 'App\\Models\\User'),
         'client' => null,
+        'client_title' => 'name',
     ],
 
     /*

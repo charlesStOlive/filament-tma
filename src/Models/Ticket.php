@@ -143,6 +143,12 @@ class Ticket extends Model implements HasMedia, HasRichContent
         return $this->belongsTo(Actor::class, 'created_by_actor_id');
     }
 
+    /** L'application source, quand le maître la connaît (« Applications clientes »). */
+    public function sourceInstance(): BelongsTo
+    {
+        return $this->belongsTo(Instance::class, 'source_instance_uid', 'uid');
+    }
+
     public function client(): MorphTo
     {
         return $this->morphTo();

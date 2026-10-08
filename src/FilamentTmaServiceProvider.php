@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
+use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
 use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
 use CharlesStOlive\FilamentTma\Listeners\QueueTicketPush;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
@@ -42,6 +43,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(TicketWorkflow::class);
         $this->app->singleton(Timeline::class);
+        $this->app->singleton(\CharlesStOlive\FilamentTma\Workflow\TimeLog::class);
     }
 
     /**
@@ -51,7 +53,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
-        Event::listen([TicketTransitioned::class, EntryAdded::class, NoteShared::class, TicketUpdated::class, AutoCloseWarned::class], QueueTicketPush::class);
+        Event::listen([TicketTransitioned::class, EntryAdded::class, NoteShared::class, TicketUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class], QueueTicketPush::class);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('tma:close-stale')->dailyAt((string) config('filament-tma.auto_close.at', '07:00'))->withoutOverlapping();

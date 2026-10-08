@@ -21,6 +21,10 @@ final class TmaGate
 
     public const SHARE_NOTE = 'share-note';
 
+    public const TIME = 'time';
+
+    public const SYNC = 'sync';
+
     public const WORKFLOW_FAMILY = 'workflow';
 
     public static function ability(string $action): string

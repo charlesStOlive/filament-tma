@@ -1,0 +1,49 @@
+<?php
+
+namespace CharlesStOlive\FilamentTma\Workflow;
+
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Models\TimeEntry;
+use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Saisir du temps sur un ticket (maître seulement, addendum §5), avec le droit `tma.ticket.time`. Le temps se
+ * saisit aussi sur un ticket terminé : on y reporte souvent une intervention après coup.
+ */
+final class TimeLog
+{
+    public function canLog(Ticket $ticket, Context $context): bool
+    {
+        return Tma::isMaster()
+            && $ticket->isHandledHere()
+            && ($context->isSystem() || TmaGate::allows($context->user, TmaGate::TIME, $ticket));
+    }
+
+    public function add(Ticket $ticket, int $minutes, \DateTimeInterface|string|null $workedOn, ?string $description, Context $context, bool $billable = true): TimeEntry
+    {
+        if (! $this->canLog($ticket, $context)) {
+            throw new AuthorizationException(__('Vous ne pouvez pas saisir de temps sur ce ticket.'));
+        }
+
+        if ($minutes <= 0 || $minutes > 24 * 60) {
+            throw ValidationException::withMessages(['minutes' => __('Une saisie va d’une minute à 24 heures.')]);
+        }
+
+        $entry = $ticket->timeEntries()->create([
+            'actor_id' => $context->actor?->getKey() ?? throw new \LogicException('Une saisie de temps a toujours un intervenant.'),
+            'worked_on' => $workedOn !== null ? Carbon::parse($workedOn)->toDateString() : now()->toDateString(),
+            'minutes' => $minutes,
+            'description' => $description,
+            'billable' => $billable,
+            'origin' => $context->origin,
+        ]);
+
+        $ticket->touchActivity();
+
+        return $entry;
+    }
+}

@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Models;
 
 use CharlesStOlive\FilamentTma\Enums\Origin;
+use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -69,6 +70,11 @@ class TimeEntry extends Model
                 throw new LogicException(__('Cette saisie est rattachée à une facture : elle ne se supprime plus.'));
             }
         });
+
+        // Quelle que soit l'origine (interface, commande, API), le changement se sait : audit, envoi des totaux.
+        static::created(fn (TimeEntry $entry) => event(new TimeEntryChanged($entry, 'created')));
+        static::updated(fn (TimeEntry $entry) => event(new TimeEntryChanged($entry, 'updated')));
+        static::deleted(fn (TimeEntry $entry) => event(new TimeEntryChanged($entry, 'deleted')));
     }
 
     public function subject(): MorphTo

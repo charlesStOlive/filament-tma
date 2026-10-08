@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
+use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
 use CharlesStOlive\FilamentTma\Jobs\PushTicketToInstance;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -20,11 +21,12 @@ use CharlesStOlive\FilamentTma\Support\Tma;
  */
 class QueueTicketPush
 {
-    public function handle(TicketTransitioned|EntryAdded|NoteShared|TicketUpdated|AutoCloseWarned $event): void
+    public function handle(TicketTransitioned|EntryAdded|NoteShared|TicketUpdated|AutoCloseWarned|TimeEntryChanged $event): void
     {
         $ticket = match (true) {
             $event instanceof EntryAdded => $event->entry->subject,
             $event instanceof NoteShared => $event->note->subject,
+            $event instanceof TimeEntryChanged => $event->entry->subject,
             default => $event->ticket,
         };
 

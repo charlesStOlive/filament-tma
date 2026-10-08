@@ -5,7 +5,14 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Jobs\PushTicketToInstance;
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -31,8 +38,32 @@ class ViewTicket extends ViewRecord
             ActionGroup::make([
                 TimelineActions::note(),
                 EditAction::make(),
+                $this->resyncAction(),
             ]),
         ];
+    }
+
+    /** Maître : renvoyer un ticket du centre de service à son application (après une erreur, ou par précaution). */
+    protected function resyncAction(): Action
+    {
+        return Action::make('resync')
+            ->label(__('Renvoyer à l’application'))
+            ->icon('heroicon-m-arrow-path')
+            ->visible(fn (Ticket $record): bool => Tma::isMaster()
+                && $record->handling_mode === HandlingMode::ServiceDesk
+                && TmaGate::allows(auth()->user(), TmaGate::SYNC, $record))
+            ->action(function (Ticket $record): void {
+                $record->forceFill(['sync_status' => SyncStatus::Pending])->saveQuietly();
+                rescue(function () use ($record): void {
+                    PushTicketToInstance::dispatch($record);
+                });
+
+                $record->refresh();
+                Notification::make()
+                    ->{$record->sync_status === SyncStatus::Error ? 'danger' : 'success'}()
+                    ->title($record->sync_status === SyncStatus::Error ? $record->last_sync_error : __('Envoi demandé'))
+                    ->send();
+            });
     }
 
     public function replyAction(): Action
