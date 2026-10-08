@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Cli;
 
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
@@ -14,9 +15,28 @@ use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 final class TicketView
 {
     /** @return array<string, mixed> */
-    public static function summary(Ticket $ticket): array
+    public static function summary(Ticket|ProjectTask $ticket): array
     {
+        if ($ticket instanceof ProjectTask) {
+            return [
+                'kind' => 'task',
+                'ref' => $ticket->number,
+                'ulid' => $ticket->ulid,
+                'title' => $ticket->title,
+                'state' => $ticket->state::getMorphClass(),
+                'state_label' => $ticket->state->getLabel(),
+                'in_hands_of' => $ticket->state->isFinal() ? null : 'handler',
+                'application' => $ticket->targetInstance?->name,
+                'project' => $ticket->project,
+                'assignee' => $ticket->assignee?->name,
+                'ends_on' => $ticket->ends_on?->toDateString(),
+                'time_minutes' => TimeTotals::for($ticket)['total_minutes'],
+                'last_activity_at' => $ticket->last_activity_at?->toIso8601String(),
+            ];
+        }
+
         return [
+            'kind' => 'ticket',
             'ref' => $ticket->number,
             'ulid' => $ticket->ulid,
             'title' => $ticket->title,
@@ -35,12 +55,12 @@ final class TicketView
     }
 
     /** @return array<string, mixed> */
-    public static function detail(Ticket $ticket, bool $withNotes): array
+    public static function detail(Ticket|ProjectTask $ticket, bool $withNotes): array
     {
         return [
             ...self::summary($ticket),
             'description' => Html::toText($ticket->description),
-            'due_on' => $ticket->due_on?->toDateString(),
+            'due_on' => $ticket instanceof Ticket ? $ticket->due_on?->toDateString() : $ticket->ends_on?->toDateString(),
             'time_by_month' => TimeTotals::for($ticket)['by_month'],
             'timeline' => TimelineItems::for($ticket, $withNotes)->map(fn (array $row): array => match ($row['kind']) {
                 'transition' => self::transition($row['item']),

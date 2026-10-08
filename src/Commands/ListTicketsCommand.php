@@ -6,17 +6,19 @@ use CharlesStOlive\FilamentTma\Commands\Concerns\UsesTmaBackend;
 use CharlesStOlive\FilamentTma\Support\Duration;
 use Illuminate\Console\Command;
 
-/** `tma:list` : les tickets ouverts (ou filtrés), du plus récemment actif au plus ancien. */
+/** `tma:list` : les tickets et tâches projet ouverts (ou filtrés), du plus récemment actif au plus ancien. */
 class ListTicketsCommand extends Command
 {
     use UsesTmaBackend;
 
-    protected $description = 'Liste les tickets de TMA (ouverts par défaut)';
+    protected $description = 'Liste les tickets de TMA et les tâches projet (ouverts par défaut)';
 
     public function __construct()
     {
         $this->signature = 'tma:list
+            {--type=all : tickets, tasks ou all}
             {--state= : États séparés par des virgules (in_progress,awaiting_requester…)}
+            {--project= : Projet (tâches)}
             {--app= : Application source (nom ou identifiant), dans le maître}
             {--search= : Texte du titre, ou numéro}
             {--mine : Seulement ceux dont je suis l’intervenant}
@@ -31,7 +33,9 @@ class ListTicketsCommand extends Command
     {
         return $this->runWithBackend(
             fn ($backend) => $backend->list([
+                'type' => (string) $this->option('type'),
                 'state' => $this->option('state'),
+                'project' => $this->option('project'),
                 'app' => $this->option('app'),
                 'search' => $this->option('search'),
                 'mine' => (bool) $this->option('mine'),
@@ -48,7 +52,7 @@ class ListTicketsCommand extends Command
                 $this->table(
                     [__('N°'), __('Titre'), __('État'), __('Main'), __('Application'), __('Intervenant'), __('Temps')],
                     collect($tickets)->map(fn (array $t): array => [
-                        $t['ref'], \Illuminate\Support\Str::limit($t['title'], 50), $t['state_label'], $t['in_hands_of'] ?? '—',
+                        $t['ref'], \Illuminate\Support\Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['in_hands_of'] ?? '—',
                         $t['application'] ?? '—', $t['assignee'] ?? '—', Duration::format((int) $t['time_minutes']),
                     ])->all(),
                 );

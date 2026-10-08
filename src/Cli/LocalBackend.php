@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Cli;
 
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
@@ -33,7 +34,44 @@ final class LocalBackend implements Backend
 
     public function list(array $filters): array
     {
-        $this->authorize('viewAny', Ticket::class);
+        $type = $filters['type'] ?? 'all';
+        $tickets = in_array($type, ['all', 'tickets'], true) && $this->can('viewAny', Ticket::class) ? $this->tickets($filters) : collect();
+        $tasks = in_array($type, ['all', 'tasks'], true) && $this->can('viewAny', ProjectTask::class) ? $this->tasks($filters) : collect();
+
+        if (! $this->can('viewAny', Ticket::class) && ! $this->can('viewAny', ProjectTask::class)) {
+            throw new AuthorizationException(__('Vous n’avez pas accès à ces tickets.'));
+        }
+
+        return $tickets->concat($tasks)
+            ->sortByDesc('last_activity_at')
+            ->take((int) ($filters['limit'] ?? 50))
+            ->values()->all();
+    }
+
+    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    private function tasks(array $filters): \Illuminate\Support\Collection
+    {
+        $actor = Actor::forUser($this->user);
+
+        return ProjectTask::query()
+            ->with(['assignee', 'targetInstance'])
+            ->when(! ($filters['all'] ?? false) && blank($filters['state'] ?? null), fn (Builder $q) => $q->open())
+            ->when(filled($filters['state'] ?? null), fn (Builder $q) => $q->whereIn('state', explode(',', (string) $filters['state'])))
+            ->when(filled($filters['app'] ?? null), fn (Builder $q) => $q->whereHas('targetInstance', fn (Builder $i) => $i->where('name', $filters['app'])->orWhere('uid', $filters['app'])))
+            ->when(filled($filters['project'] ?? null), fn (Builder $q) => $q->where('project', $filters['project']))
+            ->when(filled($filters['search'] ?? null), fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('title', 'like', '%'.$filters['search'].'%')->orWhere('number', $filters['search'])))
+            ->when($filters['mine'] ?? false, fn (Builder $q) => $q->where('assignee_actor_id', $actor->getKey()))
+            ->orderByDesc('last_activity_at')
+            ->limit((int) ($filters['limit'] ?? 50))
+            ->get()
+            ->filter(fn (ProjectTask $task): bool => $this->can('view', $task))
+            ->map(fn (ProjectTask $task): array => TicketView::summary($task))
+            ->values();
+    }
+
+    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    private function tickets(array $filters): \Illuminate\Support\Collection
+    {
         $actor = Actor::forUser($this->user);
 
         return Ticket::query()
@@ -48,7 +86,7 @@ final class LocalBackend implements Backend
             ->get()
             ->filter(fn (Ticket $ticket): bool => $this->can('view', $ticket))
             ->map(fn (Ticket $ticket): array => TicketView::summary($ticket))
-            ->values()->all();
+            ->values();
     }
 
     public function show(string $ref): array
@@ -87,16 +125,17 @@ final class LocalBackend implements Backend
         return ['ticket' => $ticket->number, 'entry' => $entry->ulid, 'type' => $entry->type->value];
     }
 
-    /** Un ticket par son numéro (DES-0042) ou son ulid, que l'utilisateur peut voir. */
-    public function find(string $ref): Ticket
+    /** Un ticket (DES-0042) ou une tâche projet (T-0007), par son numéro ou son ulid, que l'utilisateur peut voir. */
+    public function find(string $ref): Ticket|ProjectTask
     {
-        $matches = Ticket::query()->where('number', $ref)->orWhere('ulid', strtolower($ref))->get();
+        $matches = Ticket::query()->where('number', $ref)->orWhere('ulid', strtolower($ref))->get()
+            ->concat(ProjectTask::query()->where('number', $ref)->orWhere('ulid', strtolower($ref))->get());
 
         if ($matches->count() > 1) {
             throw new InvalidArgumentException(__('Plusieurs tickets portent le numéro :ref : donnez son ulid.', ['ref' => $ref]));
         }
 
-        $ticket = $matches->first() ?? throw new InvalidArgumentException(__('Ticket introuvable : :ref', ['ref' => $ref]));
+        $ticket = $matches->first() ?? throw new InvalidArgumentException(__('Ticket ou tâche introuvable : :ref', ['ref' => $ref]));
         $this->authorize('view', $ticket);
 
         return $ticket;
@@ -104,7 +143,9 @@ final class LocalBackend implements Backend
 
     private function can(string $ability, mixed $subject): bool
     {
-        return Gate::getPolicyFor(Ticket::class) === null || Gate::forUser($this->user)->allows($ability, $subject);
+        $class = is_object($subject) ? $subject::class : $subject;
+
+        return Gate::getPolicyFor($class) === null || Gate::forUser($this->user)->allows($ability, $subject);
     }
 
     private function authorize(string $ability, mixed $subject): void

@@ -14,6 +14,8 @@ class AgentController
     public function index(Request $request): JsonResponse
     {
         return $this->respond(fn () => $this->backend($request)->list([
+            'type' => (string) $request->query('type', 'all'),
+            'project' => $request->query('project'),
             'state' => $request->query('state'),
             'app' => $request->query('app'),
             'search' => $request->query('search'),

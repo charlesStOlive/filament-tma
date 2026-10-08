@@ -9,7 +9,7 @@ namespace CharlesStOlive\FilamentTma\Cli;
 interface Backend
 {
     /**
-     * @param  array{state?: string|null, app?: string|null, search?: string|null, mine?: bool, all?: bool, limit?: int}  $filters
+     * @param  array{type?: string, state?: string|null, app?: string|null, project?: string|null, search?: string|null, mine?: bool, all?: bool, limit?: int}  $filters
      * @return array<int, array<string, mixed>>
      */
     public function list(array $filters): array;

@@ -28,10 +28,12 @@ class ShowTicketCommand extends Command
                 $this->newLine();
                 $this->line("<options=bold>{$t['ref']} — {$t['title']}</>");
                 $this->line(__('État : :state (main : :side) · priorité : :priority · temps : :time', [
-                    'state' => $t['state_label'], 'side' => $t['in_hands_of'] ?? '—', 'priority' => $t['priority'],
+                    'state' => $t['state_label'], 'side' => $t['in_hands_of'] ?? '—', 'priority' => $t['priority'] ?? '—',
                     'time' => Duration::format((int) $t['time_minutes']),
                 ]));
-                $this->line(__('Demandeur : :r · intervenant : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
+                $this->line($t['kind'] === 'task'
+                    ? __('Projet : :p · intervenant : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
+                    : __('Demandeur : :r · intervenant : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
 
                 if (filled($t['url'] ?? null)) {
                     $this->line($t['url']);
