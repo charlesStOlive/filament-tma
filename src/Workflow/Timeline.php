@@ -6,8 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\Uploads;
@@ -18,13 +17,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Écrire dans la chronologie d'un ticket : commenter, noter, répondre, partager une note. Les droits sont contrôlés
+ * Écrire dans la chronologie d'un ticket ou d'une tâche projet : commenter, noter, répondre, partager une note. Les droits sont contrôlés
  * ici, quelle que soit l'origine. Rien ici ne change l'état du ticket (CDC §9.4).
  */
 final class Timeline
 {
     /** Peut-on écrire ce type d'entrée sur ce ticket ? */
-    public function canAdd(Ticket $ticket, EntryType $type, Context $context): bool
+    public function canAdd(Trackable $ticket, EntryType $type, Context $context): bool
     {
         if ($context->isSystem()) {
             return true;
@@ -39,7 +38,7 @@ final class Timeline
         };
     }
 
-    public function canReadNotes(Ticket $ticket, Context $context): bool
+    public function canReadNotes(Trackable $ticket, Context $context): bool
     {
         return TmaGate::allows($context->user, TmaGate::NOTE, $ticket);
     }
@@ -56,7 +55,7 @@ final class Timeline
      * @param  array<string, mixed>  $meta
      * @param  array<int, array{path: string, name?: string}>  $uploads  fichiers envoyés (disque des pièces jointes)
      */
-    public function add(Ticket $ticket, EntryType $type, ?string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
+    public function add(Trackable $ticket, EntryType $type, ?string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
     {
         if ($parent !== null) {
             $this->assertReplyable($ticket, $parent);
@@ -84,7 +83,7 @@ final class Timeline
      * @param  array<string, mixed>  $meta
      * @param  array<int, array{path: string, name?: string}>  $uploads
      */
-    public function write(Ticket $ticket, EntryType $type, string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
+    public function write(Trackable $ticket, EntryType $type, string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
     {
         $entry = DB::transaction(function () use ($ticket, $type, $body, $context, $parent, $meta, $uploads): Entry {
             $entry = $ticket->entries()->create([
@@ -132,12 +131,13 @@ final class Timeline
         return $note;
     }
 
-    private function sendsToMaster(Ticket $ticket, Context $context): bool
+    /** Un client envoie au maître ce qu'il écrit sur un objet partagé dont le maître fait autorité. */
+    private function sendsToMaster(Trackable $subject, Context $context): bool
     {
-        return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
+        return Tma::isClient() && $subject->isShared() && ! $subject->authorityIsHere() && ! $context->isApi();
     }
 
-    private function assertReplyable(Ticket $ticket, Entry $parent): void
+    private function assertReplyable(Trackable $ticket, Entry $parent): void
     {
         $sameTicket = $parent->subject_type === $ticket->getMorphClass() && (int) $parent->subject_id === (int) $ticket->getKey();
 

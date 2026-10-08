@@ -1,0 +1,28 @@
+<?php
+
+namespace CharlesStOlive\FilamentTma\States\Task;
+
+class TaskInProgress extends TaskState
+{
+    public static $name = 'in_progress';
+
+    public function getLabel(): string
+    {
+        return __('En cours');
+    }
+
+    public function getColor(): string
+    {
+        return 'primary';
+    }
+
+    public function getIcon(): string
+    {
+        return 'heroicon-m-wrench-screwdriver';
+    }
+
+    public function getDescription(): ?string
+    {
+        return __('Mise à disposition du client et synchronisée.');
+    }
+}

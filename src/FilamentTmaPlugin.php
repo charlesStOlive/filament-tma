@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Instances\InstanceResource;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
@@ -38,6 +39,7 @@ class FilamentTmaPlugin implements Plugin
     {
         $panel->resources([
             TicketResource::class,
+            TaskResource::class,
             InstanceResource::class,
         ]);
     }

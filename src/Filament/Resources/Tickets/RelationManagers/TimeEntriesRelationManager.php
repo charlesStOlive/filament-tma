@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers;
 
-use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -27,7 +27,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Le temps passé sur un ticket, dans le maître : une ligne par intervention, avec sa date (qui la range dans son
+ * Le temps passé sur un ticket ou une tâche projet, dans le maître : une ligne par intervention, avec sa date (qui la range dans son
  * mois). Une saisie rattachée à une facture est verrouillée.
  */
 class TimeEntriesRelationManager extends RelationManager
@@ -108,9 +108,9 @@ class TimeEntriesRelationManager extends RelationManager
             ]);
     }
 
-    private function getTicket(): Ticket
+    private function getTicket(): Trackable
     {
-        /** @var Ticket */
+        /** @var Trackable */
         return $this->getOwnerRecord();
     }
 }

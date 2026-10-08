@@ -22,7 +22,8 @@ return [
     |
     | uid : identifiant global et stable de l'installation (un ULID, `php artisan tma:install` en propose un).
     | Il ne doit plus changer une fois des tickets créés : il est écrit dans chacun.
-    | ticket_prefix : début des numéros lisibles des tickets créés ici (DES-0042).
+    | ticket_prefix : début des numéros lisibles des tickets créés ici (DES-0042) ; task_prefix : celui des tâches
+    | projet, numérotées par le maître (T-0007).
     |
     */
 
@@ -30,6 +31,7 @@ return [
         'uid' => env('TMA_INSTANCE_UID'),
         'name' => env('TMA_INSTANCE_NAME', env('APP_NAME', 'Application')),
         'ticket_prefix' => env('TMA_TICKET_PREFIX', 'TMA'),
+        'task_prefix' => env('TMA_TASK_PREFIX', 'T'),
     ],
 
     /*

@@ -2,9 +2,8 @@
 
 namespace CharlesStOlive\FilamentTma\Http\Controllers;
 
-use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Illuminate\Http\Request;
@@ -24,15 +23,15 @@ class MediaController
         $owner = $media->model;
 
         $ticket = match (true) {
-            $owner instanceof Ticket => $owner,
-            $owner instanceof Entry && $owner->subject instanceof Ticket => $owner->subject,
+            $owner instanceof Trackable => $owner,
+            $owner instanceof Entry && $owner->subject instanceof Trackable => $owner->subject,
             default => abort(404),
         };
 
         $user = $request->user();
         abort_if($user === null, 401);
 
-        $policy = Gate::getPolicyFor(Ticket::class);
+        $policy = Gate::getPolicyFor($ticket::class);
         abort_if($policy !== null && ! Gate::forUser($user)->allows('view', $ticket), 403);
 
         if ($owner instanceof Entry) {

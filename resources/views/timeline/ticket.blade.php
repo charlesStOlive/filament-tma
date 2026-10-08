@@ -4,7 +4,7 @@
     use CharlesStOlive\FilamentTma\Workflow\Context;
     use CharlesStOlive\FilamentTma\Workflow\Timeline;
 
-    /** @var \CharlesStOlive\FilamentTma\Models\Ticket $ticket */
+    /** @var \CharlesStOlive\FilamentTma\Contracts\Trackable $ticket  un ticket ou une tâche projet */
     $ticket = $getRecord();
     $context = Context::current();
     $timeline = app(Timeline::class);
@@ -13,6 +13,9 @@
     $canNote = $timeline->canAdd($ticket, EntryType::Note, $context);
     $items = TimelineItems::for($ticket, $withNotes);
     $states = collect($ticket->state::all())->mapWithKeys(fn ($class, $name) => [$name => new $class($ticket)]);
+    $moveLabels = collect($ticket instanceof \CharlesStOlive\FilamentTma\Models\ProjectTask
+        ? app(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class)->moves()
+        : app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->moves())->map(fn ($move) => $move->label());
 @endphp
 
 <div class="fi-tma-timeline">
@@ -23,7 +26,7 @@
                 <x-filament::icon icon="heroicon-m-arrow-path" class="fi-tma-timeline-event-icon" />
                 <span>
                     <strong>{{ $transition->actor?->name ?? __('Système') }}</strong>
-                    — {{ app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->moves()[$transition->move]?->label() ?? $transition->move }}
+                    — {{ $moveLabels[$transition->move] ?? $transition->move }}
                     @if ($transition->from_state)
                         <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>
                         →

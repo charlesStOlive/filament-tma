@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Sync;
 
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Actor;
@@ -88,12 +89,53 @@ final class Mirror
     }
 
     /**
+     * Une tâche projet, reçue du maître (le seul à en créer). Une version plus ancienne ne remplace pas les champs.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $overrides
+     */
+    public static function task(array $payload, array $overrides = []): \CharlesStOlive\FilamentTma\Models\ProjectTask
+    {
+        $task = \CharlesStOlive\FilamentTma\Models\ProjectTask::withTrashed()->firstOrNew(['ulid' => $payload['ulid']]);
+
+        if ($task->exists && (int) ($payload['version'] ?? 0) < (int) $task->sync_version) {
+            return $task;
+        }
+
+        $time = $payload['time'] ?? null;
+
+        $task->forceFill([
+            ...Arr::only($payload, ['number', 'target_instance_uid', 'project', 'title', 'description', 'state', 'starts_on', 'ends_on']),
+            ...self::dates($payload, ['published_at', 'done_at', 'cancelled_at', 'last_activity_at']),
+            'assignee_actor_id' => self::actor($payload['assignee'] ?? null)?->getKey(),
+            'created_by_actor_id' => self::actor($payload['created_by'] ?? null)?->getKey(),
+            'sync_version' => (int) ($payload['version'] ?? 0),
+            'sync_status' => SyncStatus::Synced,
+            'synced_at' => now(),
+            'last_sync_error' => null,
+            ...(! Tma::isMaster() && is_array($time) ? [
+                'time_total_minutes' => (int) ($time['total_minutes'] ?? 0),
+                'time_by_month' => $time['by_month'] ?? [],
+            ] : []),
+            ...$overrides,
+        ]);
+
+        if (! $task->exists && isset($payload['created_at'])) {
+            $task->created_at = Carbon::parse($payload['created_at']);
+        }
+
+        $task->save();
+
+        return $task;
+    }
+
+    /**
      * Une entrée de la chronologie. Une note n'arrive que partagée : une note interne de l'autre application ne
      * doit jamais être reçue.
      *
      * @param  array<string, mixed>  $payload
      */
-    public static function entry(Ticket $ticket, array $payload): Entry
+    public static function entry(Trackable $ticket, array $payload): Entry
     {
         $type = EntryType::from($payload['type']);
 
@@ -138,7 +180,7 @@ final class Mirror
     }
 
     /** @param  array<string, mixed>  $payload */
-    public static function transition(Ticket $ticket, array $payload): StateTransition
+    public static function transition(Trackable $ticket, array $payload): StateTransition
     {
         $transition = StateTransition::query()->firstOrNew(['ulid' => $payload['ulid']]);
 
@@ -165,11 +207,13 @@ final class Mirror
      *
      * @param  array<string, mixed>  $snapshot
      * @param  array<string, mixed>  $overrides
-     * @return array{ticket: Ticket, missing_media: array<int, string>}
+     * @return array{ticket: Trackable, missing_media: array<int, string>}
      */
     public static function snapshot(array $snapshot, array $overrides = []): array
     {
-        $ticket = self::ticket($snapshot['ticket'], $overrides);
+        $ticket = ($snapshot['kind'] ?? 'ticket') === 'task'
+            ? self::task($snapshot['task'], $overrides)
+            : self::ticket($snapshot['ticket'], $overrides);
 
         foreach ($snapshot['transitions'] ?? [] as $transition) {
             self::transition($ticket, $transition);

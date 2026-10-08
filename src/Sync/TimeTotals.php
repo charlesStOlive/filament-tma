@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Sync;
 
-use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Support\Tma;
 
 /**
@@ -12,7 +12,7 @@ use CharlesStOlive\FilamentTma\Support\Tma;
 final class TimeTotals
 {
     /** @return array{total_minutes: int, by_month: array<string, int>} */
-    public static function for(Ticket $ticket): array
+    public static function for(Trackable $ticket): array
     {
         if (! Tma::isMaster()) {
             return ['total_minutes' => (int) $ticket->time_total_minutes, 'by_month' => (array) ($ticket->time_by_month ?? [])];

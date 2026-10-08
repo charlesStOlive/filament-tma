@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Sync;
 
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
@@ -62,12 +63,40 @@ final class Payload
     }
 
     /** @return array<string, mixed> */
+    public static function task(\CharlesStOlive\FilamentTma\Models\ProjectTask $task): array
+    {
+        $task->loadMissing(['assignee', 'createdBy']);
+
+        return [
+            'ulid' => $task->ulid,
+            'number' => $task->number,
+            'target_instance_uid' => $task->target_instance_uid,
+            'project' => $task->project,
+            'title' => $task->title,
+            'description' => $task->description,
+            'state' => $task->state::getMorphClass(),
+            'starts_on' => $task->starts_on?->toDateString(),
+            'ends_on' => $task->ends_on?->toDateString(),
+            'assignee' => self::actor($task->assignee),
+            'created_by' => self::actor($task->createdBy),
+            'published_at' => self::date($task->published_at),
+            'done_at' => self::date($task->done_at),
+            'cancelled_at' => self::date($task->cancelled_at),
+            'last_activity_at' => self::date($task->last_activity_at),
+            'created_at' => self::date($task->created_at),
+            'version' => $task->sync_version,
+            'time' => TimeTotals::for($task),
+        ];
+    }
+
+    /** @return array<string, mixed> */
     public static function entry(Entry $entry, bool $withFiles = false): array
     {
         $entry->loadMissing(['author', 'parent', 'subject']);
 
         return [
             'ulid' => $entry->ulid,
+            'subject_kind' => $entry->subject?->kind(),
             'ticket_ulid' => $entry->subject?->ulid,
             'parent_ulid' => $entry->parent?->ulid,
             'type' => $entry->type->value,
@@ -107,10 +136,11 @@ final class Payload
      *
      * @return array<string, mixed>
      */
-    public static function snapshot(Ticket $ticket): array
+    public static function snapshot(Trackable $ticket): array
     {
         return [
-            'ticket' => self::ticket($ticket),
+            'kind' => $ticket->kind(),
+            $ticket->kind() => $ticket->kind() === 'task' ? self::task($ticket) : self::ticket($ticket),
             'entries' => $ticket->entries()->with(['author', 'parent', 'media'])->oldest('id')->get()
                 ->filter(fn (Entry $entry): bool => $entry->isShared())
                 ->map(fn (Entry $entry): array => self::entry($entry))

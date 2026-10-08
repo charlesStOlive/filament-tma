@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
-use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use Illuminate\Support\Collection;
 
 /**
@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 final class TimelineItems
 {
     /** @return Collection<int, array{kind: string, at: \Illuminate\Support\Carbon, item: Entry|StateTransition}> */
-    public static function for(Ticket $ticket, bool $withNotes): Collection
+    public static function for(Trackable $ticket, bool $withNotes): Collection
     {
         $entries = $ticket->timelineEntries($withNotes)
             ->map(fn (Entry $entry): array => ['kind' => 'entry', 'at' => $entry->created_at, 'item' => $entry]);

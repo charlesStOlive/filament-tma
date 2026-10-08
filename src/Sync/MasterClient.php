@@ -78,7 +78,7 @@ final class MasterClient
     public function sendEntry(Entry $entry): void
     {
         Http::call(__('Envoi au centre de service'), fn () => $this->http()->post(
-            $this->url("tickets/{$entry->subject->ulid}/entries"),
+            $this->url(($entry->subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$entry->subject->ulid}/entries"),
             Payload::entry($entry, withFiles: true),
         ));
     }

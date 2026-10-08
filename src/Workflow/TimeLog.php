@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
-use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -16,14 +16,14 @@ use Illuminate\Validation\ValidationException;
  */
 final class TimeLog
 {
-    public function canLog(Ticket $ticket, Context $context): bool
+    public function canLog(Trackable $ticket, Context $context): bool
     {
         return Tma::isMaster()
             && $ticket->isHandledHere()
             && ($context->isSystem() || TmaGate::allows($context->user, TmaGate::TIME, $ticket));
     }
 
-    public function add(Ticket $ticket, int $minutes, \DateTimeInterface|string|null $workedOn, ?string $description, Context $context, bool $billable = true): TimeEntry
+    public function add(Trackable $ticket, int $minutes, \DateTimeInterface|string|null $workedOn, ?string $description, Context $context, bool $billable = true): TimeEntry
     {
         if (! $this->canLog($ticket, $context)) {
             throw new AuthorizationException(__('Vous ne pouvez pas saisir de temps sur ce ticket.'));

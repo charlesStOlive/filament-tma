@@ -3,6 +3,7 @@
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\SyncController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\UserController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\AgentController;
+use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\TaskController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\TicketController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\PingController;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateAgent;
@@ -25,6 +26,8 @@ Route::prefix('api/tma/v1')
             Route::get('tickets/{ulid}', [TicketController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ulid}/moves', [TicketController::class, 'move'])->name('tickets.move');
             Route::post('tickets/{ulid}/entries', [TicketController::class, 'entry'])->name('tickets.entry');
+            Route::get('tasks/{ulid}', [TaskController::class, 'show'])->name('tasks.show');
+            Route::post('tasks/{ulid}/entries', [TaskController::class, 'entry'])->name('tasks.entry');
         });
 
         // Le maître, appelé par un de ses utilisateurs (les commandes tma:* lancées dans une application cliente).

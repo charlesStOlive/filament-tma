@@ -6,18 +6,26 @@ use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\CommentTicketCommand;
 use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
+use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
 use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
+use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
+use CharlesStOlive\FilamentTma\Events\TaskUpdated;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
 use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
-use CharlesStOlive\FilamentTma\Listeners\QueueTicketPush;
+use CharlesStOlive\FilamentTma\Listeners\QueuePush;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
@@ -42,11 +50,13 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 ShowTicketCommand::class,
                 LogTimeCommand::class,
                 CommentTicketCommand::class,
+                PublishScheduledTasksCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',
                 'create_filament_tma_instances_table',
                 'create_filament_tma_time_entries_table',
+                'create_filament_tma_tasks_table',
             ]);
     }
 
@@ -54,6 +64,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(TicketWorkflow::class);
         $this->app->singleton(Timeline::class);
+        $this->app->singleton(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class);
         $this->app->singleton(\CharlesStOlive\FilamentTma\Workflow\TimeLog::class);
     }
 
@@ -63,12 +74,19 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
+        TmaGate::registerResource(Ticket::class, TicketResource::class);
+        TmaGate::registerResource(ProjectTask::class, TaskResource::class);
+
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
-        Event::listen([TicketTransitioned::class, EntryAdded::class, NoteShared::class, TicketUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class], QueueTicketPush::class);
+        Event::listen([
+            TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, NoteShared::class,
+            TicketUpdated::class, TaskUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class,
+        ], QueuePush::class);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('tma:close-stale')->dailyAt((string) config('filament-tma.auto_close.at', '07:00'))->withoutOverlapping();
             $schedule->command('tma:resume-paused')->everyFifteenMinutes()->withoutOverlapping();
+            $schedule->command('tma:publish-scheduled')->everyFiveMinutes()->withoutOverlapping();
         });
 
         FilamentAsset::register([

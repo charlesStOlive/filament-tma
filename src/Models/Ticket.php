@@ -7,7 +7,9 @@ use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
+use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Html;
@@ -44,9 +46,10 @@ use Spatie\ModelStates\HasStates;
  * @property HandlingMode $handling_mode
  * @property SyncStatus $sync_status
  */
-class Ticket extends Model implements HasMedia, HasRichContent
+class Ticket extends Model implements HasMedia, HasRichContent, Trackable
 {
     use HasAttachments;
+    use IsTrackable;
     use HasStates;
     use HasUlids;
     use InteractsWithRichContent;
@@ -154,22 +157,6 @@ class Ticket extends Model implements HasMedia, HasRichContent
         return $this->morphTo();
     }
 
-    public function entries(): MorphMany
-    {
-        return $this->morphMany(Entry::class, 'subject');
-    }
-
-    public function transitions(): MorphMany
-    {
-        return $this->morphMany(StateTransition::class, 'subject');
-    }
-
-    /** Les saisies de temps (dans le maître ; un client n'a que les totaux, `time_total_minutes`). */
-    public function timeEntries(): MorphMany
-    {
-        return $this->morphMany(TimeEntry::class, 'subject');
-    }
-
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNotIn('state', ['closed', 'cancelled']);
@@ -186,18 +173,8 @@ class Ticket extends Model implements HasMedia, HasRichContent
     }
 
     /**
-     * Les parties que cette application représente pour ce ticket. L'application source est le demandeur ; en
-     * traitement local elle est aussi l'intervenant, en centre de service c'est le maître.
-     *
-     * @return array<int, Side>
-     */
-    public function sidesHere(): array
-    {
-        return $this->sidesOf(Tma::instanceUid(), Tma::isMaster());
-    }
-
-    /**
-     * Les parties que représente une application donnée (`Workflow\Context::$instanceUid`).
+     * Les parties que représente une application donnée. L'application source est le demandeur ; en traitement
+     * local elle est aussi l'intervenant, en centre de service c'est le maître (`Workflow\Context::$instanceUid`).
      *
      * @return array<int, Side>
      */
@@ -221,11 +198,6 @@ class Ticket extends Model implements HasMedia, HasRichContent
     public function authorityIsHere(): bool
     {
         return $this->handling_mode === HandlingMode::Local ? Tma::isHere($this->source_instance_uid) : Tma::isMaster();
-    }
-
-    public function isHandledHere(): bool
-    {
-        return in_array(Side::Handler, $this->sidesHere(), true);
     }
 
     /** Cette application a la main : elle peut modifier les champs du ticket. Sinon, on ne fait plus qu'ajouter. */
@@ -258,24 +230,23 @@ class Ticket extends Model implements HasMedia, HasRichContent
         return $this->isHandledHere() && $this->sideInCharge() === Side::Handler;
     }
 
-    public function touchActivity(): void
+    protected function hasAutoCloseWarning(): bool
     {
-        $this->forceFill(['last_activity_at' => now(), 'auto_close_warned_at' => null])->saveQuietly();
+        return true;
     }
 
-    /** Les entrées de premier niveau visibles ici, avec leurs réponses. */
-    public function timelineEntries(bool $withNotes): \Illuminate\Support\Collection
+    public function kind(): string
     {
-        return $this->entries()
-            ->whereNull('parent_id')
-            ->visibleHere($withNotes)
-            ->with(['author', 'media', 'replies' => fn ($q) => $q->visibleHere($withNotes)->with(['author', 'media'])])
-            ->oldest()
-            ->get();
+        return 'ticket';
     }
 
-    public function latestEntryOfType(EntryType $type): ?Entry
+    public function clientInstanceUid(): string
     {
-        return $this->entries()->where('type', $type->value)->latest('id')->first();
+        return $this->source_instance_uid;
+    }
+
+    public function isShared(): bool
+    {
+        return $this->handling_mode === HandlingMode::ServiceDesk;
     }
 }

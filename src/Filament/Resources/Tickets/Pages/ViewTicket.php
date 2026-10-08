@@ -7,7 +7,7 @@ use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
-use CharlesStOlive\FilamentTma\Jobs\PushTicketToInstance;
+use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -55,7 +55,7 @@ class ViewTicket extends ViewRecord
             ->action(function (Ticket $record): void {
                 $record->forceFill(['sync_status' => SyncStatus::Pending])->saveQuietly();
                 rescue(function () use ($record): void {
-                    PushTicketToInstance::dispatch($record);
+                    PushToInstance::dispatch($record);
                 });
 
                 $record->refresh();

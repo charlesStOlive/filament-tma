@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -46,7 +46,7 @@ final class TimelineActions
             ->label(__('Répondre'))
             ->modalHeading(__('Répondre'))
             ->schema(self::entrySchema())
-            ->action(function (Ticket $record, array $data, array $arguments, Action $action): void {
+            ->action(function (Trackable $record, array $data, array $arguments, Action $action): void {
                 $parent = Entry::query()->findOrFail($arguments['entry'] ?? null);
 
                 self::write($action, fn (): Entry => app(Timeline::class)->add($record, $parent->type, $data['body'] ?? null, Context::current(), $parent, uploads: Uploads::fromForm($data)));
@@ -60,7 +60,7 @@ final class TimelineActions
             ->requiresConfirmation()
             ->modalHeading(__('Partager cette note'))
             ->modalDescription(__('L’autre partie pourra la lire. Ce partage ne se retire pas.'))
-            ->action(function (Ticket $record, array $arguments, Action $action): void {
+            ->action(function (Trackable $record, array $arguments, Action $action): void {
                 $note = $record->entries()->findOrFail($arguments['entry'] ?? null);
 
                 try {
@@ -79,8 +79,8 @@ final class TimelineActions
         return Action::make($name)
             ->modalHeading($type->getLabel())
             ->schema(self::entrySchema())
-            ->visible(fn (Ticket $record): bool => app(Timeline::class)->canAdd($record, $type, Context::current()))
-            ->action(function (Ticket $record, array $data, Action $action) use ($type): void {
+            ->visible(fn (Trackable $record): bool => app(Timeline::class)->canAdd($record, $type, Context::current()))
+            ->action(function (Trackable $record, array $data, Action $action) use ($type): void {
                 self::write($action, fn (): Entry => app(Timeline::class)->add($record, $type, $data['body'] ?? null, Context::current(), uploads: Uploads::fromForm($data)));
             });
     }

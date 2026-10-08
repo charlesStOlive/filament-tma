@@ -27,14 +27,25 @@ final class TmaGate
 
     public const WORKFLOW_FAMILY = 'workflow';
 
-    public static function ability(string $action): string
+    /** @var array<class-string<Model>, class-string> la Resource qui déclare les droits de chaque objet */
+    private static array $resources = [];
+
+    /** @param  class-string<Model>  $model */
+    public static function registerResource(string $model, string $resource): void
     {
-        return TicketResource::class.'.'.$action;
+        self::$resources[$model] = $resource;
+    }
+
+    public static function ability(string $action, Model|string|null $record = null): string
+    {
+        $model = $record instanceof Model ? $record::class : ($record ?? \CharlesStOlive\FilamentTma\Models\Ticket::class);
+
+        return (self::$resources[$model] ?? TicketResource::class).'.'.$action;
     }
 
     public static function allows(?Authenticatable $user, string $action, ?Model $record = null): bool
     {
-        $ability = self::ability($action);
+        $ability = self::ability($action, $record);
 
         if (! Gate::has($ability)) {
             return true;

@@ -26,6 +26,10 @@ class SyncController
     /** `POST sync` */
     public function sync(Request $request): JsonResponse
     {
+        if ($request->input('kind') === 'task') {
+            return $this->syncTask($request);
+        }
+
         $request->validate([
             'ticket' => ['required', 'array'],
             'ticket.ulid' => ['required', 'string', 'size:26'],
@@ -50,6 +54,33 @@ class SyncController
         return response()->json(['missing_media' => $result['missing_media']]);
     }
 
+    /**
+     * Une tâche projet publiée pour cette application : créée à sa première réception, puis tenue à jour. Le maître
+     * n'envoie jamais un brouillon.
+     */
+    private function syncTask(Request $request): JsonResponse
+    {
+        $request->validate([
+            'task' => ['required', 'array'],
+            'task.ulid' => ['required', 'string', 'size:26'],
+            'task.number' => ['required', 'string'],
+            'task.title' => ['required', 'string'],
+            'task.target_instance_uid' => ['required', 'in:'.Tma::instanceUid()],
+            'task.state' => ['required', 'not_in:draft'],
+            'entries' => ['array'],
+            'transitions' => ['array'],
+        ]);
+
+        $isNew = ! \CharlesStOlive\FilamentTma\Models\ProjectTask::withTrashed()->where('ulid', $request->input('task.ulid'))->exists();
+        $result = DB::transaction(fn () => Mirror::snapshot($request->all()));
+
+        if ($isNew) {
+            event(new \CharlesStOlive\FilamentTma\Events\TaskReceived($result['ticket']));
+        }
+
+        return response()->json(['missing_media' => $result['missing_media']]);
+    }
+
     /** `POST media/entry/{ulid}` */
     public function media(Request $request, string $owner, string $ulid): JsonResponse
     {
@@ -57,7 +88,7 @@ class SyncController
         $request->validate(['files' => ['required', 'array']]);
 
         $entry = Entry::query()->where('ulid', $ulid)->firstOrFail();
-        abort_unless($entry->subject instanceof Ticket && Tma::isHere($entry->subject->source_instance_uid), 403);
+        abort_unless($entry->subject instanceof \CharlesStOlive\FilamentTma\Contracts\Trackable && Tma::isHere($entry->subject->clientInstanceUid()), 403);
 
         Mirror::files($entry, $request->input('files'));
 

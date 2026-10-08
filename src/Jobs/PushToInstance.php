@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Events\TicketSyncFailed;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Sync\InstanceClient;
 use CharlesStOlive\FilamentTma\Sync\Payload;
@@ -17,11 +18,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Le maître envoie l'état d'un ticket du centre de service à son application cliente, puis les fichiers qui lui
- * manquent. Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
- * travail du centre de service. Un seul envoi en attente par ticket : il part avec l'état du moment.
+ * Le maître envoie l'état d'un ticket du centre de service, ou d'une tâche publiée, à son application cliente, puis
+ * les fichiers qui lui manquent. Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
+ * travail du centre de service. Un seul envoi en attente par objet : il part avec l'état du moment.
  */
-class PushTicketToInstance implements ShouldBeUnique, ShouldQueue
+class PushToInstance implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -30,7 +31,7 @@ class PushTicketToInstance implements ShouldBeUnique, ShouldQueue
 
     public int $tries;
 
-    public function __construct(public Ticket $ticket)
+    public function __construct(public Ticket|ProjectTask $ticket)
     {
         $this->tries = (int) config('filament-tma.api.sync.tries', 6);
         $this->onQueue(config('filament-tma.api.sync.queue'));
@@ -44,12 +45,12 @@ class PushTicketToInstance implements ShouldBeUnique, ShouldQueue
 
     public function uniqueId(): string
     {
-        return (string) $this->ticket->getKey();
+        return $this->ticket->kind().':'.$this->ticket->getKey();
     }
 
     public function handle(): void
     {
-        $instance = Instance::query()->active()->where('uid', $this->ticket->source_instance_uid)->firstOrFail();
+        $instance = Instance::query()->active()->where('uid', $this->ticket->clientInstanceUid())->firstOrFail();
         $client = new InstanceClient($instance);
         $ticket = $this->ticket->refresh();
 
