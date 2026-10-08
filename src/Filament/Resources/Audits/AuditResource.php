@@ -6,15 +6,16 @@ use CharlesStOlive\FilamentTma\Enums\Origin;
 use CharlesStOlive\FilamentTma\Filament\Resources\Audits\Pages\ListAudits;
 use CharlesStOlive\FilamentTma\Models\Audit;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /** « Journal d'audit » : en lecture seule (CDC §23). Droit `tma.audit.viewany`. */
@@ -101,7 +102,7 @@ class AuditResource extends Resource
     {
         $keys = array_keys($record->new_values ?? $record->old_values ?? []);
 
-        return new HtmlString(e(\Illuminate\Support\Str::limit(implode(', ', $keys), 80)));
+        return new HtmlString(e(Str::limit(implode(', ', $keys), 80)));
     }
 
     public static function getPages(): array

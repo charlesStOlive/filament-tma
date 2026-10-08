@@ -2,19 +2,19 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
-use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
 /**

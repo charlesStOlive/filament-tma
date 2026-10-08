@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -12,7 +13,7 @@ class ListTickets extends ListRecords
 
     protected function getHeaderWidgets(): array
     {
-        return [\CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview::class];
+        return [AllowanceOverview::class];
     }
 
     protected function getHeaderActions(): array

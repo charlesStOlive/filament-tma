@@ -3,8 +3,11 @@
 namespace CharlesStOlive\FilamentTma\Workflow;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use Filament\Forms\Components\Field;
+use Filament\Schemas\Components\Component;
 
 /**
  * Un mouvement du workflow d'un ticket : « Prendre en charge », « Répondre »… Il dit d'où il part (`from()`), où il
@@ -72,7 +75,7 @@ abstract class Move
     /**
      * Les champs du formulaire Filament.
      *
-     * @return array<int, \Filament\Schemas\Components\Component|\Filament\Forms\Components\Field>
+     * @return array<int, Component|Field>
      */
     public function formSchema(Ticket $ticket): array
     {
@@ -86,7 +89,7 @@ abstract class Move
      * Appelé dans la transaction, une fois l'état changé et l'historique écrit : une exception ici annule tout
      * (la transmission au centre de service s'en sert pour appeler le maître).
      */
-    public function committing(Ticket $ticket, \CharlesStOlive\FilamentTma\Models\StateTransition $transition, Context $context): void {}
+    public function committing(Ticket $ticket, StateTransition $transition, Context $context): void {}
 
     /** Le motif gardé dans l'historique. */
     public function reason(array $data): ?string

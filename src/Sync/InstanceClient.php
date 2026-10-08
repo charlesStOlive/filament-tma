@@ -3,13 +3,14 @@
 namespace CharlesStOlive\FilamentTma\Sync;
 
 use CharlesStOlive\FilamentTma\Models\Instance;
+use Illuminate\Http\Client\PendingRequest;
 
 /** Le maître appelle une application cliente. */
 final class InstanceClient
 {
     public function __construct(private Instance $instance) {}
 
-    private function http(): \Illuminate\Http\Client\PendingRequest
+    private function http(): PendingRequest
     {
         if (blank($this->instance->token)) {
             throw new SyncException(__('L’application :name n’a pas de jeton : renseignez-le dans « Applications clientes ».', ['name' => $this->instance->name]));

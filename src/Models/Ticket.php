@@ -2,12 +2,11 @@
 
 namespace CharlesStOlive\FilamentTma\Models;
 
-use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
-use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
 use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
@@ -21,7 +20,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
@@ -49,10 +47,10 @@ use Spatie\ModelStates\HasStates;
 class Ticket extends Model implements HasMedia, HasRichContent, Trackable
 {
     use HasAttachments;
-    use IsTrackable;
     use HasStates;
     use HasUlids;
     use InteractsWithRichContent;
+    use IsTrackable;
     use SoftDeletes;
 
     protected $table = 'tma_tickets';

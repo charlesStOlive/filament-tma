@@ -2,30 +2,39 @@
 
 namespace CharlesStOlive\FilamentTma;
 
+use CharlesStOlive\FilamentTma\Commands\CleanupCommand;
 use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\CommentTicketCommand;
 use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
 use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
-use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
-use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
+use CharlesStOlive\FilamentTma\Commands\SendDigestCommand;
+use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
+use CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
+use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
-use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
-use CharlesStOlive\FilamentTma\Listeners\QueuePush;
-use CharlesStOlive\FilamentTma\Workflow\Timeline;
-use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Listeners\AuditTrail;
+use CharlesStOlive\FilamentTma\Listeners\CheckAllowances;
+use CharlesStOlive\FilamentTma\Listeners\NotifyAllowanceThreshold;
+use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
+use CharlesStOlive\FilamentTma\Listeners\QueueAllowancesPush;
+use CharlesStOlive\FilamentTma\Listeners\QueuePush;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
+use CharlesStOlive\FilamentTma\Workflow\Timeline;
+use CharlesStOlive\FilamentTma\Workflow\TimeLog;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
@@ -51,8 +60,8 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 LogTimeCommand::class,
                 CommentTicketCommand::class,
                 PublishScheduledTasksCommand::class,
-                \CharlesStOlive\FilamentTma\Commands\SendDigestCommand::class,
-                \CharlesStOlive\FilamentTma\Commands\CleanupCommand::class,
+                SendDigestCommand::class,
+                CleanupCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',
@@ -69,8 +78,8 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(TicketWorkflow::class);
         $this->app->singleton(Timeline::class);
-        $this->app->singleton(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class);
-        $this->app->singleton(\CharlesStOlive\FilamentTma\Workflow\TimeLog::class);
+        $this->app->singleton(TaskWorkflow::class);
+        $this->app->singleton(TimeLog::class);
     }
 
     /**
@@ -83,13 +92,13 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
 
         if (config('filament-tma.audit.enabled', true)) {
-            \CharlesStOlive\FilamentTma\Listeners\AuditTrail::register();
+            AuditTrail::register();
         }
 
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
-        Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\CheckAllowances::class);
-        Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\QueueAllowancesPush::class);
-        Event::listen(\CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached::class, \CharlesStOlive\FilamentTma\Listeners\NotifyAllowanceThreshold::class);
+        Event::listen(TimeEntryChanged::class, CheckAllowances::class);
+        Event::listen(TimeEntryChanged::class, QueueAllowancesPush::class);
+        Event::listen(AllowanceThresholdReached::class, NotifyAllowanceThreshold::class);
         Event::listen([
             TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, NoteShared::class,
             TicketUpdated::class, TaskUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class,

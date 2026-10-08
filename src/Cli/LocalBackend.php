@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Cli;
 
 use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Enums\Origin;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -13,8 +14,10 @@ use CharlesStOlive\FilamentTma\Workflow\TimeLog;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -29,7 +32,7 @@ final class LocalBackend implements Backend
     private function context(): Context
     {
         return $this->viaApi
-            ? new Context($this->user, Actor::forUser($this->user), \CharlesStOlive\FilamentTma\Enums\Origin::Api)
+            ? new Context($this->user, Actor::forUser($this->user), Origin::Api)
             : Context::command($this->user);
     }
 
@@ -49,8 +52,8 @@ final class LocalBackend implements Backend
             ->values()->all();
     }
 
-    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
-    private function tasks(array $filters): \Illuminate\Support\Collection
+    /** @return Collection<int, array<string, mixed>> */
+    private function tasks(array $filters): Collection
     {
         $actor = Actor::forUser($this->user);
 
@@ -70,8 +73,8 @@ final class LocalBackend implements Backend
             ->values();
     }
 
-    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
-    private function tickets(array $filters): \Illuminate\Support\Collection
+    /** @return Collection<int, array<string, mixed>> */
+    private function tickets(array $filters): Collection
     {
         $actor = Actor::forUser($this->user);
 
@@ -179,6 +182,6 @@ final class LocalBackend implements Backend
             return null;
         }
 
-        return \Illuminate\Support\Str::limit(trim(strtok(strip_tags($text), "\n")), 250);
+        return Str::limit(trim(strtok(strip_tags($text), "\n")), 250);
     }
 }

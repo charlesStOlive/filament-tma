@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Sync;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use Illuminate\Support\Carbon;
@@ -63,7 +64,7 @@ final class Payload
     }
 
     /** @return array<string, mixed> */
-    public static function task(\CharlesStOlive\FilamentTma\Models\ProjectTask $task): array
+    public static function task(ProjectTask $task): array
     {
         $task->loadMissing(['assignee', 'createdBy']);
 

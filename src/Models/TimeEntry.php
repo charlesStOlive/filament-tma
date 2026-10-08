@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -19,7 +20,7 @@ use LogicException;
  * soit l'état de la facture. Il faut d'abord défaire le rattachement (lot 3). Le verrou est dans le modèle : il vaut
  * pour l'interface, l'API et les commandes.
  *
- * @property \Illuminate\Support\Carbon $worked_on
+ * @property Carbon $worked_on
  * @property int $minutes
  * @property bool $billable
  */

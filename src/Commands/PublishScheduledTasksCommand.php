@@ -3,8 +3,10 @@
 namespace CharlesStOlive\FilamentTma\Commands;
 
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Illuminate\Console\Command;
 
 /**
@@ -33,9 +35,9 @@ class PublishScheduledTasksCommand extends Command
                 }
             });
 
-        $tickets = app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class);
+        $tickets = app(TicketWorkflow::class);
 
-        \CharlesStOlive\FilamentTma\Models\Ticket::query()
+        Ticket::query()
             ->where('state', 'draft')
             ->whereNotNull('publish_at')
             ->where('publish_at', '<=', now())

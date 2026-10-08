@@ -3,8 +3,10 @@
 namespace CharlesStOlive\FilamentTma\Contracts;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Models\Entry;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
+use Spatie\ModelStates\State;
 
 /**
  * Ce qui a une chronologie, du temps passé et une copie chez l'autre application : un ticket, une tâche projet.
@@ -13,7 +15,7 @@ use Illuminate\Support\Collection;
  *
  * @property string $ulid
  * @property string $number
- * @property \Spatie\ModelStates\State $state
+ * @property State $state
  */
 interface Trackable
 {
@@ -31,7 +33,7 @@ interface Trackable
 
     public function touchActivity(): void;
 
-    /** @return Collection<int, \CharlesStOlive\FilamentTma\Models\Entry> */
+    /** @return Collection<int, Entry> */
     public function timelineEntries(bool $withNotes): Collection;
 
     /** @return array<int, Side> les parties que représente cette application */

@@ -6,13 +6,14 @@ use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
+use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
-use CharlesStOlive\FilamentTma\Workflow\Moves;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -202,7 +203,7 @@ class TicketWorkflow
      * @param  array<string, mixed>  $attributes  title, description, priority, due_on, publish_at
      * @param  array{id: string, name: string, email?: string|null}  $requester  un utilisateur de l'application (`Sync\RemoteUsers`)
      */
-    public function createForClient(\CharlesStOlive\FilamentTma\Models\Instance $instance, array $requester, array $attributes, Context $context): Ticket
+    public function createForClient(Instance $instance, array $requester, array $attributes, Context $context): Ticket
     {
         if (! Tma::isMaster()) {
             throw new AuthorizationException(__('Seul le centre de service prépare un ticket pour un client.'));
@@ -212,7 +213,7 @@ class TicketWorkflow
             throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
         }
 
-        $actor = \CharlesStOlive\FilamentTma\Models\Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
+        $actor = Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
 
         $ticket = Ticket::create([
             ...collect($attributes)->only(['title', 'description', 'priority', 'due_on', 'publish_at'])->all(),

@@ -6,16 +6,17 @@ use CharlesStOlive\FilamentStateFusionEnhanced\Tables\Filters\StateFusionSelectF
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
-use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeEntriesRelationManager;
-use CharlesStOlive\FilamentTma\Models\Instance;
-use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\CreateTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\EditTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ListTickets;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ViewTicket;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeEntriesRelationManager;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketForm;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
+use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\States\Ticket\Draft;
+use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
@@ -108,7 +109,7 @@ class TicketResource extends Resource
     public static function canDelete(Model $record): bool
     {
         /** @var Ticket $record */
-        return $record->state instanceof \CharlesStOlive\FilamentTma\States\Ticket\Draft
+        return $record->state instanceof Draft
             && $record->fieldsEditableHere()
             && parent::canDelete($record);
     }

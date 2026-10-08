@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -38,7 +39,7 @@ final class TmaGate
 
     public static function ability(string $action, Model|string|null $record = null): string
     {
-        $model = $record instanceof Model ? $record::class : ($record ?? \CharlesStOlive\FilamentTma\Models\Ticket::class);
+        $model = $record instanceof Model ? $record::class : ($record ?? Ticket::class);
 
         return (self::$resources[$model] ?? TicketResource::class).'.'.$action;
     }

@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Support;
 
+use Illuminate\Database\Eloquent\Model;
 use RuntimeException;
 
 /**
@@ -61,7 +62,7 @@ final class Tma
         return $instanceUid !== null && $instanceUid === self::instanceUid();
     }
 
-    /** @return class-string<\Illuminate\Database\Eloquent\Model> */
+    /** @return class-string<Model> */
     public static function userModel(): string
     {
         return config('filament-tma.models.user') ?: config('auth.providers.users.model');

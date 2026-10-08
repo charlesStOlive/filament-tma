@@ -2,9 +2,12 @@
 
 namespace CharlesStOlive\FilamentTma;
 
+use CharlesStOlive\FilamentTma\Filament\Resources\Allowances\AllowanceResource;
+use CharlesStOlive\FilamentTma\Filament\Resources\Audits\AuditResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Instances\InstanceResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -41,12 +44,12 @@ class FilamentTmaPlugin implements Plugin
             TicketResource::class,
             TaskResource::class,
             InstanceResource::class,
-            \CharlesStOlive\FilamentTma\Filament\Resources\Allowances\AllowanceResource::class,
-            \CharlesStOlive\FilamentTma\Filament\Resources\Audits\AuditResource::class,
+            AllowanceResource::class,
+            AuditResource::class,
         ]);
 
         $panel->widgets([
-            \CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview::class,
+            AllowanceOverview::class,
         ]);
     }
 

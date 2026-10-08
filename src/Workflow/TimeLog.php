@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Workflow;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
+use CharlesStOlive\FilamentTma\Support\AllowanceMeter;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -56,13 +57,13 @@ final class TimeLog
             return;
         }
 
-        $probe = new \CharlesStOlive\FilamentTma\Models\TimeEntry(['worked_on' => $workedOn ?? now(), 'billable' => true]);
+        $probe = new TimeEntry(['worked_on' => $workedOn ?? now(), 'billable' => true]);
         $probe->setRelation('subject', $subject);
 
-        foreach (\CharlesStOlive\FilamentTma\Support\AllowanceMeter::allowancesFor($probe) as $allowance) {
-            $key = \CharlesStOlive\FilamentTma\Support\AllowanceMeter::periodKey($allowance, $probe->worked_on);
+        foreach (AllowanceMeter::allowancesFor($probe) as $allowance) {
+            $key = AllowanceMeter::periodKey($allowance, $probe->worked_on);
 
-            if (\CharlesStOlive\FilamentTma\Support\AllowanceMeter::consumed($allowance, $key) + $minutes > $allowance->minutes) {
+            if (AllowanceMeter::consumed($allowance, $key) + $minutes > $allowance->minutes) {
                 throw ValidationException::withMessages(['minutes' => __('Le forfait « :label » serait dépassé.', ['label' => $allowance->label()])]);
             }
         }

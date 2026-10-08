@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -94,9 +95,9 @@ final class Mirror
      * @param  array<string, mixed>  $payload
      * @param  array<string, mixed>  $overrides
      */
-    public static function task(array $payload, array $overrides = []): \CharlesStOlive\FilamentTma\Models\ProjectTask
+    public static function task(array $payload, array $overrides = []): ProjectTask
     {
-        $task = \CharlesStOlive\FilamentTma\Models\ProjectTask::withTrashed()->firstOrNew(['ulid' => $payload['ulid']]);
+        $task = ProjectTask::withTrashed()->firstOrNew(['ulid' => $payload['ulid']]);
 
         if ($task->exists && (int) ($payload['version'] ?? 0) < (int) $task->sync_version) {
             return $task;

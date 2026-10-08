@@ -2,16 +2,16 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
-use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

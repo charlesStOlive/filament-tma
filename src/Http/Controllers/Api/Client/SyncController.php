@@ -2,11 +2,15 @@
 
 namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Client;
 
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Events\TaskReceived;
 use CharlesStOlive\FilamentTma\Events\TicketSynced;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Notifications\AutoCloseWarning;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use Illuminate\Http\JsonResponse;
@@ -73,11 +77,11 @@ class SyncController
             'transitions' => ['array'],
         ]);
 
-        $isNew = ! \CharlesStOlive\FilamentTma\Models\ProjectTask::withTrashed()->where('ulid', $request->input('task.ulid'))->exists();
+        $isNew = ! ProjectTask::withTrashed()->where('ulid', $request->input('task.ulid'))->exists();
         $result = DB::transaction(fn () => Mirror::snapshot($request->all()));
 
         if ($isNew) {
-            event(new \CharlesStOlive\FilamentTma\Events\TaskReceived($result['ticket']));
+            event(new TaskReceived($result['ticket']));
         }
 
         return response()->json(['missing_media' => $result['missing_media']]);
@@ -90,7 +94,7 @@ class SyncController
         $request->validate(['files' => ['required', 'array']]);
 
         $entry = Entry::query()->where('ulid', $ulid)->firstOrFail();
-        abort_unless($entry->subject instanceof \CharlesStOlive\FilamentTma\Contracts\Trackable && Tma::isHere($entry->subject->clientInstanceUid()), 403);
+        abort_unless($entry->subject instanceof Trackable && Tma::isHere($entry->subject->clientInstanceUid()), 403);
 
         Mirror::files($entry, $request->input('files'));
 
@@ -109,6 +113,6 @@ class SyncController
 
         // Les passages reçus : la clôture automatique, et ceux de `notifications.immediate`.
         $ticket->transitions()->whereNotIn('ulid', $knownTransitions)->with('actor')->get()
-            ->each(fn ($transition) => \CharlesStOlive\FilamentTma\Support\Notifier::transition($ticket, $transition));
+            ->each(fn ($transition) => Notifier::transition($ticket, $transition));
     }
 }

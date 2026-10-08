@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Commands;
 use CharlesStOlive\FilamentTma\Commands\Concerns\UsesTmaBackend;
 use CharlesStOlive\FilamentTma\Support\Duration;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 /** `tma:list` : les tickets et tâches projet ouverts (ou filtrés), du plus récemment actif au plus ancien. */
 class ListTicketsCommand extends Command
@@ -52,7 +53,7 @@ class ListTicketsCommand extends Command
                 $this->table(
                     [__('N°'), __('Titre'), __('État'), __('Main'), __('Application'), __('Intervenant'), __('Temps')],
                     collect($tickets)->map(fn (array $t): array => [
-                        $t['ref'], \Illuminate\Support\Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['in_hands_of'] ?? '—',
+                        $t['ref'], Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['in_hands_of'] ?? '—',
                         $t['application'] ?? '—', $t['assignee'] ?? '—', Duration::format((int) $t['time_minutes']),
                     ])->all(),
                 );
