@@ -73,6 +73,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             'handling_mode' => HandlingMode::class,
             'sync_status' => SyncStatus::class,
             'due_on' => 'date',
+            'publish_at' => 'datetime',
             'submitted_at' => 'datetime',
             'taken_at' => 'datetime',
             'waiting_since' => 'datetime',
@@ -245,8 +246,9 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return $this->source_instance_uid;
     }
 
+    /** Au centre de service, et publié : un brouillon préparé par le maître reste chez lui. */
     public function isShared(): bool
     {
-        return $this->handling_mode === HandlingMode::ServiceDesk;
+        return $this->handling_mode === HandlingMode::ServiceDesk && ! $this->state instanceof Draft;
     }
 }

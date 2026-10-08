@@ -39,10 +39,13 @@ class SyncController
         ]);
 
         $before = Ticket::withTrashed()->where('ulid', $request->input('ticket.ulid'))->first();
-        abort_if($before === null, 404, __('Ticket inconnu de cette application.'));
 
-        $warnedBefore = $before->auto_close_warned_at;
-        $knownTransitions = $before->transitions()->pluck('ulid')->all();
+        // Un ticket inconnu ici ne peut être qu'un ticket préparé par le maître pour nous, et publié.
+        $preparedByMaster = ! Tma::isHere($request->input('ticket.created_on_instance_uid')) && $request->input('ticket.state') !== 'draft';
+        abort_if($before === null && ! $preparedByMaster, 404, __('Ticket inconnu de cette application.'));
+
+        $warnedBefore = $before?->auto_close_warned_at;
+        $knownTransitions = $before?->transitions()->pluck('ulid')->all() ?? [];
 
         $result = DB::transaction(fn () => Mirror::snapshot($request->all()));
         $ticket = $result['ticket']->refresh();

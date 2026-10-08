@@ -28,7 +28,7 @@ final class Notifier
         }
 
         $recipient = match ($transition->move) {
-            'request-answer', 'submit-for-validation', 'take-charge' => self::requester($ticket),
+            'request-answer', 'submit-for-validation', 'take-charge', 'publish', 'auto-publish' => self::requester($ticket),
             'submit', 'reopen', 'answer' => self::localUser($ticket->assignee),
             default => null,
         };

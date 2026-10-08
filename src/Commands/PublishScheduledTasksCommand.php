@@ -7,12 +7,15 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
 use Illuminate\Console\Command;
 
-/** Publie les tâches dont la publication programmée est arrivée (maître). Planifiée toutes les cinq minutes. */
+/**
+ * Publie les tâches projet, et les brouillons de tickets du maître, dont la publication programmée est arrivée.
+ * Planifiée toutes les cinq minutes.
+ */
 class PublishScheduledTasksCommand extends Command
 {
     protected $signature = 'tma:publish-scheduled';
 
-    protected $description = 'Publie les tâches projet arrivées à leur date de publication';
+    protected $description = 'Publie les tâches projet et les tickets préparés arrivés à leur date de publication';
 
     public function handle(TaskWorkflow $workflow): int
     {
@@ -30,7 +33,20 @@ class PublishScheduledTasksCommand extends Command
                 }
             });
 
-        $this->components->info("{$published} tâche(s) publiée(s).");
+        $tickets = app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class);
+
+        \CharlesStOlive\FilamentTma\Models\Ticket::query()
+            ->where('state', 'draft')
+            ->whereNotNull('publish_at')
+            ->where('publish_at', '<=', now())
+            ->each(function ($ticket) use ($tickets, $context, &$published): void {
+                if ($tickets->allows($ticket, 'auto-publish', $context)) {
+                    $tickets->run($ticket, 'auto-publish', [], $context);
+                    $published++;
+                }
+            });
+
+        $this->components->info("{$published} tâche(s) ou ticket(s) publié(s).");
 
         return self::SUCCESS;
     }

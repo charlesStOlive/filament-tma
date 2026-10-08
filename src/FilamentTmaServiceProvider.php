@@ -59,6 +59,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_filament_tma_time_entries_table',
                 'create_filament_tma_tasks_table',
                 'create_filament_tma_allowances_table',
+                'add_publish_at_to_tma_tickets_table',
             ]);
     }
 

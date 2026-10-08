@@ -50,6 +50,8 @@ class TicketWorkflow
             new Moves\Cancel,
             new Moves\AutoClose,
             new Moves\AutoResume,
+            new Moves\Publish,
+            new Moves\AutoPublish,
         ] as $move) {
             $this->register($move);
         }
@@ -191,6 +193,41 @@ class TicketWorkflow
     public function delegatesToMaster(Ticket $ticket, Context $context): bool
     {
         return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
+    }
+
+    /**
+     * Le maître prépare un ticket pour une application cliente, au nom de l'un de ses utilisateurs (addendum §3) :
+     * un brouillon invisible chez le client jusqu'à sa publication (tout de suite, ou à `publish_at`).
+     *
+     * @param  array<string, mixed>  $attributes  title, description, priority, due_on, publish_at
+     * @param  array{id: string, name: string, email?: string|null}  $requester  un utilisateur de l'application (`Sync\RemoteUsers`)
+     */
+    public function createForClient(\CharlesStOlive\FilamentTma\Models\Instance $instance, array $requester, array $attributes, Context $context): Ticket
+    {
+        if (! Tma::isMaster()) {
+            throw new AuthorizationException(__('Seul le centre de service prépare un ticket pour un client.'));
+        }
+
+        if (! $context->isSystem() && Gate::getPolicyFor(Ticket::class) !== null && ! Gate::forUser($context->user)->allows('create', Ticket::class)) {
+            throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
+        }
+
+        $actor = \CharlesStOlive\FilamentTma\Models\Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
+
+        $ticket = Ticket::create([
+            ...collect($attributes)->only(['title', 'description', 'priority', 'due_on', 'publish_at'])->all(),
+            'source_instance_uid' => $instance->uid,
+            'created_on_instance_uid' => Tma::instanceUid(),
+            'handling_mode' => HandlingMode::ServiceDesk,
+            'client_type' => $instance->client_type,
+            'client_id' => $instance->client_id,
+            'requester_actor_id' => $actor->getKey(),
+            'created_by_actor_id' => $context->actor->getKey(),
+        ]);
+
+        event(new TicketCreated($ticket, $context));
+
+        return $ticket;
     }
 
     /**

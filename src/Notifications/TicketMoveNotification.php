@@ -32,6 +32,7 @@ class TicketMoveNotification extends Notification implements ShouldQueue
             'take-charge' => __(':who a pris votre demande en charge.', ['who' => $who]),
             'reopen' => __(':who a rouvert la demande.', ['who' => $who]),
             'answer' => __(':who a répondu.', ['who' => $who]),
+            'publish', 'auto-publish' => __('Le centre de service a ouvert ce ticket pour vous.'),
             default => __(':who : :move.', ['who' => $who, 'move' => $this->transition->move]),
         };
 
