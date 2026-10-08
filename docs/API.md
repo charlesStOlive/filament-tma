@@ -142,10 +142,39 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 }
 ```
 
+### Tâche projet
+
+```json
+{
+  "ulid": "01k…", "number": "T-0007", "target_instance_uid": "01K…", "project": "Portail parrain",
+  "title": "Refonte de la page parrain", "description": "<p>…</p>",
+  "state": "in_progress|done|cancelled",
+  "starts_on": "2026-10-01", "ends_on": "2026-11-15",
+  "assignee": { "…acteur" }, "created_by": { "…acteur" },
+  "published_at": "…", "done_at": null, "cancelled_at": null, "last_activity_at": "…", "created_at": "…",
+  "version": 2,
+  "time": { "total_minutes": 630, "by_month": { "2026-09": 420, "2026-10": 210 } }
+}
+```
+
+Une tâche en brouillon (`draft`) n'est jamais envoyée.
+
 ### État complet (snapshot)
 
 ```json
-{ "ticket": { "…" }, "entries": [ "…entrées partagées, sans fichiers" ], "transitions": [ "…" ] }
+{ "kind": "ticket", "ticket": { "…" }, "entries": [ "…entrées partagées, sans fichiers" ], "transitions": [ "…" ] }
+{ "kind": "task", "task": { "…" }, "entries": [ "…" ], "transitions": [ "…" ] }
+```
+
+### État d'un forfait
+
+```json
+{
+  "allowance_ulid": "01k…", "label": "Desapp — Contrat 2026", "contract": "Contrat 2026",
+  "period": "monthly|quarterly", "period_key": "2026-10", "from": "2026-10-01", "to": "2026-10-31",
+  "allocated_minutes": 840, "consumed_minutes": 600, "remaining_minutes": 240, "overage_minutes": 0,
+  "percent": 71.4, "by_month": { "2026-10": 600 }, "instances": [ "01K…" ]
+}
 ```
 
 ## Routes du maître (appelées par un client)
@@ -189,15 +218,21 @@ complet, à recopier.
 Corps : une entrée (avec `files`). Réponse : `201`, ou `200` si l'entrée était déjà reçue. Sur un ticket
 terminé, seules les notes sont acceptées (422 sinon).
 
+### `GET tasks/{ulid}` et `POST tasks/{ulid}/entries`
+
+L'état d'une tâche projet publiée pour l'application appelante, et ce qu'elle y ajoute (commentaire, réponse, note
+partagée, avec ses fichiers). Une tâche en brouillon répond 404. Sur une tâche terminée, seules les notes sont
+acceptées.
+
 ## Routes « agent » du maître (appelées par ses utilisateurs)
 
 Pour les commandes `tma:*` lancées dans une application cliente. Le jeton est le jeton **personnel** d'un
 utilisateur du maître, dont l'appel a exactement les droits ; le compte de service d'une application cliente y est
-refusé (403). `{ref}` : le numéro (`DES-0042`) ou l'ulid du ticket.
+refusé (403). `{ref}` : le numéro (`DES-0042`, `T-0007`) ou l'ulid du ticket ou de la tâche.
 
 | Route | Rôle |
 |---|---|
-| `GET agent/tickets?state=&app=&search=&mine=1&all=1&limit=` | la liste (ouverts par défaut) |
+| `GET agent/tickets?type=all|tickets|tasks&state=&app=&project=&search=&mine=1&all=1&limit=` | la liste des tickets et des tâches (ouverts par défaut) |
 | `GET agent/tickets/{ref}` | un ticket, sa description et sa chronologie en texte |
 | `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, billable?, internal? }` | une saisie de temps et son résumé |
 | `POST agent/tickets/{ref}/entries` `{ body, note? }` | un commentaire, ou une note interne |
@@ -223,11 +258,18 @@ Les utilisateurs qui ont des droits sur le centre de service (`tma.ticket.workfl
 
 Le maître garde la liste en cache (`api.users_cache_ttl`, une heure), avec un bouton « Rafraîchir ».
 
-### `POST sync` — l'état d'un ticket du centre de service
+### `POST sync` — l'état d'un ticket du centre de service, ou d'une tâche projet
 
-Corps : un état complet. Le ticket doit être de cette application (`source_instance_uid`), au centre de
-service, et déjà connu (404 sinon). Le client recopie, puis prévient lui-même son demandeur (avertissement
-avant clôture, clôture automatique). Réponse :
+Corps : un état complet (`kind` : `ticket` ou `task`).
+
+- **Ticket** : il doit être de cette application (`source_instance_uid`), au centre de service, et déjà connu,
+  sauf s'il a été préparé par le maître pour elle et publié (`created_on_instance_uid` est celui du maître ; jamais
+  un brouillon) : 404 sinon.
+- **Tâche** : destinée à cette application (`target_instance_uid`), jamais en brouillon (422) ; elle est créée à sa
+  première réception (`Events\TaskReceived`).
+
+Le client recopie, puis prévient lui-même ses utilisateurs (avertissement avant clôture, clôture automatique, et
+les passages de `notifications.immediate`). Réponse :
 
 ```json
 { "missing_media": [ "01k…" ] }
@@ -242,3 +284,13 @@ les entrées dont le client attend encore les fichiers.
 ```
 
 Réponse : `{ "files_count": 2 }`.
+
+### `POST allowances` — l'état des forfaits
+
+```json
+{ "data": [ "…états de forfait (période en cours)" ] }
+```
+
+Remplace l'état précédent ; un forfait qui ne couvre pas cette application est ignoré. Réponse :
+`{ "count": 1 }`. Envoyé par la file après chaque saisie de temps qui touche un forfait, et quand un forfait est
+créé ou modifié.

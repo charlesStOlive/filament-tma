@@ -236,7 +236,22 @@ Chaque étape importante fait l'objet d'un commit.
 
 ---
 
-## 12. Points encore ouverts
+## 12. Avancement et valeurs retenues sans décision explicite
+
+Lots 1 et 2 réalisés (branche `lot-2` du plugin, `tma` de Filbreeze). Choix faits en l'absence de consigne, à
+valider :
+
+- **Forfaits** : seul le temps **facturable** des **tickets** consomme le forfait (`allowances.consume`) ; seuils
+  80/90/100/110 % ; le dépassement ne bloque pas (`allowances.block_overage`) ; les seuils préviennent les adresses
+  de `allowances.notify`.
+- **Notifications** : aucune notification immédiate par défaut, tout passe par le récapitulatif quotidien (jours
+  ouvrés, 8 h). La clôture automatique prévient toujours.
+- **Brouillons du maître** : la publication met le ticket en **Soumis** (il reste à le prendre en charge).
+- **Tâches projet** : numérotées par le maître (`T-0007`) ; un résumé d'intervention s'ajoute aussi à un objet
+  terminé (temps reporté après coup).
+- **Tâches et commandes** : `tma:list` et l'API agent couvrent tickets et tâches (`--type`).
+
+## 13. Points encore ouverts
 
 Valeurs par défaut retenues en attendant une décision :
 
