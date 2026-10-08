@@ -6,8 +6,8 @@ Filbreeze) et des applications **clientes** (Desapp…).
 - Cahier des charges : [docs/CDC-v0.1.md](docs/CDC-v0.1.md)
 - Décisions de conception, qui prévalent sur le CDC : [docs/ADDENDUM.md](docs/ADDENDUM.md)
 
-État : **lot 1a** — tickets, workflow, chronologie, en traitement local. La transmission au centre de service et
-l'API arrivent au lot 1b (voir l'addendum, §11).
+État : **lots 1a et 1c** — tickets, workflow, chronologie en traitement local ; clôture automatique et reprise des
+pauses. La transmission au centre de service et l'API arrivent au lot 1b (voir l'addendum, §11).
 
 ## Installation
 
@@ -87,6 +87,20 @@ l'état du ticket.
 Le HTML est nettoyé côté serveur à l'enregistrement (`Support\Html`) : ni script, ni attribut d'événement, ni iframe,
 ni SVG, ni `style` ; liens http(s) et mailto. Les fichiers sont sur un disque privé, avec une liste blanche de types
 contrôlée sur leur contenu, et ne se téléchargent que par `tma/media/{media}`, qui vérifie les droits à chaque fois.
+
+## Tâches planifiées
+
+Le plugin les déclare lui-même (il suffit que le planificateur de Laravel tourne) :
+
+- `tma:close-stale`, chaque jour à `auto_close.at` (7 h) : avertit le demandeur `warn_days_before` jours (7) avant de
+  clôturer un ticket où la main est à lui et où rien ne s'est passé depuis `after_days` jours (28). Un ticket averti a
+  toujours ce délai entier, même si l'avertissement part en retard. Toute activité remet le compte à zéro.
+  `--dry-run` montre sans rien faire.
+- `tma:resume-paused`, tous les quarts d'heure : reprend les tickets en pause arrivés à leur date.
+
+Seule l'application qui traite le ticket agit. Chaque application prévient ses propres utilisateurs : le maître ne
+notifie pas un demandeur d'une application cliente (il le fera par la synchronisation, au lot 1b ; l'événement
+`AutoCloseWarned` est déjà lancé).
 
 ## Les droits
 

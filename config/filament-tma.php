@@ -82,12 +82,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Un ticket où la main est au demandeur (en attente de sa réponse, ou à valider) est clôturé après
-    | `after_days` jours sans activité. Un avertissement part `warn_days_before` jours avant (null : aucun).
+    | `after_days` jours sans activité. Un avertissement part `warn_days_before` jours avant (null : aucun) ; un
+    | ticket averti a toujours ce délai entier avant d'être clôturé. La commande passe chaque jour à `at`.
     |
     */
 
     'auto_close' => [
         'enabled' => true,
+        'at' => '07:00',
         'after_days' => 28,
         'warn_days_before' => 7,
     ],
