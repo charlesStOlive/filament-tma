@@ -2,8 +2,10 @@
 
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\SyncController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\UserController;
+use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\AgentController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\TicketController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\PingController;
+use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateAgent;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateMaster;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +25,14 @@ Route::prefix('api/tma/v1')
             Route::get('tickets/{ulid}', [TicketController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ulid}/moves', [TicketController::class, 'move'])->name('tickets.move');
             Route::post('tickets/{ulid}/entries', [TicketController::class, 'entry'])->name('tickets.entry');
+        });
+
+        // Le maître, appelé par un de ses utilisateurs (les commandes tma:* lancées dans une application cliente).
+        Route::middleware(AuthenticateAgent::class)->prefix('agent')->name('agent.')->group(function (): void {
+            Route::get('tickets', [AgentController::class, 'index'])->name('tickets.index');
+            Route::get('tickets/{ref}', [AgentController::class, 'show'])->name('tickets.show');
+            Route::post('tickets/{ref}/time', [AgentController::class, 'time'])->name('tickets.time');
+            Route::post('tickets/{ref}/entries', [AgentController::class, 'entry'])->name('tickets.entry');
         });
 
         // Une application cliente, appelée par le maître.

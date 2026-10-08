@@ -6,8 +6,10 @@ Filbreeze) et des applications **clientes** (Desapp…).
 - Cahier des charges : [docs/CDC-v0.1.md](docs/CDC-v0.1.md)
 - Décisions de conception, qui prévalent sur le CDC : [docs/ADDENDUM.md](docs/ADDENDUM.md)
 
-État : **lots 1a et 1c** — tickets, workflow, chronologie en traitement local ; clôture automatique et reprise des
-pauses. La transmission au centre de service et l'API arrivent au lot 1b (voir l'addendum, §11).
+État : **lot 1 terminé** (1a, 1b, 1c, 1d de l'addendum §11) — tickets, workflow, chronologie ; transmission au
+centre de service et synchronisation par l'API ([docs/API.md](docs/API.md)) ; temps passé ; clôture automatique et
+reprise des pauses ; commandes `tma:*`. Suivent le lot 2 (tâches projet, forfaits, récapitulatif quotidien) et le
+lot 3 (facturation, nettoyage, audit).
 
 ## Installation
 
@@ -113,6 +115,26 @@ Au format de `filament-permission-manager`, sans en dépendre (`permissions:sync
 Sans le gestionnaire, ces actions restent ouvertes à qui voit le ticket, comme dans les autres plugins. Qui a la main
 compte toujours, quels que soient les droits : un ticket ne se modifie qu'en brouillon, ou par l'intervenant quand
 la main est à lui.
+
+## Les commandes `tma:*` (pour une IA)
+
+Aucune question quand les options sont données ; `--json` pour une sortie lisible par programme.
+
+```bash
+php artisan tma:list [--state=in_progress,awaiting_requester] [--app=Desapp] [--search=] [--mine] [--all] [--json]
+php artisan tma:show DES-0042 [--json]
+php artisan tma:log DES-0042 --hours=2 --summary="…" [--date=2026-10-07] [--non-billable] [--internal] [--json]
+php artisan tma:log DES-0042 --minutes=45 --summary-file=resume.md
+php artisan tma:comment DES-0042 --body="…" [--note] [--json]
+```
+
+- **Jeton obligatoire** : `--token`, ou `TMA_CLI_TOKEN` dans `.env` (jamais versionné) — le jeton personnel Passport
+  d'un utilisateur, dont la commande a exactement les droits.
+- **Dans le maître**, la commande agit directement. **Dans une application cliente**, elle agit dans le maître par son
+  API « agent » (le temps ne se saisit que là) : le jeton est alors celui d'un utilisateur du maître. `--local` la fait
+  agir sur les tickets locaux de l'application, avec un jeton de l'application.
+- `tma:log` enregistre séparément la durée (une saisie de temps) et le résumé (une entrée « Résumé d'intervention »,
+  partagée avec le client ; `--internal` en fait une note interne).
 
 ## Tests
 

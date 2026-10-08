@@ -3,6 +3,10 @@
 namespace CharlesStOlive\FilamentTma;
 
 use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
+use CharlesStOlive\FilamentTma\Commands\CommentTicketCommand;
+use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
+use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
+use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
@@ -31,7 +35,14 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
             ->hasViews('filament-tma')
             ->hasTranslations()
             ->hasRoutes(['web', 'api'])
-            ->hasCommands([CloseStaleTicketsCommand::class, ResumePausedTicketsCommand::class])
+            ->hasCommands([
+                CloseStaleTicketsCommand::class,
+                ResumePausedTicketsCommand::class,
+                ListTicketsCommand::class,
+                ShowTicketCommand::class,
+                LogTimeCommand::class,
+                CommentTicketCommand::class,
+            ])
             ->hasMigrations([
                 'create_filament_tma_tables',
                 'create_filament_tma_instances_table',

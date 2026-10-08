@@ -189,6 +189,21 @@ complet, à recopier.
 Corps : une entrée (avec `files`). Réponse : `201`, ou `200` si l'entrée était déjà reçue. Sur un ticket
 terminé, seules les notes sont acceptées (422 sinon).
 
+## Routes « agent » du maître (appelées par ses utilisateurs)
+
+Pour les commandes `tma:*` lancées dans une application cliente. Le jeton est le jeton **personnel** d'un
+utilisateur du maître, dont l'appel a exactement les droits ; le compte de service d'une application cliente y est
+refusé (403). `{ref}` : le numéro (`DES-0042`) ou l'ulid du ticket.
+
+| Route | Rôle |
+|---|---|
+| `GET agent/tickets?state=&app=&search=&mine=1&all=1&limit=` | la liste (ouverts par défaut) |
+| `GET agent/tickets/{ref}` | un ticket, sa description et sa chronologie en texte |
+| `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, billable?, internal? }` | une saisie de temps et son résumé |
+| `POST agent/tickets/{ref}/entries` `{ body, note? }` | un commentaire, ou une note interne |
+
+Réponses : `{ "data": … }` ; 404 pour un ticket introuvable.
+
 ## Routes du client (appelées par le maître)
 
 ### `GET ping`

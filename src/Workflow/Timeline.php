@@ -31,8 +31,10 @@ final class Timeline
         }
 
         return match ($type) {
-            // L'échange s'arrête avec le ticket ; les notes internes restent possibles.
-            EntryType::Comment, EntryType::Summary => ! $ticket->state->isFinal() && TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
+            // L'échange s'arrête avec le ticket ; un résumé d'intervention (souvent écrit après coup, avec le temps) et
+            // les notes internes restent possibles.
+            EntryType::Comment => ! $ticket->state->isFinal() && TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
+            EntryType::Summary => TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
             EntryType::Note => TmaGate::allows($context->user, TmaGate::NOTE, $ticket),
         };
     }
