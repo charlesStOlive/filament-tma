@@ -52,6 +52,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 CommentTicketCommand::class,
                 PublishScheduledTasksCommand::class,
                 \CharlesStOlive\FilamentTma\Commands\SendDigestCommand::class,
+                \CharlesStOlive\FilamentTma\Commands\CleanupCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',
@@ -60,6 +61,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_filament_tma_tasks_table',
                 'create_filament_tma_allowances_table',
                 'add_publish_at_to_tma_tickets_table',
+                'create_filament_tma_audits_table',
             ]);
     }
 
@@ -80,6 +82,10 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
         TmaGate::registerResource(Ticket::class, TicketResource::class);
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
 
+        if (config('filament-tma.audit.enabled', true)) {
+            \CharlesStOlive\FilamentTma\Listeners\AuditTrail::register();
+        }
+
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
         Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\CheckAllowances::class);
         Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\QueueAllowancesPush::class);
@@ -98,6 +104,10 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 ->dailyAt((string) config('filament-tma.notifications.digest.at', '08:00'))
                 ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
                 ->withoutOverlapping();
+
+            if (config('filament-tma.cleanup.schedule', false)) {
+                $schedule->command('tma:cleanup')->weeklyOn(0, '03:00')->withoutOverlapping();
+            }
         });
 
         FilamentAsset::register([

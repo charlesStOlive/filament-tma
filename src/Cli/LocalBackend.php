@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Auditor;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentTma\Workflow\TimeLog;
@@ -102,7 +103,7 @@ final class LocalBackend implements Backend
         $context = $this->context();
 
         // La durée et le résumé sont enregistrés séparément (CDC §16) ; ensemble, ou pas du tout.
-        return DB::transaction(function () use ($ticket, $minutes, $workedOn, $summary, $billable, $internal, $context): array {
+        return Auditor::as($context, fn (): array => DB::transaction(function () use ($ticket, $minutes, $workedOn, $summary, $billable, $internal, $context): array {
             $time = app(TimeLog::class)->add($ticket, $minutes, $workedOn, self::firstLine($summary), $context, $billable);
             $entry = filled($summary)
                 ? app(Timeline::class)->add($ticket, $internal ? EntryType::Note : EntryType::Summary, self::toHtml($summary), $context, meta: ['time_entry' => $time->ulid])
@@ -114,13 +115,14 @@ final class LocalBackend implements Backend
                 'summary_entry' => $entry?->ulid,
                 'time_total_minutes' => (int) $ticket->timeEntries()->sum('minutes'),
             ];
-        });
+        }));
     }
 
     public function comment(string $ref, string $body, bool $note): array
     {
         $ticket = $this->find($ref);
-        $entry = app(Timeline::class)->add($ticket, $note ? EntryType::Note : EntryType::Comment, self::toHtml($body), $this->context());
+        $context = $this->context();
+        $entry = Auditor::as($context, fn () => app(Timeline::class)->add($ticket, $note ? EntryType::Note : EntryType::Comment, self::toHtml($body), $context));
 
         return ['ticket' => $ticket->number, 'entry' => $entry->ulid, 'type' => $entry->type->value];
     }

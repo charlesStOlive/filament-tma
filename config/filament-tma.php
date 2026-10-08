@@ -199,6 +199,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Audit et nettoyage
+    |--------------------------------------------------------------------------
+    |
+    | audit : le journal des actions sensibles (CDC §23), écran « Journal d'audit ».
+    | cleanup : `tma:cleanup` supprime définitivement, après `retention_days`, ce qui a été supprimé (tickets, tâches,
+    | entrées) et les fichiers envoyés mais jamais rattachés ; jamais ce qui touche une saisie facturée. `schedule`
+    | le lance chaque semaine (désactivé par défaut : à lancer d'abord avec --dry-run).
+    |
+    */
+
+    'audit' => [
+        'enabled' => true,
+    ],
+
+    'cleanup' => [
+        'retention_days' => 90,
+        'uploads_retention_hours' => 24,
+        'schedule' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Navigation
     |--------------------------------------------------------------------------
     */

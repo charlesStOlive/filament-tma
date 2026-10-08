@@ -7,13 +7,13 @@ Filbreeze) et des applications **clientes** (Desapp…).
 - Décisions de conception, qui prévalent sur le CDC : [docs/ADDENDUM.md](docs/ADDENDUM.md)
 - API entre les applications : [docs/API.md](docs/API.md)
 
-**État : lots 1 et 2 terminés.**
+**État : lots 1 et 2 terminés ; lot 3 : audit et nettoyage faits, facturation à décider.**
 
 - Lot 1 : tickets, workflow, chronologie, transmission au centre de service et synchronisation, temps passé,
   clôture automatique, commandes `tma:*`.
 - Lot 2 : tâches projet, brouillons du maître et publication programmée, forfaits et seuils, récapitulatif
   quotidien et notifications.
-- Reste le lot 3 : facturation vers les factures de Filbreeze, nettoyage des fichiers, audit complet.
+- Lot 3 : journal d'audit et nettoyage. Reste la facturation vers les factures de Filbreeze, à discuter.
 
 ## Installation
 
@@ -181,6 +181,33 @@ toujours.
 **Chaque application prévient ses propres utilisateurs** (`Support\Notifier`). Un passage fait par le maître est
 annoncé au demandeur par l'application cliente, à la réception.
 
+## Audit et nettoyage
+
+**Le journal d'audit** (CDC §23, écran « Journal d'audit », lecture seule, droit `tma.audit.viewany`) retient, pour
+chaque action sensible, l'auteur, l'application, la date, l'objet, les valeurs avant et après, et l'origine
+(interface, API, commande, planificateur). Les actions retenues sont :
+
+- le temps : toute saisie, modification ou suppression ;
+- les champs des tickets et des tâches ;
+- les applications clientes (sans leur jeton, jamais écrit) ;
+- les forfaits et leurs seuils franchis ;
+- les synchronisations reçues ou en échec ;
+- les nettoyages.
+
+Les changements d'état ont leur propre historique (`tma_state_transitions`). Les commandes et l'API agent attribuent
+leurs écritures à leur utilisateur (`Support\Auditor::as()`).
+
+**Le nettoyage** (`tma:cleanup`, CDC §18) supprime définitivement, après `cleanup.retention_days` (90) :
+
+- les tickets et tâches supprimés, avec leur chronologie, leur historique, leur temps et leurs fichiers ;
+- les entrées supprimées ;
+- les fichiers dont l'objet n'existe plus ;
+- les fichiers envoyés mais jamais rattachés.
+
+Il ne touche jamais à ce qui a une saisie facturée. `--dry-run` compte sans rien supprimer. Le rapport est journalisé
+et audité, et l'événement `CleanupFinished` est lancé. Il ne tourne seul que si `cleanup.schedule` est activé
+(chaque dimanche à 3 h).
+
 ## Les droits
 
 Les droits suivent le format de `filament-permission-manager`, sans en dépendre (`permissions:sync` les crée) :
@@ -191,7 +218,8 @@ Les droits suivent le format de `filament-permission-manager`, sans en dépendre
   - la famille « Passages du ticket » : `tma.ticket.workflow.{mouvement}`.
 - **tâches** : les mêmes en `tma.task.*`, avec la famille « Passages de la tâche ».
 - **applications clientes** : `tma.instance.*`.
-- **forfaits** : `tma.allowance.*`, plus `reset`.
+- **forfaits** : `tma.allowance.*`, plus `reset` ;
+- **journal d'audit** : `tma.audit.viewany`.
 - **widget du forfait côté client** : `widgets.allowanceoverview.viewany`.
 
 Dans une application cliente, `tma.ticket.workflow.transmit` sépare les utilisateurs du centre de service des

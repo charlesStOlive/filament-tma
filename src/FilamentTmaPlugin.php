@@ -42,6 +42,7 @@ class FilamentTmaPlugin implements Plugin
             TaskResource::class,
             InstanceResource::class,
             \CharlesStOlive\FilamentTma\Filament\Resources\Allowances\AllowanceResource::class,
+            \CharlesStOlive\FilamentTma\Filament\Resources\Audits\AuditResource::class,
         ]);
 
         $panel->widgets([
