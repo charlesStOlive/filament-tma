@@ -49,6 +49,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API entre les applications
+    |--------------------------------------------------------------------------
+    |
+    | guard : le guard des jetons (Passport, `api`).
+    | master_user : mode client, l'utilisateur d'ici (id ou e-mail) dont le maître détient un jeton ; seul lui peut
+    | appeler l'API du client. Côté maître, chaque application cliente est une instance (écran « Applications
+    | clientes ») liée à l'utilisateur dont elle détient le jeton.
+    | users_cache_ttl : le maître garde la liste des utilisateurs d'un client ce nombre de secondes.
+    | sync : l'envoi du maître vers un client passe par la file, avec ces tentatives.
+    |
+    */
+
+    'api' => [
+        'guard' => env('TMA_API_GUARD', 'api'),
+        'timeout' => 15,
+        'master_user' => env('TMA_MASTER_API_USER'),
+        'users_cache_ttl' => 3600,
+        'sync' => [
+            'queue' => env('TMA_SYNC_QUEUE'),
+            'tries' => 6,
+            'backoff' => [30, 120, 600, 1800, 3600],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Modèles de l'application hôte
     |--------------------------------------------------------------------------
     |

@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
@@ -36,7 +37,7 @@ final class MoveAction
             ->action(function (Ticket $record, array $data, Action $action) use ($move): void {
                 try {
                     app(TicketWorkflow::class)->run($record, $move, $data, Context::current());
-                } catch (AuthorizationException|ValidationException $e) {
+                } catch (AuthorizationException|ValidationException|SyncException $e) {
                     Notification::make()->danger()->title($e->getMessage())->send();
                     $action->halt();
                 }

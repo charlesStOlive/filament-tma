@@ -80,6 +80,7 @@ class Ticket extends Model implements HasMedia, HasRichContent
             'last_activity_at' => 'datetime',
             'auto_close_warned_at' => 'datetime',
             'synced_at' => 'datetime',
+            'time_by_month' => 'array',
         ];
     }
 
@@ -157,6 +158,12 @@ class Ticket extends Model implements HasMedia, HasRichContent
         return $this->morphMany(StateTransition::class, 'subject');
     }
 
+    /** Les saisies de temps (dans le maître ; un client n'a que les totaux, `time_total_minutes`). */
+    public function timeEntries(): MorphMany
+    {
+        return $this->morphMany(TimeEntry::class, 'subject');
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNotIn('state', ['closed', 'cancelled']);
@@ -180,21 +187,34 @@ class Ticket extends Model implements HasMedia, HasRichContent
      */
     public function sidesHere(): array
     {
-        $sides = [];
+        return $this->sidesOf(Tma::instanceUid(), Tma::isMaster());
+    }
 
-        if (Tma::isHere($this->source_instance_uid)) {
+    /**
+     * Les parties que représente une application donnée (`Workflow\Context::$instanceUid`).
+     *
+     * @return array<int, Side>
+     */
+    public function sidesOf(string $instanceUid, bool $isMaster): array
+    {
+        $sides = [];
+        $isSource = $instanceUid === $this->source_instance_uid;
+
+        if ($isSource) {
             $sides[] = Side::Requester;
         }
 
-        $handlerHere = $this->handling_mode === HandlingMode::Local
-            ? Tma::isHere($this->source_instance_uid)
-            : Tma::isMaster();
-
-        if ($handlerHere) {
+        if ($this->handling_mode === HandlingMode::Local ? $isSource : $isMaster) {
             $sides[] = Side::Handler;
         }
 
         return $sides;
+    }
+
+    /** L'application qui fait autorité sur ce ticket est celle-ci : l'application source en local, le maître sinon. */
+    public function authorityIsHere(): bool
+    {
+        return $this->handling_mode === HandlingMode::Local ? Tma::isHere($this->source_instance_uid) : Tma::isMaster();
     }
 
     public function isHandledHere(): bool

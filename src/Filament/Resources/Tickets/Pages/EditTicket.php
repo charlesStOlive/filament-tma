@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
+use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -22,6 +23,7 @@ class EditTicket extends EditRecord
     protected function afterSave(): void
     {
         $this->getRecord()->touchActivity();
+        event(new TicketUpdated($this->getRecord()));
     }
 
     protected function getRedirectUrl(): string

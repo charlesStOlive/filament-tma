@@ -1,0 +1,159 @@
+<?php
+
+namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Master;
+
+use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Events\EntryAdded;
+use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
+use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
+use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Models\StateTransition;
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
+use CharlesStOlive\FilamentTma\Sync\Payload;
+use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * L'API du maître pour une application cliente (docs/API.md). L'application appelante vient du jeton
+ * (`AuthenticateInstance`) : elle ne voit et ne touche que ses propres tickets, et n'y agit qu'en demandeur.
+ */
+class TicketController
+{
+    /** `POST tickets` : la transmission au centre de service. Idempotente (par l'ulid du ticket et de la transition). */
+    public function store(Request $request): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+
+        $payload = $request->validate([
+            'ticket' => ['required', 'array'],
+            'ticket.ulid' => ['required', 'string', 'size:26'],
+            'ticket.number' => ['required', 'string', 'max:50'],
+            'ticket.source_instance_uid' => ['required', 'string', 'in:'.$instance->uid],
+            'ticket.title' => ['required', 'string', 'max:255'],
+            'ticket.requester' => ['required', 'array'],
+            'ticket.requester.instance_uid' => ['required', 'in:'.$instance->uid],
+            'ticket.requester.id' => ['required'],
+            'entries' => ['array'],
+            'transition' => ['required', 'array'],
+            'transition.ulid' => ['required', 'string', 'size:26'],
+            'files' => ['array'],
+        ]);
+
+        $existing = Ticket::withTrashed()->where('ulid', $payload['ticket']['ulid'])->first();
+        abort_if($existing !== null && $existing->source_instance_uid !== $instance->uid, 403);
+
+        $ticket = DB::transaction(function () use ($request, $instance, $existing): Ticket {
+            $alreadyTransmitted = $existing !== null && $existing->handling_mode === HandlingMode::ServiceDesk;
+
+            $ticket = Mirror::ticket($request->input('ticket'), [
+                'handling_mode' => HandlingMode::ServiceDesk,
+                'state' => $alreadyTransmitted ? $existing->state::getMorphClass() : 'submitted',
+                'client_type' => $instance->client_type,
+                'client_id' => $instance->client_id,
+                'last_activity_at' => now(),
+                'sync_version' => $existing?->sync_version ?? 0,
+            ]);
+
+            foreach ($request->input('entries', []) as $entry) {
+                Mirror::entry($ticket, $entry);
+            }
+
+            Mirror::files($ticket, $request->input('files', []));
+            Mirror::transition($ticket, [...$request->input('transition'), 'to_state' => 'submitted']);
+
+            return $ticket;
+        });
+
+        $transition = StateTransition::query()->where('ulid', $request->input('transition.ulid'))->first();
+
+        if ($transition !== null && $transition->wasRecentlyCreated) {
+            event(new TicketTransitioned($ticket, $transition, $this->context($request, $instance)));
+        }
+
+        return response()->json(Payload::snapshot($ticket->refresh()), $existing === null ? 201 : 200);
+    }
+
+    /** `GET tickets/{ulid}` : l'état d'un ticket de l'application appelante. */
+    public function show(Request $request, string $ulid): JsonResponse
+    {
+        return response()->json(Payload::snapshot($this->ticket($request, $ulid)));
+    }
+
+    /** `POST tickets/{ulid}/moves` : un mouvement du demandeur, fait ici (le maître fait autorité). */
+    public function move(Request $request, string $ulid, TicketWorkflow $workflow): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+        $ticket = $this->ticket($request, $ulid);
+
+        $request->validate([
+            'move' => ['required', 'string'],
+            'data' => ['array'],
+            'actor' => ['required', 'array'],
+            'actor.instance_uid' => ['required', 'in:'.$instance->uid],
+            'actor.id' => ['required'],
+            'transition_ulid' => ['required', 'string', 'size:26'],
+        ]);
+
+        // Déjà fait : la demande a été rejouée (réseau…), on renvoie l'état sans refaire le mouvement.
+        if (! $ticket->transitions()->where('ulid', $request->input('transition_ulid'))->exists()) {
+            try {
+                $workflow->run($ticket, $request->input('move'), $request->input('data', []), $this->context($request, $instance), $request->input('transition_ulid'));
+            } catch (AuthorizationException $e) {
+                abort(403, $e->getMessage());
+            }
+        }
+
+        return response()->json(Payload::snapshot($ticket->refresh()));
+    }
+
+    /** `POST tickets/{ulid}/entries` : un commentaire, une réponse, une note partagée de l'application appelante. */
+    public function entry(Request $request, string $ulid): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+        $ticket = $this->ticket($request, $ulid);
+
+        $payload = $request->validate([
+            'ulid' => ['required', 'string', 'size:26'],
+            'type' => ['required', 'in:'.implode(',', array_column(EntryType::cases(), 'value'))],
+            'body' => ['required', 'string'],
+            'author' => ['required', 'array'],
+            'author.instance_uid' => ['required', 'in:'.$instance->uid],
+            'origin_instance_uid' => ['required', 'in:'.$instance->uid],
+            'files' => ['array'],
+        ]);
+
+        abort_if($ticket->state->isFinal() && $payload['type'] !== EntryType::Note->value, 422, __('Ce ticket est terminé.'));
+
+        $isNew = ! $ticket->entries()->where('ulid', $payload['ulid'])->exists();
+        $entry = DB::transaction(fn () => Mirror::entry($ticket, $request->all()));
+
+        if ($isNew) {
+            $ticket->touchActivity();
+            event(new EntryAdded($entry, $this->context($request, $instance)));
+        }
+
+        return response()->json(['entry' => Payload::entry($entry)], $isNew ? 201 : 200);
+    }
+
+    private function ticket(Request $request, string $ulid): Ticket
+    {
+        return Ticket::query()
+            ->where('ulid', $ulid)
+            ->where('source_instance_uid', AuthenticateInstance::instance($request)->uid)
+            ->where('handling_mode', HandlingMode::ServiceDesk->value)
+            ->firstOrFail();
+    }
+
+    private function context(Request $request, Instance $instance): Context
+    {
+        $actor = Mirror::actor($request->input('actor') ?? $request->input('author') ?? $request->input('transition.actor') ?? $request->input('ticket.requester'));
+
+        return Context::api($actor, $instance->uid, fromMaster: false);
+    }
+}

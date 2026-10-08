@@ -82,6 +82,12 @@ abstract class Move
     /** Ce que le mouvement écrit, avant le changement d'état (dans la même transaction). */
     public function apply(Ticket $ticket, array $data, Context $context): void {}
 
+    /**
+     * Appelé dans la transaction, une fois l'état changé et l'historique écrit : une exception ici annule tout
+     * (la transmission au centre de service s'en sert pour appeler le maître).
+     */
+    public function committing(Ticket $ticket, \CharlesStOlive\FilamentTma\Models\StateTransition $transition, Context $context): void {}
+
     /** Le motif gardé dans l'historique. */
     public function reason(array $data): ?string
     {

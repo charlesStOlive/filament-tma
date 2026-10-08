@@ -5,6 +5,8 @@ namespace CharlesStOlive\FilamentTma\Filament\Actions;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Uploads;
+use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Filament\Actions\Action;
@@ -47,7 +49,7 @@ final class TimelineActions
             ->action(function (Ticket $record, array $data, array $arguments, Action $action): void {
                 $parent = Entry::query()->findOrFail($arguments['entry'] ?? null);
 
-                self::write($action, fn (): Entry => app(Timeline::class)->add($record, $parent->type, $data['body'] ?? null, Context::current(), $parent), $data);
+                self::write($action, fn (): Entry => app(Timeline::class)->add($record, $parent->type, $data['body'] ?? null, Context::current(), $parent, uploads: Uploads::fromForm($data)));
             });
     }
 
@@ -63,7 +65,7 @@ final class TimelineActions
 
                 try {
                     app(Timeline::class)->share($note, Context::current());
-                } catch (AuthorizationException $e) {
+                } catch (AuthorizationException|SyncException $e) {
                     Notification::make()->danger()->title($e->getMessage())->send();
                     $action->halt();
                 }
@@ -79,7 +81,7 @@ final class TimelineActions
             ->schema(self::entrySchema())
             ->visible(fn (Ticket $record): bool => app(Timeline::class)->canAdd($record, $type, Context::current()))
             ->action(function (Ticket $record, array $data, Action $action) use ($type): void {
-                self::write($action, fn (): Entry => app(Timeline::class)->add($record, $type, $data['body'] ?? null, Context::current()), $data);
+                self::write($action, fn (): Entry => app(Timeline::class)->add($record, $type, $data['body'] ?? null, Context::current(), uploads: Uploads::fromForm($data)));
             });
     }
 
@@ -113,42 +115,16 @@ final class TimelineActions
             ->maxFiles((int) config('filament-tma.attachments.max_files', 10));
     }
 
-    /** Écrit l'entrée, puis y range les fichiers envoyés (medialibrary les déplace sur son disque). */
-    private static function write(Action $action, \Closure $create, array $data): void
+    /** Écrit l'entrée (avec ses fichiers) et le dit ; une erreur de droit, de contenu ou d'échange s'affiche. */
+    private static function write(Action $action, \Closure $create): void
     {
         try {
-            $entry = $create();
-        } catch (AuthorizationException|ValidationException $e) {
+            $create();
+        } catch (AuthorizationException|ValidationException|SyncException $e) {
             Notification::make()->danger()->title($e->getMessage())->send();
             $action->halt();
         }
 
-        self::attachUploads($entry, $data);
-
         Notification::make()->success()->title(__('Ajouté à la chronologie'))->send();
-    }
-
-    /** @param  array<string, mixed>  $data  attachments (chemins), attachment_names (chemin => nom d'origine) */
-    public static function attachUploads(Entry|Ticket $model, array $data): void
-    {
-        $disk = config('filament-tma.attachments.disk', 'local');
-        $names = $data['attachment_names'] ?? [];
-
-        foreach ((array) ($data['attachments'] ?? []) as $path) {
-            $original = $names[$path] ?? basename($path);
-
-            $model->addMediaFromDisk($path, $disk)
-                ->usingName(pathinfo($original, PATHINFO_FILENAME))
-                ->usingFileName(self::safeFileName($original))
-                ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
-        }
-    }
-
-    private static function safeFileName(string $name): string
-    {
-        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        $base = \Illuminate\Support\Str::slug(pathinfo($name, PATHINFO_FILENAME)) ?: 'fichier';
-
-        return $extension !== '' ? "{$base}.{$extension}" : $base;
     }
 }

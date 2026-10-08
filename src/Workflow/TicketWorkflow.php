@@ -2,17 +2,22 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentTma\Sync\MasterClient;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Workflow\Moves;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -31,6 +36,7 @@ class TicketWorkflow
     {
         foreach ([
             new Moves\Submit,
+            new Moves\Transmit,
             new Moves\TakeCharge,
             new Moves\RequestAnswer,
             new Moves\Answer,
@@ -95,9 +101,13 @@ class TicketWorkflow
             return $move->sides() === [];
         }
 
-        $side = $this->sideFor($ticket, $move);
+        if ($this->sideFor($ticket, $move, $context) === null) {
+            return false;
+        }
 
-        return $side !== null && TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
+        // L'autre application a déjà contrôlé le droit de son utilisateur ; ici, seule compte la partie qu'elle
+        // représente pour ce ticket.
+        return $context->isApi() || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
     }
 
     /** Les mouvements que ce contexte peut faire maintenant sur ce ticket. */
@@ -106,11 +116,13 @@ class TicketWorkflow
         return array_filter($this->moves, fn (Move $move): bool => $this->allows($ticket, $move, $context));
     }
 
-    /** La partie au nom de laquelle cette application peut faire le mouvement, s'il y en a une. */
-    public function sideFor(Ticket $ticket, Move $move): ?Side
+    /** La partie au nom de laquelle le contexte (cette application par défaut) peut faire le mouvement, s'il y en a une. */
+    public function sideFor(Ticket $ticket, Move $move, ?Context $context = null): ?Side
     {
+        $sides = $context !== null ? $ticket->sidesOf($context->instanceUid, $context->fromMaster) : $ticket->sidesHere();
+
         foreach ($move->sides() as $side) {
-            if (in_array($side, $ticket->sidesHere(), true) && $move->allowsSide($side, $ticket)) {
+            if (in_array($side, $sides, true) && $move->allowsSide($side, $ticket)) {
                 return $side;
             }
         }
@@ -122,9 +134,14 @@ class TicketWorkflow
      * Fait le mouvement : contrôle, validation des données, écritures du mouvement, changement d'état, historique,
      * dans une seule transaction ; puis l'événement `TicketTransitioned`.
      *
+     * Sur un ticket du centre de service, une application cliente ne fait pas le mouvement elle-même : elle le
+     * demande au maître, qui fait autorité, et recopie le résultat. Si le maître ne répond pas, rien n'est fait.
+     *
      * @param  array<string, mixed>  $data
+     * @param  string|null  $transitionUlid  l'identifiant de la transition, fixé par l'application qui la demande
+     *                                       (une même demande reçue deux fois ne fait le mouvement qu'une fois)
      */
-    public function run(Ticket $ticket, string|Move $move, array $data, Context $context): StateTransition
+    public function run(Ticket $ticket, string|Move $move, array $data, Context $context, ?string $transitionUlid = null): StateTransition
     {
         $move = is_string($move) ? $this->move($move) : $move;
 
@@ -133,31 +150,47 @@ class TicketWorkflow
         }
 
         $data = Validator::make($data, $move->rules($ticket))->validate();
+        $transitionUlid ??= (string) Str::ulid();
 
-        $transition = DB::transaction(function () use ($ticket, $move, $data, $context): StateTransition {
-            $from = $ticket->state;
-            $to = $move->to($ticket);
+        if ($this->delegatesToMaster($ticket, $context)) {
+            $snapshot = app(MasterClient::class)->runMove($ticket, $move->key(), $data, $context, $transitionUlid);
+            DB::transaction(fn () => Mirror::snapshot($snapshot));
+            $transition = StateTransition::query()->where('ulid', $transitionUlid)->firstOrFail();
+        } else {
+            $transition = DB::transaction(function () use ($ticket, $move, $data, $context, $transitionUlid): StateTransition {
+                $from = $ticket->state;
+                $to = $move->to($ticket);
 
-            $move->apply($ticket, $data, $context);
-            $ticket->state->transitionTo($to);
+                $move->apply($ticket, $data, $context);
+                $ticket->state->transitionTo($to);
 
-            $transition = $ticket->transitions()->create([
-                'move' => $move->key(),
-                'from_state' => $from::getMorphClass(),
-                'to_state' => $to::getMorphClass(),
-                'actor_id' => $context->actor?->getKey(),
-                'origin' => $context->origin,
-                'reason' => $move->reason($data),
-            ]);
+                $transition = $ticket->transitions()->create([
+                    'ulid' => $transitionUlid,
+                    'move' => $move->key(),
+                    'from_state' => $from::getMorphClass(),
+                    'to_state' => $to::getMorphClass(),
+                    'actor_id' => $context->actor?->getKey(),
+                    'origin_instance_uid' => $context->instanceUid,
+                    'origin' => $context->origin,
+                    'reason' => $move->reason($data),
+                ]);
 
-            $ticket->touchActivity();
+                $ticket->touchActivity();
+                $move->committing($ticket, $transition, $context);
 
-            return $transition;
-        });
+                return $transition;
+            });
+        }
 
         event(new TicketTransitioned($ticket->refresh(), $transition, $context));
 
         return $transition;
+    }
+
+    /** Une application cliente demande au maître ce qui touche un ticket du centre de service. */
+    public function delegatesToMaster(Ticket $ticket, Context $context): bool
+    {
+        return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
     }
 
     /**

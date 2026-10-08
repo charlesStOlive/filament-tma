@@ -5,7 +5,12 @@ namespace CharlesStOlive\FilamentTma;
 use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
+use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
+use CharlesStOlive\FilamentTma\Events\EntryAdded;
+use CharlesStOlive\FilamentTma\Events\NoteShared;
+use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
+use CharlesStOlive\FilamentTma\Listeners\QueueTicketPush;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Support\Assets\Css;
@@ -24,10 +29,12 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
             ->hasConfigFile('filament-tma')
             ->hasViews('filament-tma')
             ->hasTranslations()
-            ->hasRoute('web')
+            ->hasRoutes(['web', 'api'])
             ->hasCommands([CloseStaleTicketsCommand::class, ResumePausedTicketsCommand::class])
             ->hasMigrations([
                 'create_filament_tma_tables',
+                'create_filament_tma_instances_table',
+                'create_filament_tma_time_entries_table',
             ]);
     }
 
@@ -44,6 +51,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
+        Event::listen([TicketTransitioned::class, EntryAdded::class, NoteShared::class, TicketUpdated::class, AutoCloseWarned::class], QueueTicketPush::class);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('tma:close-stale')->dailyAt((string) config('filament-tma.auto_close.at', '07:00'))->withoutOverlapping();

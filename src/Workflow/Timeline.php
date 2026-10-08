@@ -7,7 +7,11 @@ use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\NoteShared;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\Uploads;
+use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +52,9 @@ final class Timeline
 
     /**
      * @param  array<string, mixed>  $meta
+     * @param  array<int, array{path: string, name?: string}>  $uploads  fichiers envoyés (disque des pièces jointes)
      */
-    public function add(Ticket $ticket, EntryType $type, ?string $body, Context $context, ?Entry $parent = null, array $meta = []): Entry
+    public function add(Ticket $ticket, EntryType $type, ?string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
     {
         if ($parent !== null) {
             $this->assertReplyable($ticket, $parent);
@@ -64,18 +69,22 @@ final class Timeline
             throw ValidationException::withMessages(['body' => __('Le message est vide.')]);
         }
 
-        return $this->write($ticket, $type, $body, $context, $parent, $meta);
+        return $this->write($ticket, $type, $body, $context, $parent, $meta, $uploads);
     }
 
     /**
      * Écrit l'entrée, sans contrôle de droit : pour un mouvement du workflow (la question de « Demander une
      * réponse »…), déjà autorisé par sa propre permission, ou pour ce qui arrive de l'autre application.
      *
+     * Sur un ticket du centre de service, une application cliente envoie au maître ce qui est partagé, dans la
+     * transaction : si le maître ne répond pas, rien n'est écrit.
+     *
      * @param  array<string, mixed>  $meta
+     * @param  array<int, array{path: string, name?: string}>  $uploads
      */
-    public function write(Ticket $ticket, EntryType $type, string $body, Context $context, ?Entry $parent = null, array $meta = []): Entry
+    public function write(Ticket $ticket, EntryType $type, string $body, Context $context, ?Entry $parent = null, array $meta = [], array $uploads = []): Entry
     {
-        $entry = DB::transaction(function () use ($ticket, $type, $body, $context, $parent, $meta): Entry {
+        $entry = DB::transaction(function () use ($ticket, $type, $body, $context, $parent, $meta, $uploads): Entry {
             $entry = $ticket->entries()->create([
                 'type' => $type,
                 'body' => $body,
@@ -87,7 +96,12 @@ final class Timeline
                 'meta' => $meta ?: null,
             ]);
 
+            Uploads::attach($entry, $uploads);
             $ticket->touchActivity();
+
+            if ($entry->isShared() && $this->sendsToMaster($ticket, $context)) {
+                app(MasterClient::class)->sendEntry($entry);
+            }
 
             return $entry;
         });
@@ -103,11 +117,22 @@ final class Timeline
             throw new AuthorizationException(__('Cette note ne peut pas être partagée.'));
         }
 
-        $note->forceFill(['shared_at' => now()])->save();
+        DB::transaction(function () use ($note, $context): void {
+            $note->forceFill(['shared_at' => now()])->save();
+
+            if ($this->sendsToMaster($note->subject, $context)) {
+                app(MasterClient::class)->sendEntry($note);
+            }
+        });
 
         event(new NoteShared($note, $context));
 
         return $note;
+    }
+
+    private function sendsToMaster(Ticket $ticket, Context $context): bool
+    {
+        return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
     }
 
     private function assertReplyable(Ticket $ticket, Entry $parent): void
