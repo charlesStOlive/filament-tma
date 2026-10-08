@@ -145,6 +145,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rappels et notifications
+    |--------------------------------------------------------------------------
+    |
+    | digest : le récapitulatif quotidien de ce qui attend chacun (CDC §12.1) — heure, jours (1 = lundi), fuseau,
+    | et `late_after_days` : au-delà, une attente est signalée en retard.
+    | immediate : les mouvements qui préviennent tout de suite (CDC §12.2). Par défaut aucun : tout passe par le
+    | récapitulatif. Possibles : request-answer, submit-for-validation, submit, take-charge, reopen, answer.
+    | La clôture automatique prévient toujours.
+    |
+    */
+
+    'notifications' => [
+        'digest' => [
+            'enabled' => true,
+            'at' => '08:00',
+            'days' => [1, 2, 3, 4, 5],
+            'timezone' => env('TMA_TIMEZONE', env('APP_TIMEZONE', 'Europe/Paris')),
+            'late_after_days' => 5,
+        ],
+        'immediate' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pièces jointes
     |--------------------------------------------------------------------------
     |

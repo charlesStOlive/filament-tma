@@ -7,7 +7,6 @@ use CharlesStOlive\FilamentTma\Events\TicketSynced;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Notifications\AutoCloseWarning;
-use CharlesStOlive\FilamentTma\Notifications\TicketAutoClosed;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use Illuminate\Http\JsonResponse;
@@ -100,19 +99,13 @@ class SyncController
     {
         $user = $ticket->requester?->isLocal() ? $ticket->requester->user : null;
 
-        if ($user === null) {
-            return;
-        }
-
-        if ($warnedBefore === null && $ticket->auto_close_warned_at !== null) {
+        if ($user !== null && $warnedBefore === null && $ticket->auto_close_warned_at !== null) {
             $closesOn = $ticket->last_activity_at->copy()->addDays((int) config('filament-tma.auto_close.after_days', 28));
             $user->notify(new AutoCloseWarning($ticket, max($closesOn, $ticket->auto_close_warned_at->copy()->addDays((int) config('filament-tma.auto_close.warn_days_before', 7)))));
         }
 
-        $closedNow = $ticket->transitions()->where('move', 'auto-close')->whereNotIn('ulid', $knownTransitions)->exists();
-
-        if ($closedNow) {
-            $user->notify(new TicketAutoClosed($ticket));
-        }
+        // Les passages reçus : la clôture automatique, et ceux de `notifications.immediate`.
+        $ticket->transitions()->whereNotIn('ulid', $knownTransitions)->with('actor')->get()
+            ->each(fn ($transition) => \CharlesStOlive\FilamentTma\Support\Notifier::transition($ticket, $transition));
     }
 }

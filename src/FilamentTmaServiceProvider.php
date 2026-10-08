@@ -51,6 +51,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 LogTimeCommand::class,
                 CommentTicketCommand::class,
                 PublishScheduledTasksCommand::class,
+                \CharlesStOlive\FilamentTma\Commands\SendDigestCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',
@@ -91,6 +92,11 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
             $schedule->command('tma:close-stale')->dailyAt((string) config('filament-tma.auto_close.at', '07:00'))->withoutOverlapping();
             $schedule->command('tma:resume-paused')->everyFifteenMinutes()->withoutOverlapping();
             $schedule->command('tma:publish-scheduled')->everyFiveMinutes()->withoutOverlapping();
+            $schedule->command('tma:digest')
+                ->days((array) config('filament-tma.notifications.digest.days', [1, 2, 3, 4, 5]))
+                ->dailyAt((string) config('filament-tma.notifications.digest.at', '08:00'))
+                ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
+                ->withoutOverlapping();
         });
 
         FilamentAsset::register([

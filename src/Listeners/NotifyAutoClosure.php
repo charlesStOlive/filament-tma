@@ -3,23 +3,17 @@
 namespace CharlesStOlive\FilamentTma\Listeners;
 
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
-use CharlesStOlive\FilamentTma\Notifications\TicketAutoClosed;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 
 /**
- * Prévient le demandeur d'une clôture automatique — quand il est d'ici : chaque application notifie ses propres
- * utilisateurs (addendum §4). Pour un ticket du centre de service, c'est l'application cliente qui le fera en
- * recevant la transition (lot 1b).
+ * Prévient les utilisateurs d'ici d'un passage fait ici : la clôture automatique toujours, les autres selon
+ * `notifications.immediate` (voir `Support\Notifier`). Un passage reçu de l'autre application est traité à sa
+ * réception (`SyncController`).
  */
 class NotifyAutoClosure
 {
     public function handle(TicketTransitioned $event): void
     {
-        if ($event->transition->move !== 'auto-close') {
-            return;
-        }
-
-        $user = $event->ticket->requester?->isLocal() ? $event->ticket->requester->user : null;
-
-        $user?->notify(new TicketAutoClosed($event->ticket));
+        Notifier::transition($event->ticket, $event->transition);
     }
 }
