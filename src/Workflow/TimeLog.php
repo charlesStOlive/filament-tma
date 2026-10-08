@@ -33,6 +33,8 @@ final class TimeLog
             throw ValidationException::withMessages(['minutes' => __('Une saisie va d’une minute à 24 heures.')]);
         }
 
+        $this->assertWithinAllowance($ticket, $minutes, $workedOn, $billable);
+
         $entry = $ticket->timeEntries()->create([
             'actor_id' => $context->actor?->getKey() ?? throw new \LogicException('Une saisie de temps a toujours un intervenant.'),
             'worked_on' => $workedOn !== null ? Carbon::parse($workedOn)->toDateString() : now()->toDateString(),
@@ -45,5 +47,24 @@ final class TimeLog
         $ticket->touchActivity();
 
         return $entry;
+    }
+
+    /** Avec `allowances.block_overage`, une saisie facturable qui ferait dépasser 100 % d'un forfait est refusée. */
+    private function assertWithinAllowance(Trackable $subject, int $minutes, \DateTimeInterface|string|null $workedOn, bool $billable): void
+    {
+        if (! $billable || ! config('filament-tma.allowances.block_overage', false)) {
+            return;
+        }
+
+        $probe = new \CharlesStOlive\FilamentTma\Models\TimeEntry(['worked_on' => $workedOn ?? now(), 'billable' => true]);
+        $probe->setRelation('subject', $subject);
+
+        foreach (\CharlesStOlive\FilamentTma\Support\AllowanceMeter::allowancesFor($probe) as $allowance) {
+            $key = \CharlesStOlive\FilamentTma\Support\AllowanceMeter::periodKey($allowance, $probe->worked_on);
+
+            if (\CharlesStOlive\FilamentTma\Support\AllowanceMeter::consumed($allowance, $key) + $minutes > $allowance->minutes) {
+                throw ValidationException::withMessages(['minutes' => __('Le forfait « :label » serait dépassé.', ['label' => $allowance->label()])]);
+            }
+        }
     }
 }

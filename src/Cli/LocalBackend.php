@@ -74,7 +74,7 @@ final class LocalBackend implements Backend
                 'ticket' => $ticket->number,
                 'time_entry' => ['ulid' => $time->ulid, 'minutes' => $time->minutes, 'worked_on' => $time->worked_on->toDateString(), 'billable' => $time->billable],
                 'summary_entry' => $entry?->ulid,
-                'time_total_minutes' => $ticket->timeEntries()->sum('minutes'),
+                'time_total_minutes' => (int) $ticket->timeEntries()->sum('minutes'),
             ];
         });
     }

@@ -1,5 +1,6 @@
 <?php
 
+use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\AllowanceController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\SyncController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\UserController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\AgentController;
@@ -44,5 +45,6 @@ Route::prefix('api/tma/v1')
             Route::get('users', UserController::class)->name('users');
             Route::post('sync', [SyncController::class, 'sync'])->name('sync');
             Route::post('media/{owner}/{ulid}', [SyncController::class, 'media'])->name('media');
+            Route::post('allowances', AllowanceController::class)->name('allowances');
         });
     });

@@ -10,6 +10,11 @@ class ListTickets extends ListRecords
 {
     protected static string $resource = TicketResource::class;
 
+    protected function getHeaderWidgets(): array
+    {
+        return [\CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview::class];
+    }
+
     protected function getHeaderActions(): array
     {
         return [

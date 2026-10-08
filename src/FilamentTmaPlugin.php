@@ -41,6 +41,11 @@ class FilamentTmaPlugin implements Plugin
             TicketResource::class,
             TaskResource::class,
             InstanceResource::class,
+            \CharlesStOlive\FilamentTma\Filament\Resources\Allowances\AllowanceResource::class,
+        ]);
+
+        $panel->widgets([
+            \CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview::class,
         ]);
     }
 

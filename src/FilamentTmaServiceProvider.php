@@ -57,6 +57,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_filament_tma_instances_table',
                 'create_filament_tma_time_entries_table',
                 'create_filament_tma_tasks_table',
+                'create_filament_tma_allowances_table',
             ]);
     }
 
@@ -78,6 +79,9 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
 
         Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
+        Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\CheckAllowances::class);
+        Event::listen(TimeEntryChanged::class, \CharlesStOlive\FilamentTma\Listeners\QueueAllowancesPush::class);
+        Event::listen(\CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached::class, \CharlesStOlive\FilamentTma\Listeners\NotifyAllowanceThreshold::class);
         Event::listen([
             TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, NoteShared::class,
             TicketUpdated::class, TaskUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class,

@@ -108,6 +108,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Forfaits de TMA
+    |--------------------------------------------------------------------------
+    |
+    | thresholds : les seuils (en % du volume) qui déclenchent un événement, une fois par période.
+    | consume : ce qui consomme le forfait — le temps facturable des tickets ; `tasks` y ajoute celui des tâches projet.
+    | block_overage : refuser une saisie facturable qui dépasserait 100 % (sinon, on alerte seulement).
+    | notify : les adresses prévenues à chaque seuil (côté maître).
+    |
+    */
+
+    'allowances' => [
+        'thresholds' => [80, 90, 100, 110],
+        'consume' => ['tickets'],
+        'block_overage' => false,
+        'notify' => array_filter(explode(',', (string) env('TMA_ALLOWANCE_NOTIFY', ''))),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Clôture automatique
     |--------------------------------------------------------------------------
     |
