@@ -1,0 +1,37 @@
+{
+    "name": "charlesstolive/filament-tma",
+    "description": "Suivi de TMA et de tâches projet pour Filament : tickets, chronologie, temps, entre une application maître et des applications clientes",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "filament",
+        "tma",
+        "ticketing"
+    ],
+    "require": {
+        "php": "^8.3|^8.4",
+        "charlesstolive/filament-state-fusion-enhanced": "dev-master",
+        "filament/filament": "^5.0",
+        "filament/spatie-laravel-media-library-plugin": "^5.0",
+        "spatie/laravel-model-states": "^2.13",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "suggest": {
+        "charlesstolive/filament-permission-manager": "Crée les permissions déclarées par les Resources (tma.ticket.*) et les abilities qui les vérifient"
+    },
+    "autoload": {
+        "psr-4": {
+            "CharlesStOlive\\FilamentTma\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CharlesStOlive\\FilamentTma\\FilamentTmaServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

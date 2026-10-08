@@ -1,0 +1,40 @@
+/* filament-tma : chronologie et pièces jointes. Couleurs des variables de Filament (et donc de filament-ui). */
+
+.fi-tma-timeline { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.fi-tma-timeline-event {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    font-size: 0.875rem; color: var(--gray-500);
+}
+.fi-tma-timeline-event > span { display: inline-flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
+.fi-tma-timeline-event-icon { width: 1rem; height: 1rem; }
+.fi-tma-timeline-event time, .fi-tma-entry-header time { margin-left: auto; font-size: 0.75rem; color: var(--gray-400); }
+.fi-tma-timeline-reason { color: var(--gray-600); }
+.fi-tma-timeline-empty { font-size: 0.875rem; color: var(--gray-500); }
+
+.fi-tma-entry {
+    border: 1px solid var(--gray-200); border-radius: 0.75rem; padding: 0.75rem 1rem;
+    background: var(--gray-50);
+}
+.dark .fi-tma-entry { border-color: var(--gray-700); background: color-mix(in oklab, var(--gray-900) 60%, transparent); }
+.fi-tma-entry--note { border-color: color-mix(in oklab, var(--warning-500) 40%, transparent); }
+.fi-tma-entry--local { border-style: dashed; }
+.fi-tma-entry--summary { border-color: color-mix(in oklab, var(--success-500) 40%, transparent); }
+
+.fi-tma-entry-header { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.875rem; }
+.fi-tma-entry-instance { font-size: 0.75rem; color: var(--gray-500); }
+.fi-tma-entry-body { margin-top: 0.5rem; font-size: 0.875rem; }
+.fi-tma-entry-reply { margin: 0.75rem 0 0 1.5rem; padding-left: 0.75rem; border-left: 2px solid var(--gray-200); }
+.dark .fi-tma-entry-reply { border-color: var(--gray-700); }
+.fi-tma-entry-actions { display: flex; gap: 1rem; margin-top: 0.5rem; }
+
+.fi-tma-attachments { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.fi-tma-attachment {
+    display: inline-flex; align-items: center; gap: 0.375rem; max-width: 16rem;
+    padding: 0.25rem 0.5rem; border: 1px solid var(--gray-200); border-radius: 0.5rem; font-size: 0.75rem;
+}
+.dark .fi-tma-attachment { border-color: var(--gray-700); }
+.fi-tma-attachment img { width: 3rem; height: 3rem; object-fit: cover; border-radius: 0.25rem; }
+.fi-tma-attachment span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fi-tma-attachment small { color: var(--gray-500); }
+.fi-tma-attachment-icon { width: 1rem; height: 1rem; }
