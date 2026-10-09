@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Models\Audit;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -19,7 +20,7 @@ use Illuminate\Support\Str;
 use UnitEnum;
 
 /** « Journal d'audit » : en lecture seule (CDC §23). Droit `tma.audit.viewany`. */
-class AuditResource extends Resource
+class AuditResource extends Resource implements HasKnowledgeBase
 {
     protected static ?string $model = Audit::class;
 
@@ -59,6 +60,12 @@ class AuditResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
+    }
+
+    /** Le menu d'aide de la page : l'audit et le nettoyage. */
+    public static function getDocumentation(): array|string
+    {
+        return ['tma.audit-nettoyage'];
     }
 
     public static function table(Table $table): Table

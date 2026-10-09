@@ -27,6 +27,7 @@ En local, comme les autres plugins `filament-*`, en dépôt `path` :
 composer require charlesstolive/filament-tma:@dev
 php artisan vendor:publish --tag=filament-tma-config
 php artisan vendor:publish --tag=filament-tma-migrations
+php artisan vendor:publish --tag=filament-tma-docs
 php artisan migrate
 php artisan filament:assets
 ```
@@ -39,13 +40,28 @@ use CharlesStOlive\FilamentTma\FilamentTmaPlugin;
 ->plugins([FilamentTmaPlugin::make()])
 ```
 
+## L'aide intégrée (base de connaissances)
+
+Le plugin embarque son aide pour `guava/filament-knowledge-base` : 13 pages dans `docs/knowledge-base/tma/` (groupe
+« TMA et tâches projet »). Elles couvrent la compréhension du module, la configuration de départ, les tickets, la
+chronologie, le temps, les tâches, les forfaits, les notifications, la synchronisation, les droits, les commandes,
+l'audit et un glossaire.
+
+- `vendor:publish --tag=filament-tma-docs` les copie dans `docs/knowledge-base/fr` de l'application. Ajoutez-le au
+  `post-autoload-dump` de `composer.json` (avec `--force`) pour qu'elles suivent les mises à jour.
+- Chaque écran du plugin a son menu « ? » (`HasKnowledgeBase::getDocumentation()`), si l'application a un panneau
+  de base de connaissances et le `KnowledgeBaseCompanionPlugin` dans son admin.
+- Le thème Filament de l'application lit les vues du plugin et de la base de connaissances :
+  `@plugin "@tailwindcss/typography";` et les `@source` de `vendor/charlesstolive/filament-tma/resources` et
+  `vendor/guava/filament-knowledge-base` (voir la page « Configuration de départ »).
+
 Il faut aussi :
 
 - **un planificateur** (`schedule:work`) : le plugin déclare ses tâches planifiées lui-même ;
 - **un worker de file** dans le maître (`queue:work`) : les envois vers les clients passent par la file.
 
 Dépendances : `charlesstolive/filament-state-fusion-enhanced` (les états), `filament/spatie-laravel-media-library-plugin`
-(les fichiers), Passport (les jetons de l'API ; `filament-permission-manager` l'installe).
+(les fichiers), `guava/filament-knowledge-base` (l'aide), Passport (les jetons de l'API ; `filament-permission-manager` l'installe).
 `charlesstolive/filament-permission-manager` est conseillé (les droits, voir plus bas).
 
 ### Variables d'environnement

@@ -22,6 +22,7 @@ use CharlesStOlive\FilamentTma\Workflow\Move;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -40,7 +41,7 @@ use UnitEnum;
  * Qui a la main compte aussi, et ne dépend d'aucun droit : on ne modifie un ticket qu'en brouillon ou quand on en
  * est l'intervenant et qu'il est à nous (`Ticket::fieldsEditableHere()`).
  */
-class TicketResource extends Resource
+class TicketResource extends Resource implements HasKnowledgeBase
 {
     protected static ?string $model = Ticket::class;
 
@@ -112,6 +113,12 @@ class TicketResource extends Resource
         return $record->state instanceof Draft
             && $record->fieldsEditableHere()
             && parent::canDelete($record);
+    }
+
+    /** Le menu d'aide de la page : les tickets, leur chronologie, et ce qu'il faut comprendre du module. */
+    public static function getDocumentation(): array|string
+    {
+        return ['tma.tickets', 'tma.chronologie', 'tma.comprendre', 'tma.temps'];
     }
 
     public static function form(Schema $schema): Schema

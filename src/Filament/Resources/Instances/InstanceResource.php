@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -29,7 +30,7 @@ use UnitEnum;
  * « Applications clientes » (maître seulement) : les installations du plugin en mode client, leur adresse, leur
  * client, le compte par lequel elles appellent le maître et le jeton par lequel le maître les appelle.
  */
-class InstanceResource extends Resource
+class InstanceResource extends Resource implements HasKnowledgeBase
 {
     protected static ?string $model = Instance::class;
 
@@ -64,6 +65,12 @@ class InstanceResource extends Resource
     public static function canAccess(): bool
     {
         return Tma::isMaster() && parent::canAccess();
+    }
+
+    /** Le menu d'aide de la page : relier une application cliente, et la synchronisation. */
+    public static function getDocumentation(): array|string
+    {
+        return ['tma.demarrer', 'tma.synchronisation'];
     }
 
     public static function form(Schema $schema): Schema

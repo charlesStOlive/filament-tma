@@ -20,6 +20,7 @@ use CharlesStOlive\FilamentTma\Workflow\TaskMove;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -35,7 +36,7 @@ use UnitEnum;
  * Droits (filament-permission-manager) : `tma.task.*`, avec `comment`, `note`, `share-note`, `time`, `sync` et la
  * famille `workflow` (`tma.task.workflow.publish`…).
  */
-class TaskResource extends Resource
+class TaskResource extends Resource implements HasKnowledgeBase
 {
     protected static ?string $model = ProjectTask::class;
 
@@ -100,6 +101,12 @@ class TaskResource extends Resource
     {
         /** @var ProjectTask $record */
         return Tma::isMaster() && ! $record->isShared() && parent::canDelete($record);
+    }
+
+    /** Le menu d'aide de la page : les tâches projet, leur chronologie, le temps passé. */
+    public static function getDocumentation(): array|string
+    {
+        return ['tma.taches', 'tma.chronologie', 'tma.temps'];
     }
 
     public static function form(Schema $schema): Schema

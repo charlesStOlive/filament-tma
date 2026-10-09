@@ -88,6 +88,13 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
+        // L'aide (base de connaissances Guava) : groupe « TMA et tâches projet », pages `tma.*`.
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../docs/knowledge-base' => base_path('docs/knowledge-base/fr'),
+            ], 'filament-tma-docs');
+        }
+
         TmaGate::registerResource(Ticket::class, TicketResource::class);
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
 

@@ -18,6 +18,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -29,7 +30,7 @@ use UnitEnum;
  * « Forfaits » (maître) : le volume de TMA alloué à un client ou à une application, par mois ou par trimestre, et sa
  * consommation sur la période en cours. Les seuils (80, 90, 100, 110 %) déclenchent `AllowanceThresholdReached`.
  */
-class AllowanceResource extends Resource
+class AllowanceResource extends Resource implements HasKnowledgeBase
 {
     protected static ?string $model = Allowance::class;
 
@@ -68,6 +69,12 @@ class AllowanceResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         return Tma::isMaster() && parent::shouldRegisterNavigation();
+    }
+
+    /** Le menu d'aide de la page : les forfaits et ce qui les consomme. */
+    public static function getDocumentation(): array|string
+    {
+        return ['tma.forfaits', 'tma.temps'];
     }
 
     public static function form(Schema $schema): Schema
