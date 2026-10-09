@@ -4,6 +4,7 @@ use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\AllowanceController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\SyncController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\UserController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\AgentController;
+use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\RegisterController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\TaskController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Master\TicketController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\PingController;
@@ -23,6 +24,7 @@ Route::prefix('api/tma/v1')
         // Le maître, appelé par une application cliente.
         Route::middleware(AuthenticateInstance::class)->name('master.')->group(function (): void {
             Route::get('master/ping', PingController::class)->name('ping');
+            Route::post('master/register', RegisterController::class)->name('register');
             Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
             Route::get('tickets/{ulid}', [TicketController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ulid}/moves', [TicketController::class, 'move'])->name('tickets.move');

@@ -5,6 +5,8 @@ namespace CharlesStOlive\FilamentTma\Commands;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\EnvFile;
 use CharlesStOlive\FilamentTma\Support\ServiceAccount;
+use CharlesStOlive\FilamentTma\Sync\MasterClient;
+use CharlesStOlive\FilamentTma\Sync\SyncException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -76,11 +78,7 @@ class InstallCommand extends Command
             if ($this->option('show')) {
                 $this->components->warn(__('--show : le compte du centre de service n’est pas créé.'));
             } else {
-                $token = ServiceAccount::token(ServiceAccount::user($email, __('Centre de service (TMA)')));
-
-                $this->newLine();
-                $this->components->info(__('Compte du centre de service : :email. Son jeton, à coller dans le centre de service (Applications clientes › Jeton émis par l’application) :', ['email' => $email]));
-                $this->line($token);
+                $this->connectMaster($email, $values);
             }
         }
 
@@ -94,6 +92,52 @@ class InstallCommand extends Command
         ]);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Crée le compte par lequel le centre de service appellera l'application, et lui transmet son jeton. Si la
+     * transmission échoue, le jeton s'affiche : il se colle alors à la main dans la fiche de l'application.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function connectMaster(string $email, array $values): void
+    {
+        $token = ServiceAccount::token(ServiceAccount::user($email, __('Centre de service (TMA)')));
+
+        config(array_filter([
+            'filament-tma.api.master_user' => $email,
+            'filament-tma.master.url' => $values['TMA_MASTER_URL'] ?? null,
+            'filament-tma.master.token' => $values['TMA_MASTER_TOKEN'] ?? null,
+        ]));
+
+        if (blank(config('filament-tma.master.url')) || blank(config('filament-tma.master.token'))) {
+            $this->showToken($email, $token, __('Le centre de service n’est pas encore configuré (--master-url, --master-token).'));
+
+            return;
+        }
+
+        try {
+            $answer = app(MasterClient::class)->register($token);
+        } catch (SyncException $e) {
+            $this->showToken($email, $token, $e->getMessage());
+
+            return;
+        }
+
+        $this->components->info(__('Jeton transmis au centre de service (application « :name »).', ['name' => $answer['instance'] ?? '?']));
+
+        if ($answer['callback'] ?? false) {
+            $this->components->info(__('Le centre de service joint cette application : la liaison marche dans les deux sens.'));
+        } else {
+            $this->components->warn(__('Le centre de service ne joint pas encore cette application : :error', ['error' => $answer['callback_error'] ?? '?']));
+        }
+    }
+
+    private function showToken(string $email, string $token, string $why): void
+    {
+        $this->components->warn($why);
+        $this->components->info(__('Compte du centre de service : :email. Son jeton, à coller dans le centre de service (Applications clientes › Saisir le jeton à la main) :', ['email' => $email]));
+        $this->line($token);
     }
 
     /** @param  array<string, string>  $values */

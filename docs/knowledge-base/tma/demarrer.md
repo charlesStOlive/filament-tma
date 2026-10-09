@@ -48,36 +48,43 @@ Dans `config/filament-tma.php`, déclarez aussi le modèle des clients :
 
 ## 3. Déclarer l'application cliente (centre de service)
 
-**TMA › Applications clientes › Nouveau** : son nom, son adresse et son client. L'**identifiant** est proposé
-d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà le sien, collez-le à la place.
+**TMA › Applications clientes › Nouveau** : son nom, son adresse (telle que le centre de service la joint) et son
+client. L'**identifiant** est proposé d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà
+le sien (installée avant), collez-le à la place.
 
-Puis **Configuration de l'application** (dans la liste, ou en tête de la fiche) :
+À l'enregistrement, le centre de service crée le **compte de service** de l'application : un utilisateur dédié,
+sans rôle, qui n'entre dans aucun écran. On ne choisit jamais un compte existant.
 
-- le **compte de service** par lequel l'application appellera le centre de service est créé (sans rôle : il n'entre
-  dans aucun écran), et reçoit un jeton ; un nouveau jeton remplace l'ancien ;
-- l'**adresse du centre de service** est celle que l'application cliente doit appeler (en développement, celle du
-  conteneur, pas `localhost`) ;
-- une fenêtre montre la **commande à lancer dans l'application cliente**, avec un bouton pour la copier.
+## 4. Configuration de l'application
 
-Ce jeton n'est montré qu'une fois. Perdu, il suffit de relancer « Configuration de l'application ».
+Sur la fiche, **Configuration de l'application** :
 
-## 4. Configurer l'application cliente
+- **Adresse du centre de service** : celle que l'application cliente doit appeler (proposée d'après
+  `TMA_PUBLIC_URL` ; en développement, celle du conteneur, pas `localhost`) ;
+- **Préfixe des tickets** de l'application.
 
-Lancez-y la commande copiée. Elle ressemble à :
+Une fenêtre montre la **commande à lancer dans l'application cliente**, avec un bouton pour la copier. Elle contient
+un jeton qui n'est montré qu'une fois ; perdu, il suffit de relancer « Configuration de l'application ».
+
+## 5. Lancer la commande dans l'application cliente
 
 ```bash
 php artisan tma:install --mode=client --uid=01K… --name='Desapp' --prefix='DES' \
     --master-url='https://filbreeze.example' --master-token=eyJ… --master-account=centre-de-service@tma.local
 ```
 
-Elle écrit la configuration dans `.env`, puis crée le compte par lequel le **centre de service** appellera
-l'application (`centre-de-service@tma.local`, sans rôle), et **affiche son jeton**.
+Elle :
 
-## 5. Terminer dans le centre de service
+1. écrit la configuration dans le `.env` de l'application ;
+2. crée le compte par lequel le centre de service appellera l'application (`centre-de-service@tma.local`, sans rôle) ;
+3. **transmet son jeton au centre de service**, qui rappelle aussitôt l'application pour vérifier que la liaison
+   marche dans les deux sens.
 
-Sur la fiche de l'application cliente, collez ce jeton dans **Jeton émis par l'application**, enregistrez, puis
-**Tester** : la connexion est vérifiée dans les deux sens. **Utilisateurs** montre qui, dans l'application cliente,
-a accès au centre de service.
+La commande dit ce qu'il en est. Sur la fiche, **Jeton de l'application** passe à « Reçu », et **Tester** vérifie la
+connexion à tout moment.
+
+Si la transmission échoue (centre de service injoignable), la commande **affiche le jeton** : collez-le dans la
+fiche, champ **Saisir le jeton à la main**.
 
 Sans configuration du centre de service, une application cliente ne fait que du traitement local.
 

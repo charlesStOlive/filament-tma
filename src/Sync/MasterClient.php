@@ -74,6 +74,19 @@ final class MasterClient
         ]))->json();
     }
 
+    /**
+     * Transmet au centre de service le jeton par lequel il appellera cette application ; il la rappelle aussitôt pour
+     * vérifier la connexion dans l'autre sens.
+     *
+     * @return array{instance: string, callback: bool, callback_error: string|null}
+     */
+    public function register(string $token): array
+    {
+        return Http::call(__('Transmission du jeton au centre de service'), fn () => $this->http()->post($this->url('master/register'), [
+            'token' => $token,
+        ]))->json();
+    }
+
     /** Envoie une entrée (commentaire, note partagée, réponse) avec ses fichiers. */
     public function sendEntry(Entry $entry): void
     {

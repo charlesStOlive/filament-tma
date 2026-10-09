@@ -65,6 +65,8 @@ return [
 
     'api' => [
         'guard' => env('TMA_API_GUARD', 'api'),
+        // Mode maître : l'adresse à laquelle les applications clientes le joignent (http://filbreeze.test en développement).
+        'public_url' => env('TMA_PUBLIC_URL'),
         'timeout' => 15,
         'master_user' => env('TMA_MASTER_API_USER'),
         'users_cache_ttl' => 3600,

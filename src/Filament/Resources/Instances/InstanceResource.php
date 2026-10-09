@@ -18,6 +18,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
@@ -79,7 +80,6 @@ class InstanceResource extends Resource implements HasKnowledgeBase
 
     public static function form(Schema $schema): Schema
     {
-        $userModel = Tma::userModel();
         $clientModel = config('filament-tma.models.client');
 
         return $schema->components([
@@ -110,17 +110,23 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ]),
             Section::make(__('Accès'))->columns(2)->columnSpanFull()
                 ->headerActions([Help::title('tma.demarrer.jetons', __('Les comptes et leurs jetons'))])
+                ->visibleOn('edit')
                 ->schema([
-                Select::make('api_user_id')->label(__('Compte de service de l’application'))
-                    ->helperText(__('L’utilisateur d’ici dont l’application détient un jeton pour appeler le centre de service. « Configuration de l’application » le crée.'))
-                    ->options(fn (): array => $userModel::query()->orderBy('name')->pluck('name', (new $userModel)->getKeyName())->all())
-                    ->searchable()
-                    ->unique(ignoreRecord: true),
-                TextInput::make('token')->label(__('Jeton émis par l’application'))
-                    ->helperText(__('Celui qu’affiche `tma:install` dans l’application. Laisser vide pour garder le jeton actuel ; il est chiffré en base.'))
-                    ->password()->revealable()
-                    ->dehydrated(fn (?string $state): bool => filled($state)),
-            ]),
+                    TextEntry::make('service_account')->label(__('Compte de service de l’application'))
+                        ->state(fn (?Instance $record): string => $record?->apiUser?->email ?? '—')
+                        ->helperText(__('Créé par le centre de service, sans rôle : c’est à son jeton qu’il reconnaît l’application.')),
+                    TextEntry::make('token_status')->label(__('Jeton de l’application'))
+                        ->state(fn (?Instance $record): string => filled($record?->token)
+                            ? __('Reçu')
+                            : __('En attente : lancez dans l’application la commande de « Configuration de l’application ».'))
+                        ->badge()
+                        ->color(fn (?Instance $record): string => filled($record?->token) ? 'success' : 'warning'),
+                    TextInput::make('token')->label(__('Saisir le jeton à la main'))
+                        ->helperText(__('Seulement si la commande n’a pas pu le transmettre : elle l’affiche alors. Laisser vide pour garder le jeton actuel.'))
+                        ->password()->revealable()
+                        ->dehydrated(fn (?string $state): bool => filled($state))
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
@@ -150,8 +156,9 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     }
 
     /**
-     * « Configuration de l'application » : crée (ou reprend) le compte par lequel l'application appellera le centre de
-     * service, lui émet un jeton (l'ancien est révoqué), puis montre la commande à lancer dans l'application.
+     * « Configuration de l'application » : émet un jeton pour le compte de service de l'application (créé avec elle ;
+     * l'ancien jeton est révoqué), puis montre la commande à lancer dans l'application. Cette commande écrit sa
+     * configuration, crée le compte du centre de service chez elle, et lui transmet son jeton (`POST master/register`).
      */
     public static function setupClientAction(): Action
     {
@@ -159,17 +166,13 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ->label(__('Configuration de l’application'))
             ->icon('heroicon-m-key')
             ->modalHeading(fn (Instance $record): string => __('Configurer :name', ['name' => $record->name]))
-            ->modalDescription(__('Un nouveau jeton est émis pour l’application ; le précédent ne marche plus. Elle devra recevoir cette configuration.'))
+            ->modalDescription(__('Un nouveau jeton est émis pour l’application ; le précédent ne marche plus.'))
             ->modalSubmitActionLabel(__('Générer'))
             ->fillForm(fn (Instance $record): array => [
-                'account_email' => $record->apiUser?->email ?? Str::slug($record->name).'@tma.local',
-                'master_url' => config('app.url'),
+                'master_url' => config('filament-tma.api.public_url') ?: config('app.url'),
                 'ticket_prefix' => strtoupper(Str::substr(Str::slug($record->name, ''), 0, 3)),
             ])
             ->schema([
-                TextInput::make('account_email')->label(__('Compte de service, ici'))->email()->required()
-                    ->helperText(__('Créé s’il n’existe pas, sans rôle : il n’entre dans aucun écran.'))
-                    ->hintAction(Help::action('tma.demarrer.jetons', __('Pourquoi un compte de service ?'))),
                 TextInput::make('master_url')->label(__('Adresse du centre de service, vue de l’application'))->url()->required()
                     ->helperText(__('En développement, l’adresse du conteneur (http://filbreeze.test…), pas localhost.'))
                     ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
@@ -177,16 +180,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                     ->hintAction(Help::action('tma.demarrer.identifiant', __('Le préfixe des numéros'))),
             ])
             ->action(function (Instance $record, array $data, $livewire): void {
-                $user = ServiceAccount::user($data['account_email'], __('Application :name (TMA)', ['name' => $record->name]));
-
-                if (Instance::query()->where('api_user_id', $user->getAuthIdentifier())->whereKeyNot($record->getKey())->exists()) {
-                    Notification::make()->danger()->title(__('Ce compte sert déjà à une autre application.'))->send();
-
-                    return;
-                }
-
-                $token = ServiceAccount::token($user);
-                $record->update(['api_user_id' => $user->getAuthIdentifier()]);
+                $token = ServiceAccount::token($record->ensureServiceAccount());
 
                 $livewire->replaceMountedAction('clientEnv', [
                     'command' => self::installCommand($record, $data['master_url'], $token, $data['ticket_prefix']),

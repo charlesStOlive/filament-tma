@@ -35,6 +35,21 @@ final class ServiceAccount
         return $user;
     }
 
+    /** Un compte qui ne peut pas servir : il existe déjà et a des rôles (une personne), ou sert déjà à une application. */
+    public static function isTaken(string $email): bool
+    {
+        $model = Tma::userModel();
+        $user = $model::query()->where('email', $email)->first();
+
+        if ($user === null) {
+            return false;
+        }
+
+        $hasRoles = method_exists($user, 'roles') && $user->roles()->exists();
+
+        return $hasRoles || \CharlesStOlive\FilamentTma\Models\Instance::query()->where('api_user_id', $user->getAuthIdentifier())->exists();
+    }
+
     /** Un nouveau jeton pour ce compte ; les anciens jetons de service sont révoqués. */
     public static function token(Authenticatable $user): string
     {

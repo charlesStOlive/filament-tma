@@ -63,6 +63,30 @@ class Instance extends Model
             || ProjectTask::withTrashed()->where('target_instance_uid', $this->getOriginal('uid') ?? $this->uid)->exists();
     }
 
+    /**
+     * Le compte de service de l'application, ici : créé au besoin, dédié (sans rôle, jamais un compte de quelqu'un) ;
+     * c'est à son jeton que le centre de service reconnaît l'application.
+     */
+    public function ensureServiceAccount(): \Illuminate\Contracts\Auth\Authenticatable
+    {
+        if ($this->apiUser !== null) {
+            return $this->apiUser;
+        }
+
+        $base = 'tma-'.(\Illuminate\Support\Str::slug($this->name) ?: 'application');
+        $email = $base.'@tma.local';
+
+        if (\CharlesStOlive\FilamentTma\Support\ServiceAccount::isTaken($email)) {
+            $email = $base.'-'.strtolower(substr($this->uid, -6)).'@tma.local';
+        }
+
+        $user = \CharlesStOlive\FilamentTma\Support\ServiceAccount::user($email, __('Application :name (TMA)', ['name' => $this->name]));
+        $this->forceFill(['api_user_id' => $user->getAuthIdentifier()])->save();
+        $this->setRelation('apiUser', $user);
+
+        return $user;
+    }
+
     public function apiUrl(string $path = ''): string
     {
         return rtrim($this->url, '/').'/api/tma/v1/'.ltrim($path, '/');

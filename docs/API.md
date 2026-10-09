@@ -19,14 +19,17 @@ départ » (`docs/knowledge-base/tma/demarrer.md`).
 
 1. **Filbreeze** : `php artisan tma:install --mode=master --name=Filbreeze --prefix=FIL` (mode, identifiant généré,
    nom, préfixe, dans `.env`).
-2. **Filbreeze** : **TMA › Applications clientes › Nouveau** (l'identifiant est proposé), puis **Configuration de
-   l'application**. Le maître crée le compte de service de Desapp (sans rôle) et son jeton Passport
-   (`Support\ServiceAccount`, l'ancien jeton est révoqué), et affiche la commande à lancer dans Desapp.
+2. **Filbreeze** : **TMA › Applications clientes › Nouveau** (l'identifiant est proposé). À l'enregistrement, le maître
+   crée le compte de service de Desapp (`Instance::ensureServiceAccount()`, sans rôle). Puis **Configuration de
+   l'application** : un jeton Passport pour ce compte (`Support\ServiceAccount`, l'ancien est révoqué) et la commande à
+   lancer dans Desapp. `TMA_PUBLIC_URL` (maître) propose l'adresse du maître vue des clients.
 3. **Desapp** : lancer cette commande,
    `php artisan tma:install --mode=client --uid=… --master-url=… --master-token=… --master-account=centre-de-service@tma.local`.
    Elle écrit `.env` (`TMA_MODE`, `TMA_INSTANCE_UID`, `TMA_MASTER_URL`, `TMA_MASTER_TOKEN`, `TMA_MASTER_API_USER`),
-   crée le compte par lequel le maître appellera Desapp, et affiche son jeton.
-4. **Filbreeze** : coller ce jeton dans **Jeton émis par l'application**, puis **Tester** (`GET ping` de Desapp).
+   crée le compte par lequel le maître appellera Desapp, et **transmet son jeton** (`POST master/register`) ; le maître
+   rappelle aussitôt Desapp (`GET ping`) et la commande dit si la liaison marche dans les deux sens.
+4. **Filbreeze** : rien à coller, sauf si la transmission a échoué (la commande affiche alors le jeton : fiche ›
+   **Saisir le jeton à la main**). **Tester** vérifie la connexion à tout moment.
 5. **Filbreeze** : un worker de file doit tourner (`php artisan queue:work`) : les envois vers les clients passent
    par la file.
 6. **Desapp** : donner `tma.ticket.workflow.transmit` aux rôles qui peuvent transmettre au centre de service. Les
@@ -171,6 +174,21 @@ Une tâche en brouillon (`draft`) n'est jamais envoyée.
 ```json
 { "api": "v1", "mode": "master", "instance_uid": "01K…", "name": "Filbreeze" }
 ```
+
+### `POST master/register` — le jeton par lequel le maître appellera l'application
+
+```json
+{ "token": "eyJ…" }
+```
+
+Le maître le range (chiffré) dans la fiche de l'application appelante, puis l'appelle (`GET ping`) avec. Réponse :
+
+```json
+{ "instance": "Desapp", "callback": true, "callback_error": null }
+```
+
+`callback: false` et la raison si le rappel échoue (adresse de l'application à corriger dans le maître). Utilisé par
+`tma:install --master-account=…`.
 
 ### `POST tickets` — transmettre au centre de service
 

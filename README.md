@@ -74,6 +74,7 @@ Dépendances : `charlesstolive/filament-state-fusion-enhanced` (les états), `fi
 | `TMA_TICKET_PREFIX` | début des numéros des tickets créés ici : `DES` donne `DES-0042` |
 | `TMA_TASK_PREFIX` | maître : début des numéros des tâches projet (`T` donne `T-0007`) |
 | `TMA_MASTER_URL`, `TMA_MASTER_TOKEN`, `TMA_MASTER_API_USER` | mode client : le maître, et le compte dont il détient un jeton (voir [docs/API.md](docs/API.md)). Sans URL, seul le traitement local existe |
+| `TMA_PUBLIC_URL` | maître : son adresse vue des applications clientes (`http://filbreeze.test` en développement) |
 | `TMA_CLI_TOKEN` | le jeton personnel utilisé par les commandes `tma:*` |
 | `TMA_ALLOWANCE_NOTIFY` | maître : adresses prévenues aux seuils des forfaits (séparées par des virgules) |
 | `TMA_ATTACHMENTS_DISK` | disque **privé** des fichiers (défaut `local`) |

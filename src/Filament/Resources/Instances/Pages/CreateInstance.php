@@ -13,4 +13,16 @@ class CreateInstance extends CreateRecord
     {
         return InstanceData::withClientType($data);
     }
+
+    /** L'application a son propre compte de service dès sa création : on ne choisit jamais un utilisateur. */
+    protected function afterCreate(): void
+    {
+        $this->getRecord()->ensureServiceAccount();
+    }
+
+    /** Directement sur sa fiche, où « Configuration de l'application » attend. */
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('edit', ['record' => $this->getRecord()]);
+    }
 }
