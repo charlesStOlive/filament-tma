@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use Filament\Infolists\Components\TextEntry;
@@ -35,13 +36,15 @@ class TicketInfolist
                     ]),
                 Section::make(__('Suivi'))
                     ->columnSpan(1)
+                    ->headerActions([Help::title('tma.comprendre.la-main', __('Qui a la main ?'))])
                     ->schema([
                         TextEntry::make('state')->label(__('État'))->badge()
                             ->helperText(fn (Ticket $record): ?string => $record->state->getDescription()),
                         TextEntry::make('in_hands')->label(__('La main est à'))
                             ->state(fn (Ticket $record): ?string => $record->sideInCharge()?->getLabel())
                             ->placeholder('—'),
-                        TextEntry::make('handling_mode')->label(__('Traitement'))->badge(),
+                        TextEntry::make('handling_mode')->label(__('Traitement'))->badge()
+                            ->hintAction(Help::action('tma.comprendre.traitement', __('Local ou centre de service ?'))),
                         TextEntry::make('priority')->label(__('Priorité'))->badge(),
                         TextEntry::make('requester.name')->label(__('Demandeur')),
                         TextEntry::make('assignee.name')->label(__('Intervenant'))->placeholder('—'),
@@ -53,6 +56,7 @@ class TicketInfolist
                         TextEntry::make('sourceInstance.name')->label(__('Application'))
                             ->visible(fn (): bool => Tma::isMaster()),
                         TextEntry::make('sync_status')->label(__('Synchro'))->badge()
+                            ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
                             ->visible(fn (Ticket $record): bool => $record->handling_mode === HandlingMode::ServiceDesk)
                             ->helperText(fn (Ticket $record): ?string => $record->last_sync_error),
                         TextEntry::make('created_at')->label(__('Créé le'))->dateTime('d/m/Y H:i'),
@@ -61,6 +65,7 @@ class TicketInfolist
             ]),
             Section::make(__('Chronologie'))
                 ->columnSpanFull()
+                ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Commentaire ou note ?'))])
                 ->schema([
                     ViewEntry::make('timeline')
                         ->hiddenLabel()

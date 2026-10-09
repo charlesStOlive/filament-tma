@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Workflow\Concerns;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
@@ -15,9 +16,9 @@ use Filament\Forms\Components\Textarea;
 /** Les messages qu'un mouvement demande (la question, la réponse, le motif) et qu'il écrit dans la chronologie. */
 trait WritesMessages
 {
-    protected function messageField(string $name, string $label, bool $required = true): RichEditor
+    protected function messageField(string $name, string $label, bool $required = true, ?array $help = null): RichEditor
     {
-        return RichEditor::make($name)
+        $field = RichEditor::make($name)
             ->label($label)
             ->required($required)
             ->toolbarButtons([
@@ -25,15 +26,19 @@ trait WritesMessages
                 ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
                 ['undo', 'redo'],
             ]);
+
+        return $help === null ? $field : $field->hintAction(Help::action(...$help));
     }
 
-    protected function reasonField(bool $required = true, ?string $label = null): Textarea
+    /** @param  array{0: string, 1: string}|null  $help  la page d'aide et le libellé du « ? » */
+    protected function reasonField(bool $required = true, ?string $label = null, ?array $help = null): Textarea
     {
         return Textarea::make('reason')
             ->label($label ?? __('Motif'))
             ->required($required)
             ->rows(3)
-            ->maxLength(2000);
+            ->maxLength(2000)
+            ->hintAction(Help::action(...($help ?? ['tma.tickets.annuler', __('Quand faut-il un motif ?')])));
     }
 
     /** @return array<int, mixed> */

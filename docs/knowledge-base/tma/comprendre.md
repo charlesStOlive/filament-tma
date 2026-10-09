@@ -57,3 +57,8 @@ rend.
 - [l'audit et le nettoyage](#modal-tma.audit-nettoyage).
 
 Pour installer et relier les applications : [Configuration de départ](#modal-tma.demarrer).
+
+## En détail
+
+- [Qui a la main ?](#modal-tma.comprendre.la-main)
+- [Traitement local ou centre de service](#modal-tma.comprendre.traitement)

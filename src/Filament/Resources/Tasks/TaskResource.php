@@ -106,7 +106,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
     /** Le menu d'aide de la page : les tâches projet, leur chronologie, le temps passé. */
     public static function getDocumentation(): array|string
     {
-        return ['tma.taches', 'tma.chronologie', 'tma.temps'];
+        return ['tma.taches', 'tma.taches.publication', 'tma.chronologie', 'tma.temps'];
     }
 
     public static function form(Schema $schema): Schema

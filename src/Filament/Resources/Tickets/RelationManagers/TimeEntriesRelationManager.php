@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -53,13 +54,16 @@ class TimeEntriesRelationManager extends RelationManager
     {
         return $schema->components([
             Grid::make(3)->columnSpanFull()->schema([
-                DatePicker::make('worked_on')->label(__('Le'))->required()->default(now())->maxDate(now()->addDay()),
-                TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step(0.25),
+                DatePicker::make('worked_on')->label(__('Le'))->required()->default(now())->maxDate(now()->addDay())
+                    ->hintAction(Help::action('tma.temps.saisie', __('Quel jour ?'))),
+                TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step(0.25)
+                    ->hintAction(Help::action('tma.temps.saisie', __('Minutes, heures ou jours'))),
                 Select::make('unit')->label(__('En'))->options(Duration::units())->required()
                     ->default(config('filament-tma.time.display_unit', Duration::HOURS)),
             ]),
             Textarea::make('description')->label(__('Ce qui a été fait'))->rows(3)->columnSpanFull(),
-            Toggle::make('billable')->label(__('Facturable'))->default(true),
+            Toggle::make('billable')->label(__('Facturable'))->default(true)
+                ->hintAction(Help::action('tma.temps.facturable', __('Facturable ou non ?'))),
         ]);
     }
 

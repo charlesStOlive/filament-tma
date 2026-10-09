@@ -77,3 +77,14 @@ Le centre de service peut ouvrir un ticket **pour** un client, au nom de l'un de
 l'application, puis le demandeur parmi les utilisateurs qui ont accès au centre de service. Le ticket reste
 **invisible** chez le client tant qu'il est en brouillon ; **Publier chez le client** l'y fait apparaître, tout de
 suite ou à la date de **publication programmée**.
+
+## En détail
+
+- [Priorité et échéance](#modal-tma.tickets.priorite-echeance)
+- [Soumettre ou transmettre](#modal-tma.tickets.soumettre)
+- [Demander une réponse, répondre](#modal-tma.tickets.question-reponse)
+- [La pause et sa reprise](#modal-tma.tickets.pause)
+- [Soumettre à validation, valider, rouvrir](#modal-tma.tickets.validation)
+- [Annuler, refuser, clôturer sans réponse](#modal-tma.tickets.annuler)
+- [La clôture automatique](#modal-tma.tickets.cloture-automatique)
+- [Les tickets préparés par le centre de service](#modal-tma.tickets.prepares)

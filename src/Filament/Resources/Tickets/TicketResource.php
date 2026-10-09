@@ -118,7 +118,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
     /** Le menu d'aide de la page : les tickets, leur chronologie, et ce qu'il faut comprendre du module. */
     public static function getDocumentation(): array|string
     {
-        return ['tma.tickets', 'tma.chronologie', 'tma.comprendre', 'tma.temps'];
+        return ['tma.tickets', 'tma.comprendre.la-main', 'tma.chronologie', 'tma.tickets.cloture-automatique', 'tma.comprendre'];
     }
 
     public static function form(Schema $schema): Schema

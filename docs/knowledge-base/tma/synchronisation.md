@@ -41,3 +41,7 @@ besoin, la liste de ceux qui ont accès au centre de service (gardée une heure)
 Utilisateurs**. Chaque message garde le nom et l'e-mail de son auteur, même si cet utilisateur disparaît ensuite.
 
 Pour relier deux applications : [Configuration de départ](#modal-tma.demarrer).
+
+## En détail
+
+- [Synchronisation en erreur](#modal-tma.synchronisation.erreurs)

@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\States\Ticket\Paused;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -63,8 +64,9 @@ class Pause extends Move
     public function formSchema(Ticket $ticket): array
     {
         return [
-            DateTimePicker::make('until')->label(__('Reprise le'))->required()->minDate(now())->seconds(false),
-            $this->reasonField(false),
+            DateTimePicker::make('until')->label(__('Reprise le'))->required()->minDate(now())->seconds(false)
+                ->hintAction(Help::action('tma.tickets.pause', __('Que se passe-t-il à la reprise ?'))),
+            $this->reasonField(false, help: ['tma.tickets.pause', __('La pause et sa reprise')]),
         ];
     }
 

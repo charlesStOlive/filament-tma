@@ -37,3 +37,8 @@ dépassements, une saisie qui le ferait dépasser est refusée. Voir [Les forfai
 
 La commande `tma:log` saisit du temps et enregistre à part un résumé d'intervention. Voir
 [Les commandes](#modal-tma.commandes).
+
+## En détail
+
+- [Saisir une durée](#modal-tma.temps.saisie)
+- [Temps facturable](#modal-tma.temps.facturable)

@@ -57,7 +57,7 @@ class SubmitForValidation extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Ce qui a été fait'), false)];
+        return [$this->messageField('message', __('Ce qui a été fait'), false, ['tma.tickets.validation', __('Et ensuite ?')])];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

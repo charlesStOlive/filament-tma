@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Support\Uploads;
@@ -92,6 +93,7 @@ final class TimelineActions
             RichEditor::make('body')
                 ->label(__('Message'))
                 ->required()
+                ->hintAction(Help::action('tma.chronologie.commentaire-ou-note', __('Qui le lira ?')))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -105,6 +107,7 @@ final class TimelineActions
     {
         return FileUpload::make('attachments')
             ->label(__('Pièces jointes'))
+            ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
             ->multiple()
             ->disk(config('filament-tma.attachments.disk', 'local'))
             ->directory('tma-uploads')

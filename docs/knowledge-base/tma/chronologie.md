@@ -50,3 +50,9 @@ Dans l'application cliente, un commentaire, une réponse ou une note partagée p
 où on l'écrit**. S'il ne répond pas, le message n'est pas enregistré et un avertissement le dit : rien n'est perdu
 en silence. Ce que le centre de service écrit arrive dans l'application cliente quelques instants plus tard. Voir
 [La synchronisation](#modal-tma.synchronisation).
+
+## En détail
+
+- [Commentaire ou note ?](#modal-tma.chronologie.commentaire-ou-note)
+- [Les pièces jointes](#modal-tma.chronologie.fichiers)
+- [La mise en forme du texte](#modal-tma.chronologie.mise-en-forme)

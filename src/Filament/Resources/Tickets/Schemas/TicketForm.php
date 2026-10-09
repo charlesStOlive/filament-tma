@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
@@ -29,7 +30,8 @@ class TicketForm
                     Select::make('instance_uid')->label(__('Application du client'))
                         ->options(fn (): array => Instance::query()->active()->orderBy('name')->pluck('name', 'uid')->all())
                         ->required()
-                        ->live(),
+                        ->live()
+                        ->hintAction(Help::action('tma.tickets.prepares', __('Préparer un ticket pour un client'))),
                     Select::make('requester_id')->label(__('Demandeur'))
                         ->options(function (Get $get): array {
                             $instance = Instance::forUid($get('instance_uid'));
@@ -41,10 +43,12 @@ class TicketForm
                         })
                         ->helperText(__('Les utilisateurs de l’application qui ont accès au centre de service.'))
                         ->searchable()
-                        ->required(),
+                        ->required()
+                        ->hintAction(Help::action('tma.tickets.prepares', __('Qui peut être demandeur ?'))),
                     DateTimePicker::make('publish_at')->label(__('Publication programmée'))
                         ->helperText(__('Vide : vous publierez à la main.'))
-                        ->minDate(now())->seconds(false),
+                        ->minDate(now())->seconds(false)
+                        ->hintAction(Help::action('tma.tickets.prepares', __('Quand le client le verra-t-il ?'))),
                 ]),
             TextInput::make('title')
                 ->label(__('Titre'))
@@ -56,12 +60,15 @@ class TicketForm
                     ->label(__('Priorité'))
                     ->options(Priority::class)
                     ->default(Priority::Normal->value)
-                    ->required(),
+                    ->required()
+                    ->hintAction(Help::action('tma.tickets.priorite-echeance', __('À quoi sert la priorité ?'))),
                 DatePicker::make('due_on')
-                    ->label(__('Échéance souhaitée')),
+                    ->label(__('Échéance souhaitée'))
+                    ->hintAction(Help::action('tma.tickets.priorite-echeance', __('Que se passe-t-il à l’échéance ?'))),
             ])->columnSpanFull(),
             RichEditor::make('description')
                 ->label(__('Description'))
+                ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('Mise en forme du texte')))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['h2', 'h3', 'bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -70,6 +77,7 @@ class TicketForm
                 ->columnSpanFull(),
             SpatieMediaLibraryFileUpload::make('attachments')
                 ->label(__('Pièces jointes'))
+                ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
                 ->collection(Ticket::ATTACHMENTS_COLLECTION)
                 ->disk(config('filament-tma.attachments.disk', 'local'))
                 ->visibility('private')

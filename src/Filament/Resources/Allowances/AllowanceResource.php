@@ -10,6 +10,7 @@ use CharlesStOlive\FilamentTma\Models\Allowance;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Support\AllowanceMeter;
 use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -74,7 +75,7 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
     /** Le menu d'aide de la page : les forfaits et ce qui les consomme. */
     public static function getDocumentation(): array|string
     {
-        return ['tma.forfaits', 'tma.temps'];
+        return ['tma.forfaits', 'tma.forfaits.seuils', 'tma.temps.facturable'];
     }
 
     public static function form(Schema $schema): Schema
@@ -88,13 +89,16 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
                     ->options(fn (): array => $clientModel ? $clientModel::query()->orderBy($title)->pluck($title, (new $clientModel)->getKeyName())->all() : [])
                     ->searchable()
                     ->required(fn ($get): bool => blank($get('instance_uid')))
-                    ->helperText(__('Sans application choisie, le forfait est partagé entre toutes celles du client.')),
+                    ->helperText(__('Sans application choisie, le forfait est partagé entre toutes celles du client.'))
+                    ->hintAction(Help::action('tma.forfaits.portee', __('Client ou application ?'))),
                 Select::make('instance_uid')->label(__('Application'))
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all())
                     ->placeholder(__('Toutes les applications du client')),
                 TextInput::make('contract')->label(__('Contrat'))->maxLength(255),
-                Select::make('period')->label(__('Rythme'))->options(AllowancePeriod::class)->default(AllowancePeriod::Monthly->value)->required(),
-                TextInput::make('volume')->label(__('Volume par période'))->numeric()->minValue(0.25)->step(0.25)->required(),
+                Select::make('period')->label(__('Rythme'))->options(AllowancePeriod::class)->default(AllowancePeriod::Monthly->value)->required()
+                    ->hintAction(Help::action('tma.forfaits.volume', __('Mensuel ou trimestriel ?'))),
+                TextInput::make('volume')->label(__('Volume par période'))->numeric()->minValue(0.25)->step(0.25)->required()
+                    ->hintAction(Help::action('tma.forfaits.volume', __('Ce qui est compté'))),
                 Select::make('unit')->label(__('En'))->options([Duration::HOURS => __('heures'), Duration::DAYS => __('jours')])->default(Duration::DAYS)->required(),
                 DatePicker::make('starts_on')->label(__('Du'))->required()->default(now()->startOfMonth()),
                 DatePicker::make('ends_on')->label(__('Au'))->afterOrEqual('starts_on'),
@@ -141,7 +145,7 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
                     ->label(__('Réinitialiser les seuils'))
                     ->icon('heroicon-m-arrow-uturn-left')
                     ->requiresConfirmation()
-                    ->modalDescription(__('Les seuils de la période en cours pourront se déclencher de nouveau.'))
+                    ->modalDescription(__('Les seuils de la période en cours pourront se déclencher de nouveau. Voir l’aide « Les seuils d’un forfait ».'))
                     ->authorize(static::class.'.reset')
                     ->action(function (Allowance $record): void {
                         AllowanceMeter::resetThresholds($record, AllowanceMeter::periodKey($record));

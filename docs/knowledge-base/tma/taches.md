@@ -32,3 +32,8 @@ passé dans l'onglet **Temps passé** (voir [Le temps passé](#modal-tma.temps))
 Les tâches publiées pour l'application apparaissent dans **TMA › Tâches projet**, en lecture. On y participe par la
 [chronologie](#modal-tma.chronologie) : commentaires, notes, images, réponses. On ne crée pas de tâche et on ne
 change pas son état.
+
+## En détail
+
+- [Publier une tâche](#modal-tma.taches.publication)
+- [La période d'une tâche](#modal-tma.taches.periode)

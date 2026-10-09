@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
@@ -72,7 +73,8 @@ class Submit extends Move
                 ->label(__('Intervenant'))
                 ->helperText(__('Facultatif : sans intervenant désigné, le premier qui le prend en charge le devient.'))
                 ->options(fn (): array => $users::query()->orderBy('name')->pluck('name', (new $users)->getKeyName())->all())
-                ->searchable(),
+                ->searchable()
+                ->hintAction(Help::action('tma.tickets.soumettre', __('Et sans intervenant ?'))),
         ];
     }
 

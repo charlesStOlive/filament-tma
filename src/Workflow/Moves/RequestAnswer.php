@@ -57,7 +57,7 @@ class RequestAnswer extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('question', __('Question'))];
+        return [$this->messageField('question', __('Question'), help: ['tma.tickets.question-reponse', __('Que devient le ticket ?')])];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

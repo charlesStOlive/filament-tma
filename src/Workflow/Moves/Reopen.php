@@ -57,7 +57,7 @@ class Reopen extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Ce qui ne va pas'))];
+        return [$this->messageField('message', __('Ce qui ne va pas'), help: ['tma.tickets.validation', __('Valider ou rouvrir ?')])];
     }
 
     public function reason(array $data): ?string

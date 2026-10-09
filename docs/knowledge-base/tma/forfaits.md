@@ -41,3 +41,9 @@ Un dépassement ne bloque pas la saisie du temps, sauf si l'application est rég
 
 La consommation du forfait s'affiche en tête de la liste des tickets : consommé sur alloué, pourcentage, restant ou
 dépassement, et l'évolution par mois. Elle se met à jour après chaque saisie de temps du centre de service.
+
+## En détail
+
+- [Un forfait pour un client ou une application](#modal-tma.forfaits.portee)
+- [Volume et rythme d'un forfait](#modal-tma.forfaits.volume)
+- [Les seuils d'un forfait](#modal-tma.forfaits.seuils)

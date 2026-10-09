@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas;
 
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use Filament\Infolists\Components\TextEntry;
@@ -42,12 +43,15 @@ class TaskInfolist
                     TextEntry::make('time')->label(__('Temps passé'))
                         ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
                     TextEntry::make('sync_status')->label(__('Synchro'))->badge()
+                        ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
                         ->visible(fn (ProjectTask $record): bool => $record->isShared())
                         ->helperText(fn (ProjectTask $record): ?string => $record->last_sync_error),
                     TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
                 ]),
             ]),
-            Section::make(__('Chronologie'))->columnSpanFull()->schema([
+            Section::make(__('Chronologie'))->columnSpanFull()
+                ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Commentaire ou note ?'))])
+                ->schema([
                 ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
             ]),
         ]);

@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Instances\Pages\EditInstance;
 use CharlesStOlive\FilamentTma\Filament\Resources\Instances\Pages\ListInstances;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Support\EnvFile;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\ServiceAccount;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\InstanceClient;
@@ -73,7 +74,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     /** Le menu d'aide de la page : relier une application cliente, et la synchronisation. */
     public static function getDocumentation(): array|string
     {
-        return ['tma.demarrer', 'tma.synchronisation'];
+        return ['tma.demarrer', 'tma.demarrer.identifiant', 'tma.demarrer.adresse', 'tma.demarrer.jetons', 'tma.synchronisation.erreurs'];
     }
 
     public static function form(Schema $schema): Schema
@@ -96,15 +97,20 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                             ->visible(fn (?Instance $record): bool => $record === null || ! $record->hasTickets())
                             ->action(fn ($set) => $set('uid', self::newUid())),
                     )
-                    ->helperText(__('Proposé d’office : gardez-le, l’application le recevra par « Configuration de l’application ». Si elle en a déjà un, collez le sien. Il ne change plus une fois des tickets reçus.')),
-                TextInput::make('url')->label(__('Adresse'))->required()->url()->maxLength(255)->columnSpanFull(),
+                    ->helperText(__('Proposé d’office : gardez-le, l’application le recevra par « Configuration de l’application ». Si elle en a déjà un, collez le sien. Il ne change plus une fois des tickets reçus.'))
+                    ->hintAction(Help::action('tma.demarrer.identifiant', __('À quoi sert l’identifiant ?'))),
+                TextInput::make('url')->label(__('Adresse'))->required()->url()->maxLength(255)->columnSpanFull()
+                    ->helperText(__('La racine du site de l’application, telle que le centre de service la joint.'))
+                    ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
                 Select::make('client_id')->label(__('Client'))
                     ->visible(filled($clientModel))
                     ->options(fn (): array => $clientModel ? $clientModel::query()->orderBy(config('filament-tma.models.client_title', 'name'))->pluck(config('filament-tma.models.client_title', 'name'), (new $clientModel)->getKeyName())->all() : [])
                     ->searchable(),
                 Toggle::make('is_active')->label(__('Active'))->default(true),
             ]),
-            Section::make(__('Accès'))->columns(2)->columnSpanFull()->schema([
+            Section::make(__('Accès'))->columns(2)->columnSpanFull()
+                ->headerActions([Help::title('tma.demarrer.jetons', __('Les comptes et leurs jetons'))])
+                ->schema([
                 Select::make('api_user_id')->label(__('Compte de service de l’application'))
                     ->helperText(__('L’utilisateur d’ici dont l’application détient un jeton pour appeler le centre de service. « Configuration de l’application » le crée.'))
                     ->options(fn (): array => $userModel::query()->orderBy('name')->pluck('name', (new $userModel)->getKeyName())->all())
@@ -162,10 +168,13 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ])
             ->schema([
                 TextInput::make('account_email')->label(__('Compte de service, ici'))->email()->required()
-                    ->helperText(__('Créé s’il n’existe pas, sans rôle : il n’entre dans aucun écran.')),
+                    ->helperText(__('Créé s’il n’existe pas, sans rôle : il n’entre dans aucun écran.'))
+                    ->hintAction(Help::action('tma.demarrer.jetons', __('Pourquoi un compte de service ?'))),
                 TextInput::make('master_url')->label(__('Adresse du centre de service, vue de l’application'))->url()->required()
-                    ->helperText(__('En développement, l’adresse du conteneur (http://filbreeze.test…), pas localhost.')),
-                TextInput::make('ticket_prefix')->label(__('Préfixe des tickets de l’application'))->required()->maxLength(10),
+                    ->helperText(__('En développement, l’adresse du conteneur (http://filbreeze.test…), pas localhost.'))
+                    ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
+                TextInput::make('ticket_prefix')->label(__('Préfixe des tickets de l’application'))->required()->maxLength(10)
+                    ->hintAction(Help::action('tma.demarrer.identifiant', __('Le préfixe des numéros'))),
             ])
             ->action(function (Instance $record, array $data, $livewire): void {
                 $user = ServiceAccount::user($data['account_email'], __('Application :name (TMA)', ['name' => $record->name]));

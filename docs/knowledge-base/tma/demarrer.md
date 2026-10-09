@@ -114,3 +114,9 @@ service de ceux qui n'ont que le traitement local.
 | `attachments.accepted_types` | images, PDF, bureautique, CSV, ZIP | types de fichiers acceptés |
 | `attachments.max_size_kb` | 10 240 | taille maximale d'un fichier |
 | `cleanup.retention_days` | 90 | délai avant suppression définitive |
+
+## En détail
+
+- [L'identifiant d'une application](#modal-tma.demarrer.identifiant)
+- [Les adresses des applications](#modal-tma.demarrer.adresse)
+- [Les comptes de service et leurs jetons](#modal-tma.demarrer.jetons)
