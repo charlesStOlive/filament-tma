@@ -78,7 +78,8 @@ Dépendances : `charlesstolive/filament-state-fusion-enhanced` (les états), `fi
 | `TMA_ALLOWANCE_NOTIFY` | maître : adresses prévenues aux seuils des forfaits (séparées par des virgules) |
 | `TMA_ATTACHMENTS_DISK` | disque **privé** des fichiers (défaut `local`) |
 
-Un ULID : `php -r "require 'vendor/autoload.php'; echo Symfony\Component\Uid\Ulid::generate();"`.
+`php artisan tma:install` écrit tout cela dans `.env` et génère l'identifiant ; dans le maître, « Applications
+clientes › Configuration de l'application » donne la commande complète à lancer dans une application cliente.
 
 Dans le maître, `config/filament-tma.php` déclare aussi le modèle des clients (`models.client`,
 `App\Models\Company` dans Filbreeze, et `models.client_title`, `title`).

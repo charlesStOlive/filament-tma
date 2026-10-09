@@ -20,7 +20,7 @@ return [
     | Cette instance
     |--------------------------------------------------------------------------
     |
-    | uid : identifiant global et stable de l'installation (un ULID, `php artisan tma:install` en propose un).
+    | uid : identifiant global et stable de l'installation (un ULID ; `php artisan tma:install` le génère et l'écrit).
     | Il ne doit plus changer une fois des tickets créés : il est écrit dans chacun.
     | ticket_prefix : début des numéros lisibles des tickets créés ici (DES-0042) ; task_prefix : celui des tâches
     | projet, numérotées par le maître (T-0007).

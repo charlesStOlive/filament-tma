@@ -13,6 +13,7 @@ class EditInstance extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            InstanceResource::setupClientAction(),
             InstanceResource::pingAction(),
             InstanceResource::usersAction(),
             DeleteAction::make(),
@@ -22,5 +23,11 @@ class EditInstance extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         return InstanceData::withClientType($data);
+    }
+
+    /** Affiche la configuration produite par « Configuration de l'application » (`replaceMountedAction`). */
+    public function clientEnvAction(): \Filament\Actions\Action
+    {
+        return InstanceResource::clientEnvAction();
     }
 }

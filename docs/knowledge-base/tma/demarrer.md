@@ -33,49 +33,53 @@ Le thème Filament de l'application doit lire les vues du module et de la base d
 
 Puis `npm run build`.
 
-## 2. Régler chaque application (`.env`)
+## 2. Configurer le centre de service
 
-| Variable | Centre de service | Application cliente |
-| --- | --- | --- |
-| `TMA_MODE` | `master` | `client` |
-| `TMA_INSTANCE_UID` | un ULID propre à l'application | un ULID propre à l'application |
-| `TMA_INSTANCE_NAME` | `Filbreeze` | `Desapp` |
-| `TMA_TICKET_PREFIX` | `FIL` | `DES` |
-| `TMA_TASK_PREFIX` | `T` | — |
-| `TMA_MASTER_URL` | — | l'adresse du centre de service |
-| `TMA_MASTER_TOKEN` | — | le jeton émis par le centre de service (étape 4) |
-| `TMA_MASTER_API_USER` | — | l'e-mail du compte de service créé ici (étape 3) |
+```bash
+php artisan tma:install --mode=master --name=Filbreeze --prefix=FIL
+```
 
-L'identifiant (`TMA_INSTANCE_UID`) est **définitif** : il est écrit dans chaque ticket. Pour en obtenir un :
-`php -r "require 'vendor/autoload.php'; echo Symfony\Component\Uid\Ulid::generate();"`.
+La commande écrit dans `.env` le mode, le nom, le préfixe des numéros de tickets et un **identifiant** généré
+(`TMA_INSTANCE_UID`). Cet identifiant est **définitif** : il est écrit dans chaque ticket, et la commande refuse de
+le changer une fois des tickets créés.
 
-Sans `TMA_MASTER_URL`, une application cliente ne fait que du traitement local.
-
-Dans le centre de service, `config/filament-tma.php` déclare aussi le modèle des clients :
+Dans `config/filament-tma.php`, déclarez aussi le modèle des clients :
 `'models' => ['client' => App\Models\Company::class, 'client_title' => 'title']`.
 
-## 3. Dans l'application cliente : le compte du centre de service
+## 3. Déclarer l'application cliente (centre de service)
 
-Créez un utilisateur de service (par exemple `filbreeze@api.local`), sans rôle, et émettez-lui un **jeton API**.
-C'est par ce jeton que le centre de service appellera l'application. Son e-mail va dans `TMA_MASTER_API_USER`.
+**TMA › Applications clientes › Nouveau** : son nom, son adresse et son client. L'**identifiant** est proposé
+d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà le sien, collez-le à la place.
 
-## 4. Dans le centre de service : le compte de l'application cliente
+Puis **Configuration de l'application** (dans la liste, ou en tête de la fiche) :
 
-Créez un utilisateur de service (par exemple `desapp@api.local`) et émettez-lui un **jeton API**. Ce jeton va dans
-`TMA_MASTER_TOKEN` de l'application cliente.
+- le **compte de service** par lequel l'application appellera le centre de service est créé (sans rôle : il n'entre
+  dans aucun écran), et reçoit un jeton ; un nouveau jeton remplace l'ancien ;
+- l'**adresse du centre de service** est celle que l'application cliente doit appeler (en développement, celle du
+  conteneur, pas `localhost`) ;
+- une fenêtre montre la **commande à lancer dans l'application cliente**, avec un bouton pour la copier.
 
-## 5. Dans le centre de service : déclarer l'application
+Ce jeton n'est montré qu'une fois. Perdu, il suffit de relancer « Configuration de l'application ».
 
-**TMA › Applications clientes › Nouveau** :
+## 4. Configurer l'application cliente
 
-- **Identifiant** : le `TMA_INSTANCE_UID` de l'application cliente ;
-- **Adresse** : son URL ;
-- **Client** : la société ;
-- **Compte de service** : l'utilisateur de l'étape 4 ;
-- **Jeton** : celui de l'étape 3.
+Lancez-y la commande copiée. Elle ressemble à :
 
-Le bouton **Tester** vérifie la connexion ; **Utilisateurs** montre qui, dans l'application cliente, a accès au
-centre de service.
+```bash
+php artisan tma:install --mode=client --uid=01K… --name='Desapp' --prefix='DES' \
+    --master-url='https://filbreeze.example' --master-token=eyJ… --master-account=centre-de-service@tma.local
+```
+
+Elle écrit la configuration dans `.env`, puis crée le compte par lequel le **centre de service** appellera
+l'application (`centre-de-service@tma.local`, sans rôle), et **affiche son jeton**.
+
+## 5. Terminer dans le centre de service
+
+Sur la fiche de l'application cliente, collez ce jeton dans **Jeton émis par l'application**, enregistrez, puis
+**Tester** : la connexion est vérifiée dans les deux sens. **Utilisateurs** montre qui, dans l'application cliente,
+a accès au centre de service.
+
+Sans configuration du centre de service, une application cliente ne fait que du traitement local.
 
 ## 6. Faire tourner les tâches de fond
 

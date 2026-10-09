@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma;
 use CharlesStOlive\FilamentTma\Commands\CleanupCommand;
 use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\CommentTicketCommand;
+use CharlesStOlive\FilamentTma\Commands\InstallCommand;
 use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
 use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
@@ -62,6 +63,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 PublishScheduledTasksCommand::class,
                 SendDigestCommand::class,
                 CleanupCommand::class,
+                InstallCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',

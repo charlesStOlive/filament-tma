@@ -14,4 +14,10 @@ class ListInstances extends ListRecords
     {
         return [CreateAction::make()];
     }
+
+    /** Affiche la configuration produite par « Configuration de l'application » (`replaceMountedAction`). */
+    public function clientEnvAction(): \Filament\Actions\Action
+    {
+        return InstanceResource::clientEnvAction();
+    }
 }

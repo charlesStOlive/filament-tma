@@ -56,6 +56,13 @@ class Instance extends Model
         return $uid === null ? null : static::query()->where('uid', $uid)->first();
     }
 
+    /** Des tickets ou des tâches ont déjà été reçus de cette application, ou lui sont destinés : son identifiant ne change plus. */
+    public function hasTickets(): bool
+    {
+        return Ticket::withTrashed()->where('source_instance_uid', $this->getOriginal('uid') ?? $this->uid)->exists()
+            || ProjectTask::withTrashed()->where('target_instance_uid', $this->getOriginal('uid') ?? $this->uid)->exists();
+    }
+
     public function apiUrl(string $path = ''): string
     {
         return rtrim($this->url, '/').'/api/tma/v1/'.ltrim($path, '/');

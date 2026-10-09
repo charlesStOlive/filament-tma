@@ -14,39 +14,26 @@ dates sont en UTC (ISO 8601). Les identifiants sont les **ulid** globaux, identi
 ## Mise en place d'un couple maître / client
 
 Exemple avec Filbreeze (maître) et Desapp (client). Les deux utilisent Passport (guard `api`), que
-`filament-permission-manager` installe.
+`filament-permission-manager` installe. Le détail, pour les utilisateurs, est dans la page d'aide « Configuration de
+départ » (`docs/knowledge-base/tma/demarrer.md`).
 
-1. **Desapp** : `.env`
-
-   ```dotenv
-   TMA_MODE=client
-   TMA_INSTANCE_UID=01K…        # un ULID, propre à Desapp, définitif
-   TMA_TICKET_PREFIX=DES
-   TMA_MASTER_URL=https://filbreeze.example
-   TMA_MASTER_TOKEN=…           # étape 3
-   TMA_MASTER_API_USER=filbreeze@api.local   # étape 2 (id ou e-mail)
-   ```
-
-2. **Desapp** : créer un utilisateur de service, par exemple `filbreeze@api.local`, sans rôle, et lui émettre un
-   jeton (écran de profil de filament-permission-manager, ou `ApiTokenService::createToken()`). C'est par ce jeton
-   que le maître appellera Desapp. Seul cet utilisateur est accepté par l'API du client.
-
-3. **Filbreeze** : créer un utilisateur de service, par exemple `desapp@api.local`, et lui émettre un jeton. Ce
-   jeton va dans `TMA_MASTER_TOKEN` de Desapp.
-
-4. **Filbreeze** : écran **TMA › Applications clientes** › Nouveau :
-   - identifiant = `TMA_INSTANCE_UID` de Desapp ; adresse = l'URL de Desapp ; client = la société ;
-   - compte de service = `desapp@api.local` (étape 3) ; jeton = celui de l'étape 2.
-   - Bouton **Tester** : le maître appelle `GET ping` de Desapp et vérifie l'identifiant.
-
+1. **Filbreeze** : `php artisan tma:install --mode=master --name=Filbreeze --prefix=FIL` (mode, identifiant généré,
+   nom, préfixe, dans `.env`).
+2. **Filbreeze** : **TMA › Applications clientes › Nouveau** (l'identifiant est proposé), puis **Configuration de
+   l'application**. Le maître crée le compte de service de Desapp (sans rôle) et son jeton Passport
+   (`Support\ServiceAccount`, l'ancien jeton est révoqué), et affiche la commande à lancer dans Desapp.
+3. **Desapp** : lancer cette commande,
+   `php artisan tma:install --mode=client --uid=… --master-url=… --master-token=… --master-account=centre-de-service@tma.local`.
+   Elle écrit `.env` (`TMA_MODE`, `TMA_INSTANCE_UID`, `TMA_MASTER_URL`, `TMA_MASTER_TOKEN`, `TMA_MASTER_API_USER`),
+   crée le compte par lequel le maître appellera Desapp, et affiche son jeton.
+4. **Filbreeze** : coller ce jeton dans **Jeton émis par l'application**, puis **Tester** (`GET ping` de Desapp).
 5. **Filbreeze** : un worker de file doit tourner (`php artisan queue:work`) : les envois vers les clients passent
    par la file.
-
 6. **Desapp** : donner `tma.ticket.workflow.transmit` aux rôles qui peuvent transmettre au centre de service. Les
    autres utilisateurs n'ont que le traitement local et n'apparaissent pas chez le maître.
 
 En développement, les deux Sail doivent se joindre : un réseau Docker commun (comme `shared-db`), et les URL des
-conteneurs (`http://filbreeze.test`, `http://desapp.test`…) dans `TMA_MASTER_URL` et l'adresse de l'instance.
+conteneurs dans l'adresse du centre de service et dans celle de l'application cliente.
 
 ## Authentification et isolation
 
