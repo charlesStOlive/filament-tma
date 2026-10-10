@@ -99,7 +99,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             $ticket->source_instance_uid ??= Tma::instanceUid();
             $ticket->created_on_instance_uid ??= Tma::instanceUid();
             $ticket->last_activity_at ??= now();
-            $ticket->number ??= static::nextNumber($ticket->source_instance_uid);
+            $ticket->number ??= static::nextNumber($ticket->created_on_instance_uid);
         });
 
         static::saving(function (Ticket $ticket): void {
@@ -115,12 +115,16 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             ->fileAttachmentProvider(SpatieMediaLibraryFileAttachmentProvider::make()->collection(self::CONTENT_COLLECTION));
     }
 
-    /** DES-0042 : le préfixe de l'installation, puis un compteur propre à l'application source. */
-    public static function nextNumber(string $sourceInstanceUid): string
+    /**
+     * DES-0042 : le préfixe de l'installation où le ticket est créé, puis son compteur, sur les tickets créés là.
+     * Un ticket que le Support prépare pour un client porte donc le numéro du Support (FIL-0003) : le Support ne
+     * connaît pas les tickets que le client garde chez lui, et ne doit pas prendre un numéro qu'il a déjà.
+     */
+    public static function nextNumber(string $createdOnInstanceUid): string
     {
-        return DB::transaction(function () use ($sourceInstanceUid): string {
+        return DB::transaction(function () use ($createdOnInstanceUid): string {
             $last = static::withTrashed()
-                ->where('source_instance_uid', $sourceInstanceUid)
+                ->where('created_on_instance_uid', $createdOnInstanceUid)
                 ->lockForUpdate()
                 ->orderByDesc('id')
                 ->value('number');
