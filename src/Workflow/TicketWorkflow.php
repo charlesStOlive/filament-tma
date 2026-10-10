@@ -216,7 +216,7 @@ class TicketWorkflow
      * Le maître prépare un ticket pour une application cliente, au nom de l'un de ses utilisateurs (addendum §3) :
      * un brouillon invisible chez le client jusqu'à sa publication (tout de suite, ou à `publish_at`).
      *
-     * @param  array<string, mixed>  $attributes  title, description, priority, due_on, publish_at
+     * @param  array<string, mixed>  $attributes  title, description, priority, publish_at
      * @param  array{id: string, name: string, email?: string|null}  $requester  un utilisateur de l'application (`Sync\RemoteUsers`)
      */
     public function createForClient(Instance $instance, array $requester, array $attributes, Context $context): Ticket
@@ -232,7 +232,7 @@ class TicketWorkflow
         $actor = Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
 
         $ticket = Ticket::create([
-            ...collect($attributes)->only(['title', 'description', 'priority', 'due_on', 'publish_at'])->all(),
+            ...collect($attributes)->only(['title', 'description', 'priority', 'publish_at'])->all(),
             'source_instance_uid' => $instance->uid,
             'created_on_instance_uid' => Tma::instanceUid(),
             'handling_mode' => HandlingMode::ServiceDesk,
@@ -250,7 +250,7 @@ class TicketWorkflow
     /**
      * Crée un ticket en brouillon, au nom de l'utilisateur du contexte.
      *
-     * @param  array<string, mixed>  $attributes  title, description, priority, due_on
+     * @param  array<string, mixed>  $attributes  title, description, priority
      */
     public function create(array $attributes, Context $context): Ticket
     {
@@ -259,7 +259,7 @@ class TicketWorkflow
         }
 
         $ticket = Ticket::create([
-            ...collect($attributes)->only(['title', 'description', 'priority', 'due_on'])->all(),
+            ...collect($attributes)->only(['title', 'description', 'priority'])->all(),
             'requester_actor_id' => $context->actor->getKey(),
             'created_by_actor_id' => $context->actor->getKey(),
         ]);

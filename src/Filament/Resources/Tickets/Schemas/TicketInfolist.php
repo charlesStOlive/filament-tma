@@ -80,7 +80,6 @@ class TicketInfolist
                     TextEntry::make('priority')->label(__('Priorité'))->badge(),
                     TextEntry::make('requester.name')->label(__('Demandeur')),
                     TextEntry::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—'),
-                    TextEntry::make('due_on')->label(__('Échéance'))->date('d/m/Y')->placeholder('—'),
                     TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                         ->visible(fn (Ticket $record): bool => $record->paused_until !== null),
                     TextEntry::make('time_total')->label(__('Temps passé'))

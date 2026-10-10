@@ -44,7 +44,6 @@ final class Payload
             'priority' => $ticket->priority->value,
             'state' => $ticket->state::getMorphClass(),
             'handling_mode' => $ticket->handling_mode->value,
-            'due_on' => $ticket->due_on?->toDateString(),
             'requester' => self::actor($ticket->requester),
             'assignee' => self::actor($ticket->assignee),
             'created_by' => self::actor($ticket->createdBy),

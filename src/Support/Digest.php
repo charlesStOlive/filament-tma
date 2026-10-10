@@ -32,7 +32,6 @@ final class Digest
             'state' => $item->state->getLabel(),
             'since' => $since,
             'late' => $since !== null && now()->diffInDays($since, true) > $lateAfter
-                || ($item instanceof Ticket && $item->due_on?->isPast())
                 || ($item instanceof ProjectTask && $item->ends_on?->isPast()),
             'url' => rescue(fn () => $item instanceof Ticket ? TicketUrl::view($item) : null, null, false),
         ];

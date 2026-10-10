@@ -11,9 +11,9 @@ chez le Support, à **un seul client**. Son numéro dit d'où il vient : `DES-00
 
 ## Ouvrir une demande
 
-**Support › Tickets › Nouvelle demande** : un titre, une priorité, une échéance souhaitée, une description et des
-pièces jointes. La demande commence en **Brouillon** : vous seul (et votre application) la voyez. Vous pouvez la
-modifier autant que vous voulez.
+**Support › Tickets › Nouvelle demande** : un titre, une priorité, une description et des pièces jointes. La
+demande commence en **Brouillon** : vous seul (et votre application) la voyez. Vous pouvez la modifier autant que
+vous voulez.
 
 Ensuite :
 
@@ -92,7 +92,7 @@ programmée**.
 
 ## En détail
 
-- [Priorité et échéance](#modal-tma.tickets.priorite-echeance)
+- [La priorité](#modal-tma.tickets.priorite-echeance)
 - [Confier à l'équipe ou transmettre au Support](#modal-tma.tickets.soumettre)
 - [Demander des précisions, répondre](#modal-tma.tickets.question-reponse)
 - [La pause et sa reprise](#modal-tma.tickets.pause)

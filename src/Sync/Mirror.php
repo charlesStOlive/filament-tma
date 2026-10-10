@@ -60,7 +60,7 @@ final class Mirror
         $ticket->forceFill([
             ...Arr::only($payload, [
                 'number', 'source_instance_uid', 'created_on_instance_uid', 'title', 'description', 'priority',
-                'state', 'handling_mode', 'due_on',
+                'state', 'handling_mode',
             ]),
             ...self::dates($payload, [
                 'submitted_at', 'taken_at', 'waiting_since', 'paused_until', 'validation_requested_at', 'closed_at',

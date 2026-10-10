@@ -63,7 +63,6 @@ final class TicketView
         return [
             ...self::summary($ticket),
             'description' => Html::toText($ticket->description),
-            'due_on' => $ticket instanceof Ticket ? $ticket->due_on?->toDateString() : $ticket->ends_on?->toDateString(),
             'time_by_month' => TimeTotals::for($ticket)['by_month'],
             'timeline' => TimelineItems::for($ticket, $withNotes)->map(fn (array $row): array => match ($row['kind']) {
                 'transition' => self::transition($row['item']),

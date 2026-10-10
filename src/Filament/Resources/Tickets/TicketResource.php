@@ -157,7 +157,6 @@ class TicketResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
                 TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable(),
                 TextColumn::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—')->toggleable(),
-                TextColumn::make('due_on')->label(__('Échéance'))->date('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('sync_status')->label(__('Synchro'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
                     ->toggleable(isToggledHiddenByDefault: true),

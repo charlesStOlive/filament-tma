@@ -76,6 +76,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_filament_tma_agents_tables',
                 'add_short_name_to_tma_instances_table',
                 'convert_tma_summary_entries_to_messages',
+                'drop_due_on_from_tma_tickets_table',
             ]);
     }
 

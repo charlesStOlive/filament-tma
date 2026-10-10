@@ -8,7 +8,6 @@ use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -62,9 +61,6 @@ class TicketForm
                     ->default(Priority::Normal->value)
                     ->required()
                     ->hintAction(Help::action('tma.tickets.priorite-echeance', __('À quoi sert la priorité ?'))),
-                DatePicker::make('due_on')
-                    ->label(__('Échéance souhaitée'))
-                    ->hintAction(Help::action('tma.tickets.priorite-echeance', __('Que se passe-t-il à l’échéance ?'))),
             ])->columnSpanFull(),
             RichEditor::make('description')
                 ->label(__('Description'))

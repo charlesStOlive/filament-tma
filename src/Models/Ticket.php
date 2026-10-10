@@ -72,7 +72,6 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             'priority' => Priority::class,
             'handling_mode' => HandlingMode::class,
             'sync_status' => SyncStatus::class,
-            'due_on' => 'date',
             'publish_at' => 'datetime',
             'submitted_at' => 'datetime',
             'taken_at' => 'datetime',

@@ -93,7 +93,6 @@ Une personne, dans l'application où elle existe.
   "priority": "low|normal|high|urgent",
   "state": "draft|submitted|in_progress|awaiting_requester|paused|pending_validation|closed|cancelled",
   "handling_mode": "local|service_desk",
-  "due_on": "2026-10-31",
   "requester": { "…acteur" }, "assignee": { "…acteur" } , "created_by": { "…acteur" },
   "submitted_at": "…", "taken_at": "…", "waiting_since": "…", "paused_until": "…",
   "validation_requested_at": "…", "closed_at": "…", "cancelled_at": "…",
