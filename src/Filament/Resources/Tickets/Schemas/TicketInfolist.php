@@ -52,7 +52,7 @@ class TicketInfolist
                             ->state(fn (Ticket $record): ?string => $record->waitingOn())
                             ->placeholder('—'),
                         TextEntry::make('handling_mode')->label(__('Traité par'))->badge()
-                            ->formatStateUsing(fn (Ticket $record): string => $record->handledBy())
+                            ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié'))
                             ->hintAction(Help::action('tma.comprendre.traitement', __('Équipe locale ou Support ?'))),
                         TextEntry::make('priority')->label(__('Priorité'))->badge(),
                         TextEntry::make('requester.name')->label(__('Demandeur')),

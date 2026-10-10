@@ -142,7 +142,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('title')->label(__('Titre'))->searchable()->limit(60)->wrap(),
                 TextColumn::make('state')->label(__('État'))->badge(),
                 TextColumn::make('handling_mode')->label(__('Traité par'))->badge()->toggleable()
-                    ->formatStateUsing(fn (Ticket $record): string => $record->handledBy()),
+                    ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié')),
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
                 TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable(),
                 TextColumn::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—')->toggleable(),

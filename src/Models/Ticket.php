@@ -189,9 +189,16 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         };
     }
 
-    /** Qui traite la demande, en clair : l'équipe locale du client (« Équipe EDM »), ou le Support. */
-    public function handledBy(): string
+    /**
+     * Qui traite la demande, en clair : l'équipe locale du client (« Équipe EDM »), ou le Support. Null pour un
+     * brouillon du client, qui n'est encore confié à personne.
+     */
+    public function handledBy(): ?string
     {
+        if ($this->state instanceof Draft && $this->handling_mode === HandlingMode::Local) {
+            return null;
+        }
+
         return $this->handling_mode === HandlingMode::Local ? Terms::team($this->source_instance_uid) : Terms::support();
     }
 
