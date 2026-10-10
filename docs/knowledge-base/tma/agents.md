@@ -16,7 +16,7 @@ Sur un ticket **traité par le Support** (ou une tâche projet), elle agit **pou
 
 - elle a les passages de l'équipe qui traite (Prendre en charge, Demander des précisions, Marquer comme résolu…),
   jamais ceux du demandeur (Répondre, Confirmer et clore, Rouvrir) : elle ne s'écrit jamais à elle-même ;
-- ses commentaires, réponses et notes sont écrits **chez le Support, en son nom de là-bas** ; une note y reste (elle
+- ses messages, réponses et notes internes sont écrits **chez le Support, en son nom de là-bas** ; une note y reste (elle
   n'est pas visible dans l'application cliente) ;
 - elle saisit son temps (**Saisir du temps**), enregistré chez le Support ;
 - elle ne transmet pas de demande au Support : elle en fait partie.

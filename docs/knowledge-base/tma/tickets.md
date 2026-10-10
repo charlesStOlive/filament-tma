@@ -59,7 +59,7 @@ Les boutons en haut de la fiche ne montrent que les passages possibles **mainten
 | Clore sans réponse | l'équipe qui traite | un motif (facultatif) |
 | Annuler | le demandeur avant la prise en charge, l'équipe qui traite ensuite | un motif (sauf en brouillon) |
 
-Un **commentaire** ne fait jamais changer l'état : pour rendre la main, il faut le passage qui le dit (« Répondre »,
+Un **message** ne fait jamais changer l'état : pour rendre la main, il faut le passage qui le dit (« Répondre »,
 « Confirmer et clore »…). Voir [La chronologie](#modal-tma.chronologie).
 
 ## Qui peut modifier un ticket
@@ -67,13 +67,13 @@ Un **commentaire** ne fait jamais changer l'état : pour rendre la main, il faut
 - En **brouillon** : son auteur.
 - Ensuite : l'**équipe qui traite** la demande, quand le ticket l'attend.
 - Une fois un ticket transmis au Support, l'application cliente ne modifie plus ses champs : elle ajoute des
-  commentaires, des notes, des fichiers.
+  messages, des notes internes, des fichiers.
 
 ## La clôture automatique
 
 Quand le ticket attend le demandeur (des précisions, ou sa confirmation) et que **rien ne se passe pendant 28
 jours**, il est clos automatiquement. Le demandeur reçoit un courriel **7 jours avant**, puis à la clôture. Un
-simple commentaire remet le compte à zéro. Voir [Rappels et notifications](#modal-tma.notifications).
+simple message remet le compte à zéro. Voir [Rappels et notifications](#modal-tma.notifications).
 
 ## Les tickets préparés par le Support
 

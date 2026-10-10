@@ -7,15 +7,15 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use Illuminate\Console\Command;
 
 /**
- * `tma:log DES-0042 --hours=2 --summary="…"` : saisir du temps (dans le maître) et, à part, un résumé
- * d'intervention dans la chronologie (CDC §16). `--summary-file` lit un résumé long dans un fichier (`-` : l'entrée
+ * `tma:log DES-0042 --hours=2 --summary="…"` : saisir du temps (dans le maître) et, à part, ce qui a été fait, en
+ * message dans la chronologie (CDC §16). `--summary-file` lit un résumé long dans un fichier (`-` : l'entrée
  * standard).
  */
 class LogTimeCommand extends Command
 {
     use UsesTmaBackend;
 
-    protected $description = 'Saisit du temps sur un ticket, avec un résumé d’intervention';
+    protected $description = 'Saisit du temps sur un ticket, avec un message qui dit ce qui a été fait';
 
     public function __construct()
     {
@@ -25,10 +25,10 @@ class LogTimeCommand extends Command
             {--hours= : Durée en heures (1.5)}
             {--days= : Durée en jours (journée de '.(int) (config('filament-tma.time.day_minutes', 420) / 60).' h)}
             {--date= : Jour de l’intervention (AAAA-MM-JJ, aujourd’hui par défaut)}
-            {--summary= : Résumé d’intervention}
+            {--summary= : Ce qui a été fait (écrit en message dans la chronologie)}
             {--summary-file= : Fichier du résumé (- pour l’entrée standard)}
             {--non-billable : Temps non facturable}
-            {--internal : Le résumé reste une note interne (non partagée avec le client)}
+            {--internal : Le résumé devient une note interne (non lue par le client)}
             '.$this->backendOptions();
 
         parent::__construct();

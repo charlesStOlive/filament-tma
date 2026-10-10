@@ -154,11 +154,12 @@ final class LocalBackend implements Backend
         $ticket = $this->find($ref);
         $context = $this->context();
 
-        // La durée et le résumé sont enregistrés séparément (CDC §16) ; ensemble, ou pas du tout.
+        // La durée et le résumé sont enregistrés séparément (CDC §16) : le résumé est un message (ou une note
+        // interne) de la chronologie. Ensemble, ou pas du tout.
         return Auditor::as($context, fn (): array => DB::transaction(function () use ($ticket, $minutes, $workedOn, $summary, $billable, $internal, $context): array {
             $time = app(TimeLog::class)->add($ticket, $minutes, $workedOn, self::firstLine($summary), $context, $billable);
             $entry = filled($summary)
-                ? app(Timeline::class)->add($ticket, $internal ? EntryType::Note : EntryType::Summary, self::toHtml($summary), $context, meta: ['time_entry' => $time->ulid])
+                ? app(Timeline::class)->add($ticket, $internal ? EntryType::Note : EntryType::Comment, self::toHtml($summary), $context, meta: ['time_entry' => $time->ulid])
                 : null;
 
             return [

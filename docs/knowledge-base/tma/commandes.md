@@ -18,8 +18,7 @@ php artisan tma:comment DES-0042 --body="…" [--note]
 
 Exemple : « Ajoute deux heures à DES-0042 avec un résumé de ce que j'ai fait » devient
 `tma:log DES-0042 --hours=2 --summary-file=resume.md`. La **durée** est enregistrée comme une saisie de temps, le
-**résumé** comme un « Résumé d'intervention » dans la chronologie, partagé avec le client (`--internal` en fait une
-note interne).
+**résumé** comme un message dans la chronologie, lu par le client (`--internal` en fait une note interne).
 
 ## La protection
 

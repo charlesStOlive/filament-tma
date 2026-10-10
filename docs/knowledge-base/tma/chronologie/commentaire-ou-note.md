@@ -1,21 +1,25 @@
 ---
-title: Commentaire ou note ?
+title: Message ou note interne ?
 icon: heroicon-o-chat-bubble-left-right
 order: 10
 ---
 
-# Commentaire ou note ?
+# Message ou note interne ?
 
-| | Commentaire | Note |
+| | Message | Note interne |
 | --- | --- | --- |
-| Pour qui | l'**échange** avec l'autre partie | l'**équipe**, en interne |
-| Qui la voit | les deux parties | seulement l'application où elle est écrite, et ceux qui ont le droit des notes |
+| Pour qui | l'**échange** avec tout le monde sur le ticket | votre **équipe** |
+| Qui la lit | tout le monde, demandeur compris | seulement l'application où elle est écrite, et ceux qui ont le droit des notes |
 | Change l'état ? | non | non |
+
+Une note interne sert à écrire ce qu'on ne dit pas au demandeur : une piste technique pas encore vérifiée, l'accès
+d'un compte de test, un point de facturation.
 
 ## Partager une note
 
-**Partager**, sous une note, la rend visible de l'autre partie (par exemple une analyse qui finalement les intéresse).
-Ce partage **ne se retire pas**.
+**Partager**, sous une note interne, la rend visible de l'**autre équipe** : l'équipe du client si vous êtes au
+Support, le Support si vous êtes chez le client. Le demandeur ne la lit toujours pas. Ce partage **ne se retire
+pas**.
 
 ## Répondre
 
@@ -24,4 +28,12 @@ type du message (une réponse à une note est une note), et une réponse à une 
 
 ## Sur un ticket terminé
 
-On ne commente plus ; les notes restent possibles.
+On n'écrit plus de message ; les notes internes restent possibles.
+
+## Les réglages
+
+Chaque application règle les notes dans `config/filament-tma.php` (`notes`) :
+
+- `TMA_NOTES_SHARING=false` retire le partage : une note ne quitte jamais son application ;
+- `TMA_NOTES=false` retire les notes internes : il n'y a plus que des messages. Utile quand une seule personne
+  intervient pour un client.

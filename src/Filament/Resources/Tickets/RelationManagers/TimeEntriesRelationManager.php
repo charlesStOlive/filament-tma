@@ -21,15 +21,19 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\TextSize;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\PaginationMode;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Le temps passé sur un ticket ou une tâche projet, dans le maître : une ligne par intervention, avec sa date (qui la range dans son
- * mois). Une saisie rattachée à une facture est verrouillée.
+ * Le temps passé sur un ticket ou une tâche projet, dans le maître : une ligne par intervention, avec sa date (qui la
+ * range dans son mois). Une saisie rattachée à une facture est verrouillée. La liste se range dans le volet de droite
+ * de la fiche (`HasInfoPane`).
  */
 class TimeEntriesRelationManager extends RelationManager
 {
@@ -69,19 +73,31 @@ class TimeEntriesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        // Une liste compacte, faite pour le volet de droite de la fiche (voir `HasInfoPane`) : qui, quand, combien,
+        // puis ce qui a été fait.
         return $table
             ->defaultSort('worked_on', 'desc')
+            ->paginationMode(PaginationMode::Simple)
+            ->defaultPaginationPageOption(10)
             ->columns([
-                TextColumn::make('worked_on')->label(__('Le'))->date('d/m/Y')->sortable(),
-                TextColumn::make('actor.name')->label(__('Intervenant')),
-                TextColumn::make('minutes')->label(__('Durée'))
-                    ->formatStateUsing(fn (int $state): string => Duration::format($state))
-                    ->summarize(Sum::make()->label(__('Total'))->formatStateUsing(fn ($state): string => Duration::format((int) $state))),
-                TextColumn::make('description')->label(__('Description'))->limit(80)->wrap(),
-                IconColumn::make('billable')->label(__('Facturable'))->boolean(),
-                IconColumn::make('invoiced')->label(__('Facturée'))
-                    ->state(fn (TimeEntry $record): bool => $record->isInvoiced())
-                    ->boolean()->trueIcon('heroicon-m-lock-closed')->falseIcon('heroicon-m-minus'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('actor.name')->label(__('Intervenant'))->weight(FontWeight::Medium),
+                        TextColumn::make('worked_on')->label(__('Le'))->date('d/m/Y')->color('gray')->size(TextSize::Small)->sortable(),
+                    ]),
+                    TextColumn::make('minutes')->label(__('Durée'))
+                        ->formatStateUsing(fn (int $state): string => Duration::format($state))
+                        ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
+                ]),
+                Stack::make([
+                    TextColumn::make('description')->label(__('Description'))->wrap()->color('gray')->size(TextSize::Small),
+                    TextColumn::make('flags')->label(__('Facturation'))
+                        ->state(fn (TimeEntry $record): array => array_values(array_filter([
+                            $record->billable ? null : __('Non facturable'),
+                            $record->isInvoiced() ? __('Facturée') : null,
+                        ])))
+                        ->badge()->color('gray')->size(TextSize::ExtraSmall),
+                ])->space(1),
             ])
             ->headerActions([
                 Action::make('logTime')

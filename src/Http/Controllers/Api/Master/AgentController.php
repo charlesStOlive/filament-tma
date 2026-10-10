@@ -59,7 +59,7 @@ class AgentController
     }
 
     /**
-     * Un commentaire ou une note. Avec `type` (comment, note, summary), `parent_ulid` et `files` (base64), c'est
+     * Un message ou une note interne. Avec `type` (comment, note), `parent_ulid` et `files` (base64), c'est
      * l'écriture d'un agent depuis une application cliente : la réponse donne alors aussi l'état du ticket à recopier.
      */
     public function entry(Request $request, string $ref): JsonResponse
@@ -67,7 +67,7 @@ class AgentController
         $data = $request->validate([
             'body' => ['required', 'string', 'max:500000'],
             'note' => ['boolean'],
-            'type' => ['nullable', 'in:comment,note,summary'],
+            'type' => ['nullable', 'in:comment,note'],
             'parent_ulid' => ['nullable', 'string', 'size:26'],
             'files' => ['array'],
         ]);

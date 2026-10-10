@@ -9,9 +9,10 @@ use Filament\Support\Contracts\HasLabel;
 /**
  * Une entrée de la chronologie.
  *
- * - Commentaire : l'échange entre les deux parties, partagé d'office.
- * - Note : reste dans l'application où elle est écrite, sauf si on la partage (`shared_at`).
- * - Résumé d'intervention : ce qui a été fait (souvent écrit par la commande `tma:log`), partagé.
+ * - Message : l'échange entre les deux parties, demandeur compris, partagé d'office. Ce qui a été fait (la commande
+ *   `tma:log`, avec une saisie de temps) est aussi un message.
+ * - Note interne : seule l'équipe de l'application où elle est écrite la lit, sauf si on la partage (`shared_at`) ;
+ *   voir `filament-tma.notes`.
  *
  * Une réponse est une entrée qui a un parent ; elle a le type de son parent.
  */
@@ -19,14 +20,12 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
 {
     case Comment = 'comment';
     case Note = 'note';
-    case Summary = 'summary';
 
     public function getLabel(): string
     {
         return match ($this) {
-            self::Comment => __('Commentaire'),
-            self::Note => __('Note'),
-            self::Summary => __('Résumé d’intervention'),
+            self::Comment => __('Message'),
+            self::Note => __('Note interne'),
         };
     }
 
@@ -35,7 +34,6 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
         return match ($this) {
             self::Comment => 'primary',
             self::Note => 'warning',
-            self::Summary => 'success',
         };
     }
 
@@ -44,7 +42,6 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
         return match ($this) {
             self::Comment => 'heroicon-m-chat-bubble-left-right',
             self::Note => 'heroicon-m-pencil-square',
-            self::Summary => 'heroicon-m-clipboard-document-check',
         };
     }
 

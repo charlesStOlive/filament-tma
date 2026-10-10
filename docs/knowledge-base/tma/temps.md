@@ -11,7 +11,7 @@ clientes en voient le total, et le détail par mois.
 
 ## Saisir du temps
 
-Sur la fiche, onglet **Temps passé › Saisir du temps** :
+Sur la fiche, dans le volet de droite, sous le suivi : **Temps passé › Saisir du temps** :
 
 - **Le** : le jour de l'intervention ; c'est lui qui range le temps dans son mois ;
 - **Durée**, en minutes, heures ou jours (une journée vaut 7 heures, réglable) ;
@@ -25,7 +25,7 @@ Le temps se saisit aussi sur un ticket terminé : on reporte souvent une interve
 ## Modifier ou supprimer
 
 Tant qu'une saisie n'est pas **rattachée à une facture**, elle se modifie et se supprime. Une fois rattachée, elle
-est **verrouillée** (cadenas dans la liste), quel que soit l'état de la facture : il faut d'abord défaire le
+est **verrouillée** (mention « Facturée » dans la liste), quel que soit l'état de la facture : il faut d'abord défaire le
 rattachement.
 
 ## Le forfait
@@ -35,7 +35,7 @@ dépassements, une saisie qui le ferait dépasser est refusée. Voir [Les forfai
 
 ## Depuis un assistant IA
 
-La commande `tma:log` saisit du temps et enregistre à part un résumé d'intervention. Voir
+La commande `tma:log` saisit du temps et écrit à part, en message, ce qui a été fait. Voir
 [Les commandes](#modal-tma.commandes).
 
 ## En détail

@@ -14,7 +14,7 @@ pendant 28 jours** est clos automatiquement.
 
 ## Ce qui compte comme activité
 
-Tout : un commentaire, une note, une réponse, un passage, une modification. **Un simple commentaire remet le compte à
+Tout : un message, une note interne, une réponse, un passage, une modification. **Un simple message remet le compte à
 zéro** (et l'avertissement aussi).
 
 ## Quelques garanties

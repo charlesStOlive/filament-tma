@@ -5,6 +5,8 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskMoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
@@ -16,10 +18,20 @@ use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
-/** La fiche d'une tâche projet : sa description, son suivi, sa chronologie, et (dans le maître) ses passages. */
+/**
+ * La fiche d'une tâche projet : sa description et sa chronologie, avec à droite le suivi et le temps passé
+ * (`HasInfoPane`) ; dans le maître, ses passages.
+ */
 class ViewTask extends ViewRecord
 {
+    use HasInfoPane;
+
     protected static string $resource = TaskResource::class;
+
+    protected function sideComponents(): array
+    {
+        return TaskInfolist::side();
+    }
 
     public function getTitle(): string
     {

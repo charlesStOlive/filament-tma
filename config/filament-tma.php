@@ -132,6 +132,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Notes internes
+    |--------------------------------------------------------------------------
+    |
+    | Une note interne n'est lue que par l'équipe de cette application ; un message, par tout le monde.
+    | enabled : false, il n'y a plus que des messages (une équipe d'une seule personne n'en a pas l'usage).
+    | sharing : une note d'ici peut être partagée avec l'autre application (l'équipe du client et le Support se
+    | parlent sans que le demandeur le lise). Chaque application règle le sien.
+    |
+    */
+
+    'notes' => [
+        'enabled' => env('TMA_NOTES', true),
+        'sharing' => env('TMA_NOTES_SHARING', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Clôture automatique
     |--------------------------------------------------------------------------
     |

@@ -25,12 +25,12 @@ programmer la publication (**Publication programmée**) : elle partira toute seu
 
 **Support › Tâches projet › Nouveau** : titre, application destinataire, projet, période (début, fin prévue), date de
 publication éventuelle, description et pièces jointes. Puis **Publier**, **Terminer** ou **Annuler**, et le temps
-passé dans l'onglet **Temps passé** (voir [Le temps passé](#modal-tma.temps)).
+passé dans le volet de droite, **Temps passé** (voir [Le temps passé](#modal-tma.temps)).
 
 ## Dans l'application cliente
 
 Les tâches publiées pour l'application apparaissent dans **Support › Tâches projet**, en lecture. On y participe par la
-[chronologie](#modal-tma.chronologie) : commentaires, notes, images, réponses. On ne crée pas de tâche et on ne
+[chronologie](#modal-tma.chronologie) : messages, notes internes, images, réponses. On ne crée pas de tâche et on ne
 change pas son état.
 
 ## En détail

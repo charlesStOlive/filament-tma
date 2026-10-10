@@ -15,9 +15,9 @@ Les droits du module se donnent dans l'écran des rôles, comme les autres. Tout
 | --- | --- |
 | `viewany`, `view` | voir la liste, ouvrir une fiche |
 | `create`, `edit`, `delete` | créer, modifier, supprimer (un brouillon) |
-| `comment` | commenter et répondre |
+| `comment` | écrire des messages et répondre |
 | `note` | lire et écrire les notes internes |
-| `share-note` | partager une note avec l'autre partie |
+| `share-note` | partager une note interne avec l'autre équipe |
 | `time` | saisir et modifier du temps (Support) |
 | `sync` | renvoyer un ticket ou une tâche à son application (Support) |
 | `workflow.{passage}` | faire ce passage : `workflow.take-charge`, `workflow.validate`… |

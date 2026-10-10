@@ -6,6 +6,8 @@ use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -18,12 +20,20 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
- * La fiche d'un ticket : la demande, son suivi, sa chronologie. En tête, les mouvements possibles maintenant pour
- * l'utilisateur, puis commenter et noter. Répondre et partager se lancent depuis la chronologie.
+ * La fiche d'un ticket : la demande et sa chronologie, avec à droite le suivi et le temps passé (`HasInfoPane`). En
+ * tête, les passages possibles maintenant pour l'utilisateur, puis écrire un message ou une note interne. Répondre
+ * et partager se lancent depuis la chronologie.
  */
 class ViewTicket extends ViewRecord
 {
+    use HasInfoPane;
+
     protected static string $resource = TicketResource::class;
+
+    protected function sideComponents(): array
+    {
+        return TicketInfolist::side();
+    }
 
     public function getTitle(): string
     {

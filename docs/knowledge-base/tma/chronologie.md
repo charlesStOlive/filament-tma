@@ -6,29 +6,32 @@ order: 40
 
 # La chronologie
 
-En bas de chaque ticket et de chaque tâche projet, la chronologie montre tout ce qui s'est passé, dans l'ordre :
-messages, changements d'état, avec leur auteur et leur date.
+Sous la demande, la chronologie montre tout ce qui s'est passé sur le ticket ou la tâche, dans l'ordre : messages,
+notes internes, changements d'état, avec leur auteur et leur date. Le suivi (état, qui doit agir…) est dans le
+volet de droite.
 
-## Commentaire, note, réponse
+## Message, note interne, réponse
 
-| Entrée | Qui la voit |
+| Entrée | Qui la lit |
 | --- | --- |
-| **Commentaire** | les deux parties : c'est l'échange avec le Support, ou entre collègues |
-| **Note** | seulement l'application où elle a été écrite, et seulement les personnes qui ont le droit des notes |
-| **Résumé d'intervention** | les deux parties ; souvent écrit avec une saisie de temps |
+| **Message** | tout le monde sur le ticket, demandeur compris, des deux côtés |
+| **Note interne** | seulement votre équipe : l'application où elle a été écrite, et les personnes qui ont le droit des notes |
 | **Réponse** | comme le message auquel elle répond |
 
-- **Commenter** et **Ajouter une note** sont en haut de la fiche.
+- **Écrire un message** et **Ajouter une note interne** sont en haut de la fiche.
 - **Répondre**, sous un message, ouvre un fil (sur un seul niveau) : pratique pour un échange question / réponse,
   avec des images.
-- **Partager**, sous une note, la rend visible de l'autre partie. Ce partage ne se retire pas. La réponse à une note
-  partagée est partagée aussi.
+- **Partager**, sous une note interne, la rend visible de l'autre équipe (l'équipe du client ou le Support), pas du
+  demandeur. Ce partage ne se retire pas. La réponse à une note partagée est partagée aussi.
 
-Ajouter une entrée ne change jamais l'état du ticket. Sur un ticket terminé, on ne commente plus ; les notes et les
-résumés d'intervention restent possibles.
+Ce qui a été fait, écrit avec une saisie de temps (par la commande `tma:log`), est un message comme les autres.
 
-Une note du Support ne quitte jamais le Support tant qu'elle n'est pas partagée ; une note d'une
-application cliente non plus.
+Ajouter une entrée ne change jamais l'état du ticket. Sur un ticket terminé, on n'écrit plus de message ; les notes
+internes restent possibles.
+
+Une note du Support ne quitte jamais le Support tant qu'elle n'est pas partagée ; une note d'une application
+cliente non plus. Chaque application peut retirer le partage, ou les notes internes elles-mêmes (voir
+[Message ou note interne ?](#modal-tma.chronologie.commentaire-ou-note)).
 
 ## Les fichiers
 
@@ -46,13 +49,13 @@ Tout est nettoyé à l'enregistrement : ni script, ni contenu actif, ni lien aut
 
 ## Sur un ticket transmis
 
-Dans l'application cliente, un commentaire, une réponse ou une note partagée part au Support **au moment
-où on l'écrit**. S'il ne répond pas, le message n'est pas enregistré et un avertissement le dit : rien n'est perdu
-en silence. Ce que le Support écrit arrive dans l'application cliente quelques instants plus tard. Voir
+Dans l'application cliente, un message, une réponse ou une note partagée part au Support **au moment où on
+l'écrit**. S'il ne répond pas, le message n'est pas enregistré et un avertissement le dit : rien n'est perdu en
+silence. Ce que le Support écrit arrive dans l'application cliente quelques instants plus tard. Voir
 [La synchronisation](#modal-tma.synchronisation).
 
 ## En détail
 
-- [Commentaire ou note ?](#modal-tma.chronologie.commentaire-ou-note)
+- [Message ou note interne ?](#modal-tma.chronologie.commentaire-ou-note)
 - [Les pièces jointes](#modal-tma.chronologie.fichiers)
 - [La mise en forme du texte](#modal-tma.chronologie.mise-en-forme)

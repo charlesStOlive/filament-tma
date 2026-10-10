@@ -30,23 +30,37 @@ final class Timeline
             return true;
         }
 
+        if ($type === EntryType::Note && ! self::notesEnabled()) {
+            return false;
+        }
+
         // Un membre du Support écrit dans le maître, qui contrôle ses droits de là-bas.
         if ($context->forSubject($ticket)->isAgent()) {
             return $type !== EntryType::Comment || ! $ticket->state->isFinal();
         }
 
         return match ($type) {
-            // L'échange s'arrête avec le ticket ; un résumé d'intervention (souvent écrit après coup, avec le temps) et
-            // les notes internes restent possibles.
+            // L'échange s'arrête avec le ticket ; les notes internes restent possibles.
             EntryType::Comment => ! $ticket->state->isFinal() && TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
-            EntryType::Summary => TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
             EntryType::Note => TmaGate::allows($context->user, TmaGate::NOTE, $ticket),
         };
     }
 
     public function canReadNotes(Trackable $ticket, Context $context): bool
     {
-        return TmaGate::allows($context->user, TmaGate::NOTE, $ticket);
+        return self::notesEnabled() && TmaGate::allows($context->user, TmaGate::NOTE, $ticket);
+    }
+
+    /** Les notes internes existent dans cette application (`filament-tma.notes.enabled`). */
+    public static function notesEnabled(): bool
+    {
+        return (bool) config('filament-tma.notes.enabled', true);
+    }
+
+    /** Une note interne d'ici peut être partagée avec l'autre application (`filament-tma.notes.sharing`). */
+    public static function notesSharing(): bool
+    {
+        return self::notesEnabled() && (bool) config('filament-tma.notes.sharing', true);
     }
 
     public function canShare(Entry $note, Context $context): bool
@@ -56,7 +70,8 @@ final class Timeline
             return false;
         }
 
-        return $note->type === EntryType::Note
+        return self::notesSharing()
+            && $note->type === EntryType::Note
             && $note->shared_at === null
             && $note->isWrittenHere()
             && TmaGate::allows($context->user, TmaGate::SHARE_NOTE, $note->subject);

@@ -19,7 +19,6 @@
 .dark .fi-tma-entry { border-color: var(--gray-700); background: color-mix(in oklab, var(--gray-900) 60%, transparent); }
 .fi-tma-entry--note { border-color: color-mix(in oklab, var(--warning-500) 40%, transparent); }
 .fi-tma-entry--local { border-style: dashed; }
-.fi-tma-entry--summary { border-color: color-mix(in oklab, var(--success-500) 40%, transparent); }
 
 .fi-tma-entry-header { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.875rem; }
 .fi-tma-entry-instance { font-size: 0.75rem; color: var(--gray-500); }

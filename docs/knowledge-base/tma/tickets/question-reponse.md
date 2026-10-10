@@ -16,7 +16,7 @@ avec le demandeur, et le ticket attend le demandeur : il est **En attente du dem
 **Répondre** écrit la **réponse** sous la question (dans son fil) et **rend la main** à l'équipe qui traite : le
 ticket repart **En cours**.
 
-Un simple commentaire ne suffit pas : il apporte une précision, mais le ticket reste en attente. C'est voulu : la
+Un simple message ne suffit pas : il apporte une précision, mais le ticket reste en attente. C'est voulu : la
 réponse est un acte explicite.
 
 ## Sans réponse

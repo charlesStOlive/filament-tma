@@ -40,12 +40,12 @@ Chaque ticket a deux parties :
 - l'**équipe qui la traite** : l'équipe du client, ou le Support. Celui de l'équipe qui s'en occupe apparaît dans
   **Pris en charge par**.
 
-À chaque étape, le ticket attend **l'une des deux** : la fiche l'affiche dans **Suivi › En attente de**. Celle qu'on
-attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un commentaire, une note, une pièce jointe. Elle ne
-modifie plus le ticket et ne fait pas les passages réservés à l'autre partie.
+À chaque étape, le ticket attend **l'une des deux** : la fiche l'affiche à droite, dans **Suivi › En attente de**.
+Celle qu'on attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un message, une note interne, une pièce
+jointe. Elle ne modifie plus le ticket et ne fait pas les passages réservés à l'autre partie.
 
 Exemple : le Support pose une question (« Demander des précisions ») ; le ticket attend le demandeur. Un
-commentaire du Support pendant ce temps n'y change rien ; la réponse du demandeur (« Répondre ») rend la main au
+message du Support pendant ce temps n'y change rien ; la réponse du demandeur (« Répondre ») rend la main au
 Support.
 
 ## Ce que l'on trouve dans le module

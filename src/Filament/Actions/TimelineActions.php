@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Commenter, noter, répondre, partager une note : les boutons de la chronologie d'un ticket. Chacun repasse par
+ * Écrire un message ou une note interne, répondre, partager une note : les boutons de la chronologie d'un ticket. Chacun repasse par
  * `Workflow\Timeline`, qui contrôle les droits côté serveur.
  */
 final class TimelineActions
@@ -36,20 +36,22 @@ final class TimelineActions
     public static function comment(): Action
     {
         return self::writeAction('comment', EntryType::Comment)
-            ->label(__('Commenter'))
+            ->label(__('Écrire un message'))
             ->icon('heroicon-m-chat-bubble-left-right')
-            ->modalDescription(__('Visible des deux parties. Un commentaire ne change pas l’état du ticket.'));
+            ->modalDescription(__('Visible de tous, demandeur compris. Un message ne change pas l’état du ticket.'));
     }
 
     public static function note(): Action
     {
         return self::writeAction('note', EntryType::Note)
-            ->label(__('Ajouter une note'))
+            ->label(__('Ajouter une note interne'))
             ->icon('heroicon-m-pencil-square')
             ->color('warning')
             ->modalDescription(fn (Trackable $record): string => Context::current()->forSubject($record)->isAgent()
                 ? __('Votre note est enregistrée chez le Support, et n’est visible que là-bas.')
-                : __('Une note reste dans cette application, sauf si vous la partagez ensuite.'));
+                : (Timeline::notesSharing()
+                    ? __('Seule votre équipe la lit, sauf si vous la partagez ensuite avec l’autre application.')
+                    : __('Seule votre équipe la lit.')));
     }
 
     /**

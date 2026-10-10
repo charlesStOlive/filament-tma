@@ -110,7 +110,7 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 ```json
 {
   "ulid": "01k…", "ticket_ulid": "01k…", "parent_ulid": null,
-  "type": "comment|note|summary", "body": "<p>…</p>",
+  "type": "comment|note", "body": "<p>…</p>",
   "author": { "…acteur" }, "origin_instance_uid": "01K…", "origin": "ui|api|command|scheduler",
   "shared_at": null, "meta": { "question": true }, "created_at": "…",
   "files_count": 1,
@@ -118,7 +118,8 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 }
 ```
 
-- Une **note** n'est transmise que partagée (`shared_at` non nul) ; une note interne est refusée (422).
+- `comment` est un **message** (lu de tous, demandeur compris) ; `note`, une **note interne**.
+- Une **note** n'est transmise que partagée (`shared_at` non nul) ; une note non partagée est refusée (422).
 - `parent_ulid` : une réponse, sur un seul niveau.
 - `files` : contenu en base64. Les types suivent la liste blanche de l'application qui reçoit
   (`filament-tma.attachments.accepted_types`), sur le contenu réel ; taille maximale `attachments.max_size_kb`.
