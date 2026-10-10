@@ -107,6 +107,12 @@ class TicketWorkflow
             return false;
         }
 
+        // Qui peut parler au Support (le droit « Transmettre au Support ») forme l'équipe du client : ses demandes à
+        // lui partent au Support, il ne les confie pas à sa propre équipe.
+        if ($move->key() === 'submit' && $this->allows($ticket, 'transmit', $context)) {
+            return false;
+        }
+
         if ($context->isSystem()) {
             return $move->sides() === [];
         }

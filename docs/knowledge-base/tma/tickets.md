@@ -15,11 +15,12 @@ chez le Support, à **un seul client**. Son numéro dit d'où il vient : `DES-00
 demande commence en **Brouillon** : vous seul (et votre application) la voyez. Vous pouvez la modifier autant que
 vous voulez.
 
-Ensuite :
+Ensuite, selon votre rôle :
 
-- **Confier à l'équipe EDM** la confie à l'équipe de votre application, qui la traite sans le Support ;
-- **Transmettre au Support** l'envoie au Support, qui la traitera et fera autorité. Si le Support ne répond pas,
-  rien ne change et un message le dit : réessayez plus tard.
+- **Confier à l'équipe EDM** : vous n'êtes pas en lien avec le Support ; l'équipe de votre application traite la
+  demande, ou la transmet au Support ;
+- **Transmettre au Support** : vous faites partie de l'équipe EDM ; la demande part au Support, qui la traitera et
+  fera autorité. Si le Support ne répond pas, rien ne change et un message le dit : réessayez plus tard.
 
 « EDM » est ici le nom court du client : voir [Les mots du module](#modal-tma.comprendre.vocabulaire).
 

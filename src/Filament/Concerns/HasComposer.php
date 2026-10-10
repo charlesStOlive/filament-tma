@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Concerns;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -11,6 +12,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
@@ -150,8 +152,8 @@ trait HasComposer
     }
 
     /**
-     * « Envoyer le message » : pour qui peut écrire un message, sauf le demandeur qu'on attend — son message est sa
-     * réponse (« Répondre », « Rouvrir »…), pas une précision à côté.
+     * « Envoyer le message » : pour qui peut écrire un message, sauf qui répond pour le demandeur qu'on attend — son
+     * message est sa réponse (« Répondre », « Rouvrir »…), pas une précision à côté.
      */
     protected function composerCanMessage(): bool
     {
@@ -185,13 +187,17 @@ trait HasComposer
         $context = Context::current();
 
         // Le demandeur répond en demandeur ; tous les autres, au nom de l'équipe qui traite. Sur un ticket de l'équipe du
-        // client, une même application tient les deux rôles : c'est la personne qui les départage.
+        // client, une même application tient les deux rôles : c'est la personne qui les départage. Sur un ticket
+        // transmis au Support, l'équipe du client (qui peut lui parler) répond aussi pour le demandeur.
         $isRequester = (bool) $record->requester?->isUser(auth()->user());
+        $speaksForRequester = $isRequester || ($record->handling_mode === HandlingMode::ServiceDesk
+            && Tma::isClient()
+            && TmaGate::allows(auth()->user(), TmaGate::workflowAction('transmit'), $record));
 
         return $this->composerRepliesCache ??= array_values(array_filter(
             $workflow->moves(),
             fn (Move $move): bool => $move->replyField() !== null
-                && in_array(Side::Requester, $move->sides(), true) === $isRequester
+                && (in_array(Side::Requester, $move->sides(), true) ? $speaksForRequester : ! $isRequester)
                 && ($workflow->allows($record, $move, $context) || $this->composerTakesChargeFirst($record, $move)),
         ));
     }

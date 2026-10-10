@@ -6,7 +6,9 @@ order: 20
 
 # Confier à l'équipe ou transmettre au Support
 
-Un brouillon part de deux façons.
+Un brouillon part d'une seule façon, selon votre rôle : l'équipe EDM (les personnes en lien avec le Support)
+transmet ses demandes au Support ; les autres les confient à l'équipe EDM. Voir
+[Comprendre le module](#modal-tma.comprendre).
 
 ## Confier à l'équipe EDM
 
@@ -22,4 +24,5 @@ La demande est confiée à l'**équipe de votre application** (« EDM » est le 
 La demande part au **Support**, qui la traitera et fera autorité. Voir
 [L'équipe du client ou le Support](#modal-tma.comprendre.traitement).
 
-Ce bouton n'existe que si l'application est reliée au Support, et pour les utilisateurs qui y ont accès.
+Ce bouton n'existe que si l'application est reliée au Support, et pour l'équipe EDM (le droit « Transmettre au
+Support »). Elle s'en sert pour ses propres demandes, et pour transmettre celles qu'on lui a confiées.

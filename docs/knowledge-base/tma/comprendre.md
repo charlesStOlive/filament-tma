@@ -19,18 +19,19 @@ reste à facturer. Il relie deux sortes d'applications.
 Une application cliente ne parle qu'au Support, jamais à une autre application cliente. Le Support ne voit d'un
 client que ce que ce client lui a confié.
 
-## Qui traite une demande
+## Trois niveaux
 
-| Traité par | Qui s'en occupe | Où |
+| Qui | Ses demandes | Ce qu'il reçoit |
 | --- | --- | --- |
-| **L'équipe du client** (« Équipe EDM ») | des collègues de la même application | la demande ne quitte pas l'application cliente |
-| **Le Support** | l'équipe du Support | la demande est transmise au maître, qui fait autorité |
+| **Le Support** | — | les demandes transmises par l'équipe du client ; il les traite et fait autorité |
+| **L'équipe du client** (« Équipe EDM ») : les personnes en lien avec le Support | **Transmettre au Support**, directement | les demandes des autres utilisateurs : elle les traite, ou les transmet au Support |
+| **Les autres utilisateurs** du client | **Confier à l'équipe EDM** | — |
 
-Le nom de l'équipe du client vient de son **nom court**, réglé pour chaque application (voir
-[Les mots du module](#modal-tma.comprendre.vocabulaire)).
+Ce qui fait partie de l'équipe du client, c'est le droit **Transmettre au Support** (voir [Les droits](#modal-tma.droits)).
+Le nom de l'équipe vient du **nom court** du client (voir [Les mots du module](#modal-tma.comprendre.vocabulaire)).
 
-Une demande commence toujours chez son auteur. On la **confie à l'équipe** du client, ou on la **transmet au
-Support** ; une demande transmise au Support n'en revient pas. Voir [Les tickets](#modal-tma.tickets).
+Une demande transmise au Support n'en revient pas. Sur une demande transmise, l'équipe du client peut répondre au
+Support à la place du demandeur. Voir [Les tickets](#modal-tma.tickets).
 
 ## Le demandeur, et qui doit agir
 

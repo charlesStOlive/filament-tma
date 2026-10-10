@@ -14,7 +14,7 @@ Le module emploie les mots des outils de support les plus courants. Quelques-uns
 | --- | --- |
 | **Demandeur** | la personne qui a ouvert la demande |
 | **Support** | l'équipe qui fait la maintenance, et son application (Filbreeze) |
-| **Équipe EDM** | l'équipe du client (ici, EDM) qui traite elle-même certaines demandes, sans le Support |
+| **Équipe EDM** | les personnes du client (ici, EDM) en lien avec le Support : elles traitent les demandes des autres, ou les transmettent au Support |
 | **Pris en charge par** | la personne qui s'occupe de la demande |
 | **Intervenant** | celui qui a fait une saisie de temps, une intervention précise |
 | **Membre du Support** | une personne du Support qui travaille aussi depuis l'application d'un client (voir [Les membres du Support](#modal-tma.agents)) |

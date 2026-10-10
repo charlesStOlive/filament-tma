@@ -16,7 +16,8 @@ order: 130
 **En attente de** — La partie qui doit agir à cette étape : le demandeur, le Support ou l'équipe du client. L'autre
 ne peut qu'ajouter des messages et des fichiers. Voir [Qui doit agir ?](#modal-tma.comprendre.la-main)
 
-**Équipe du client** — Les collègues d'une application cliente qui traitent eux-mêmes une demande, sans le Support.
+**Équipe du client** — Les personnes d'une application cliente en lien avec le Support (le droit « Transmettre au
+Support ») : elles traitent les demandes des autres utilisateurs, ou les transmettent au Support.
 Elle porte le nom court du client : « Équipe EDM ».
 
 **Forfait** — Un volume de maintenance alloué à un client pour une période. Voir [Les forfaits](#modal-tma.forfaits).

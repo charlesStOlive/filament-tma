@@ -26,8 +26,11 @@ La famille **Passages du ticket** (`tma.ticket.workflow.*`) regroupe un droit pa
 traite reçoit par exemple `take-charge`, `request-answer`, `pause`, `resume`, `submit-for-validation`, `close`,
 `refuse` ; un rôle de demandeur `submit`, `answer`, `validate`, `reopen`, `cancel`.
 
-**`tma.ticket.workflow.transmit`** a un sens de plus dans une application cliente : il désigne les utilisateurs qui
-ont accès au **Support**. Les autres ne passent que par l'équipe du client, et le Support ne les voit pas.
+**`tma.ticket.workflow.transmit`** a un sens de plus dans une application cliente : il désigne l'**équipe du
+client** (« Équipe EDM »), les personnes en lien avec le **Support**. Leurs demandes partent au Support (elles ne
+voient pas « Confier à l'équipe EDM ») ; elles reçoivent celles des autres, qu'elles traitent ou transmettent, et
+répondent au Support pour le demandeur. Les autres utilisateurs ne passent que par elles, et le Support ne les voit
+pas. Voir [Comprendre le module](#modal-tma.comprendre).
 
 ## Les autres écrans
 
