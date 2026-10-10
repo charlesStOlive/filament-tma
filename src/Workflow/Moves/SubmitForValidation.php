@@ -20,6 +20,11 @@ class SubmitForValidation extends Move
         return 'submit-for-validation';
     }
 
+    public function replyField(): ?string
+    {
+        return 'message';
+    }
+
     public function label(): string
     {
         return __('Marquer comme résolu');
@@ -52,7 +57,7 @@ class SubmitForValidation extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['message' => $this->messageRules(false)];
+        return ['message' => $this->messageRules(false), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
@@ -63,6 +68,6 @@ class SubmitForValidation extends Move
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
         $ticket->validation_requested_at = now();
-        $this->writeComment($ticket, $data['message'] ?? null, $context);
+        $this->writeComment($ticket, $data['message'] ?? null, $context, files: $data['files'] ?? []);
     }
 }

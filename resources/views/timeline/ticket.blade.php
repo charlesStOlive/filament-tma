@@ -1,5 +1,4 @@
 @php
-    use CharlesStOlive\FilamentTma\Enums\EntryType;
     use CharlesStOlive\FilamentTma\Support\TimelineItems;
     use CharlesStOlive\FilamentTma\Workflow\Context;
     use CharlesStOlive\FilamentTma\Workflow\Timeline;
@@ -9,8 +8,6 @@
     $context = Context::current();
     $timeline = app(Timeline::class);
     $withNotes = $timeline->canReadNotes($ticket, $context);
-    $canComment = $timeline->canAdd($ticket, EntryType::Comment, $context);
-    $canNote = $timeline->canAdd($ticket, EntryType::Note, $context);
     $items = TimelineItems::for($ticket, $withNotes);
     $states = collect($ticket->state::all())->mapWithKeys(fn ($class, $name) => [$name => new $class($ticket)]);
     $moveLabels = collect($ticket instanceof \CharlesStOlive\FilamentTma\Models\ProjectTask
@@ -52,18 +49,15 @@
                     </div>
                 @endforeach
 
-                <div class="fi-tma-entry-actions">
-                    @if (($entry->type === EntryType::Note && $canNote) || ($entry->type !== EntryType::Note && $canComment))
-                        <x-filament::link tag="button" size="sm" icon="heroicon-m-arrow-uturn-left" wire:click="mountAction('reply', @js(['entry' => $entry->getKey()]))">
-                            {{ __('Répondre') }}
+                {{-- On répond dans la zone de réponse, sous la chronologie ; ici, seulement partager une note. Les
+                     directives Blade ne s'appliquent pas dans les attributs d'un composant : l'argument est écrit en JS. --}}
+                @if ($timeline->canShare($entry, $context))
+                    <div class="fi-tma-entry-actions">
+                        <x-filament::link tag="button" size="sm" color="warning" icon="heroicon-m-share" wire:click="mountAction('shareNote', { entry: {{ (int) $entry->getKey() }} })">
+                            {{ __('Partager avec l’autre équipe') }}
                         </x-filament::link>
-                    @endif
-                    @if ($timeline->canShare($entry, $context))
-                        <x-filament::link tag="button" size="sm" color="warning" icon="heroicon-m-share" wire:click="mountAction('shareNote', @js(['entry' => $entry->getKey()]))">
-                            {{ __('Partager') }}
-                        </x-filament::link>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </article>
         @endif
     @empty

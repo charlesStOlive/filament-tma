@@ -41,7 +41,9 @@ L'équipe qui traite est le **Support**, ou l'**équipe du client** (« Équipe 
 
 ## Les passages
 
-Les boutons en haut de la fiche ne montrent que les passages possibles **maintenant**, pour **vous**.
+Les boutons ne montrent que les passages possibles **maintenant**, pour **vous** : en haut de la fiche, et dans la
+**zone de réponse** sous la chronologie pour ceux qui portent un texte (Répondre, Demander des précisions, Marquer
+comme résolu, Confirmer et clore, Rouvrir). Voir [La chronologie](#modal-tma.chronologie).
 
 | Passage | Par | Ce qu'il demande |
 | --- | --- | --- |
@@ -61,6 +63,12 @@ Les boutons en haut de la fiche ne montrent que les passages possibles **mainten
 
 Un **message** ne fait jamais changer l'état : pour rendre la main, il faut le passage qui le dit (« Répondre »,
 « Confirmer et clore »…). Voir [La chronologie](#modal-tma.chronologie).
+
+## La liste
+
+Dans une application cliente, la liste montre d'office **vos demandes** (filtre « Mes demandes », qu'on retire pour
+voir celles des autres). La colonne **En attente de** dit qui doit agir : **Vous**, le demandeur par son nom, le
+**Support** ou l'**Équipe EDM**.
 
 ## Qui peut modifier un ticket
 

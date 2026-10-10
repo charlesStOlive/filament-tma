@@ -21,10 +21,11 @@ d'un compte de test, un point de facturation.
 Support, le Support si vous êtes chez le client. Le demandeur ne la lit toujours pas. Ce partage **ne se retire
 pas**.
 
-## Répondre
+## Où les écrire
 
-**Répondre**, sous un message, ouvre un fil : la réponse s'affiche sous le message, sur un seul niveau. Elle a le
-type du message (une réponse à une note est une note), et une réponse à une note partagée est partagée aussi.
+Dans la **zone de réponse**, sous la chronologie : on choisit **Message** ou **Note interne** au-dessus du texte.
+« Répondre » n'est pas une troisième sorte d'entrée : c'est le message par lequel le demandeur répond quand on
+l'attend, et qui rend la main. Voir [La chronologie](#modal-tma.chronologie).
 
 ## Sur un ticket terminé
 

@@ -17,6 +17,7 @@ use CharlesStOlive\FilamentTma\Support\Tma;
 use Filament\Forms\Components\RichEditor\FileAttachmentProviders\SpatieMediaLibraryFileAttachmentProvider;
 use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
 use Filament\Forms\Components\RichEditor\Models\Contracts\HasRichContent;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -187,6 +188,19 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             Side::Handler => $this->handledBy(),
             null => null,
         };
+    }
+
+    /**
+     * Qui doit agir, pour une personne donnée : « Vous » si c'est elle le demandeur attendu, le demandeur par son nom
+     * sinon, ou l'équipe qui traite.
+     */
+    public function waitingOnFor(?Authenticatable $user): ?string
+    {
+        if ($this->sideInCharge() !== Side::Requester) {
+            return $this->waitingOn();
+        }
+
+        return $this->requester?->isUser($user) ? __('Vous') : ($this->requester?->name ?? $this->waitingOn());
     }
 
     /**

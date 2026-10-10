@@ -17,6 +17,11 @@ class Validate extends Move
         return 'validate';
     }
 
+    public function replyField(): ?string
+    {
+        return '';
+    }
+
     public function label(): string
     {
         return __('Confirmer et clore');

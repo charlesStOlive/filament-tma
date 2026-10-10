@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
@@ -32,6 +33,9 @@ class TaskInfolist
                 ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Message ou note interne ?'))])
                 ->schema([
                     ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
+                    // La zone de réponse de la page (`Filament\Concerns\HasComposer`), sous la chronologie.
+                    EmbeddedSchema::make('composer')
+                        ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer()),
                 ]),
         ]);
     }

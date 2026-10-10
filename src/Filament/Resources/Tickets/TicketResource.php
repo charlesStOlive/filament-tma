@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets;
 use CharlesStOlive\FilamentStateFusionEnhanced\Tables\Filters\StateFusionSelectFilter;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
+use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\CreateTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\EditTicket;
@@ -13,6 +14,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ViewTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeEntriesRelationManager;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketForm;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
+use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
@@ -24,9 +26,11 @@ use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -141,6 +145,13 @@ class TicketResource extends Resource implements HasKnowledgeBase
                     ->visible(fn (): bool => Tma::isMaster())->toggleable(),
                 TextColumn::make('title')->label(__('Titre'))->searchable()->limit(60)->wrap(),
                 TextColumn::make('state')->label(__('État'))->badge(),
+                TextColumn::make('waiting_on')->label(__('En attente de'))->badge()->placeholder('—')
+                    ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
+                    ->color(fn (Ticket $record): string => match (true) {
+                        $record->waitingOnFor(auth()->user()) === __('Vous') => 'warning',
+                        $record->sideInCharge() === Side::Handler => 'info',
+                        default => 'gray',
+                    }),
                 TextColumn::make('handling_mode')->label(__('Traité par'))->badge()->toggleable()
                     ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié')),
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
@@ -153,6 +164,14 @@ class TicketResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('last_activity_at')->label(__('Dernière activité'))->since()->sortable(),
             ])
             ->filters([
+                // Dans une application cliente, chacun voit d'abord ses propres demandes ; on retire le filtre pour
+                // voir celles des autres.
+                Filter::make('mine')->label(__('Mes demandes'))->toggle()
+                    ->default(Tma::isClient())
+                    ->query(fn (Builder $query): Builder => $query->whereIn('requester_actor_id', Actor::query()
+                        ->where('instance_uid', Tma::instanceUid())
+                        ->where('user_id', auth()->id())
+                        ->select('id'))),
                 StateFusionSelectFilter::make('state')->label(__('État'))->multiple(),
                 SelectFilter::make('handling_mode')->label(__('Traité par'))->options(HandlingMode::class),
                 SelectFilter::make('priority')->label(__('Priorité'))->options(Priority::class)->multiple(),

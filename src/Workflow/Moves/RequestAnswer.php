@@ -20,6 +20,11 @@ class RequestAnswer extends Move
         return 'request-answer';
     }
 
+    public function replyField(): ?string
+    {
+        return 'question';
+    }
+
     public function label(): string
     {
         return __('Demander des précisions');
@@ -52,7 +57,7 @@ class RequestAnswer extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['question' => $this->messageRules()];
+        return ['question' => $this->messageRules(), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
@@ -63,6 +68,6 @@ class RequestAnswer extends Move
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
         $ticket->waiting_since = now();
-        $this->writeComment($ticket, $data['question'], $context, ['question' => true]);
+        $this->writeComment($ticket, $data['question'], $context, ['question' => true], files: $data['files'] ?? []);
     }
 }

@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskMoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
@@ -20,10 +21,11 @@ use Filament\Resources\Pages\ViewRecord;
 
 /**
  * La fiche d'une tâche projet : sa description et sa chronologie, avec à droite le suivi et le temps passé
- * (`HasInfoPane`) ; dans le maître, ses passages.
+ * (`HasInfoPane`) ; dans le maître, ses passages. Sous la chronologie, la zone de réponse (`HasComposer`).
  */
 class ViewTask extends ViewRecord
 {
+    use HasComposer;
     use HasInfoPane;
 
     protected static string $resource = TaskResource::class;
@@ -42,10 +44,8 @@ class ViewTask extends ViewRecord
     {
         return [
             ...TaskMoveAction::all(),
-            TimelineActions::comment(),
             TimelineActions::agentTime(),
             ActionGroup::make([
-                TimelineActions::note(),
                 EditAction::make(),
                 Action::make('resync')
                     ->label(__('Renvoyer à l’application'))
@@ -60,11 +60,6 @@ class ViewTask extends ViewRecord
                     }),
             ]),
         ];
-    }
-
-    public function replyAction(): Action
-    {
-        return TimelineActions::reply();
     }
 
     public function shareNoteAction(): Action

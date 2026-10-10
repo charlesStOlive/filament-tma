@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
@@ -21,11 +22,12 @@ use Filament\Resources\Pages\ViewRecord;
 
 /**
  * La fiche d'un ticket : la demande et sa chronologie, avec à droite le suivi et le temps passé (`HasInfoPane`). En
- * tête, les passages possibles maintenant pour l'utilisateur, puis écrire un message ou une note interne. Répondre
- * et partager se lancent depuis la chronologie.
+ * tête, les passages possibles maintenant pour l'utilisateur ; sous la chronologie, la zone de réponse
+ * (`HasComposer`) : messages, notes internes, et les réponses de la partie qu'on attend.
  */
 class ViewTicket extends ViewRecord
 {
+    use HasComposer;
     use HasInfoPane;
 
     protected static string $resource = TicketResource::class;
@@ -44,10 +46,8 @@ class ViewTicket extends ViewRecord
     {
         return [
             ...MoveAction::all(),
-            TimelineActions::comment(),
             TimelineActions::agentTime(),
             ActionGroup::make([
-                TimelineActions::note(),
                 EditAction::make(),
                 $this->resyncAction(),
             ]),
@@ -75,11 +75,6 @@ class ViewTicket extends ViewRecord
                     ->title($record->sync_status === SyncStatus::Error ? $record->last_sync_error : __('Envoi demandé'))
                     ->send();
             });
-    }
-
-    public function replyAction(): Action
-    {
-        return TimelineActions::reply();
     }
 
     public function shareNoteAction(): Action

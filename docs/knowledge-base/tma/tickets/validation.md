@@ -6,6 +6,8 @@ order: 50
 
 # Résolu : confirmer ou rouvrir
 
+Tout se fait dans la **zone de réponse**, sous la chronologie : le texte écrit accompagne le passage.
+
 ## Marquer comme résolu (l'équipe qui traite)
 
 Le travail est fait. **Ce qui a été fait** (facultatif) s'ajoute à la chronologie, et le ticket, **Résolu**, attend

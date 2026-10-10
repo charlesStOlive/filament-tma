@@ -56,12 +56,15 @@ final class MoveAction
     }
 
     /**
-     * Tous les mouvements qu'un utilisateur peut faire, en boutons.
+     * Les mouvements d'un utilisateur qui sont des boutons d'en-tête ; les réponses (`Move::replyField()`) se font
+     * dans la zone de réponse, sous la chronologie (`Filament\Concerns\HasComposer`).
      *
      * @return array<int, Action>
      */
     public static function all(): array
     {
-        return array_values(array_map(fn (Move $move): Action => self::make($move), app(TicketWorkflow::class)->userMoves()));
+        $moves = array_filter(app(TicketWorkflow::class)->userMoves(), fn (Move $move): bool => $move->replyField() === null);
+
+        return array_values(array_map(fn (Move $move): Action => self::make($move), $moves));
     }
 }

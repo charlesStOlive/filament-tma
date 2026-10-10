@@ -23,6 +23,11 @@ class Answer extends Move
         return 'answer';
     }
 
+    public function replyField(): ?string
+    {
+        return 'answer';
+    }
+
     public function label(): string
     {
         return __('Répondre');
@@ -50,7 +55,7 @@ class Answer extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['answer' => $this->messageRules()];
+        return ['answer' => $this->messageRules(), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
@@ -67,6 +72,6 @@ class Answer extends Move
             ->first();
 
         $ticket->waiting_since = null;
-        $this->writeComment($ticket, $data['answer'], $context, ['answer' => true], $question);
+        $this->writeComment($ticket, $data['answer'], $context, ['answer' => true], $question, $data['files'] ?? []);
     }
 }

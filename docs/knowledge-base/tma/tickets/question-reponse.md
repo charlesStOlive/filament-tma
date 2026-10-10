@@ -13,11 +13,11 @@ avec le demandeur, et le ticket attend le demandeur : il est **En attente du dem
 
 ## Répondre (le demandeur)
 
-**Répondre** écrit la **réponse** sous la question (dans son fil) et **rend la main** à l'équipe qui traite : le
-ticket repart **En cours**.
+Dans la zone de réponse, sous la chronologie, **Répondre** écrit la **réponse** (avec ses pièces jointes) sous la
+question et **rend la main** à l'équipe qui traite : le ticket repart **En cours**.
 
-Un simple message ne suffit pas : il apporte une précision, mais le ticket reste en attente. C'est voulu : la
-réponse est un acte explicite.
+Seul le demandeur répond. Un collègue, ou l'équipe qui traite, peut écrire un message pendant l'attente : il apporte
+une précision, mais le ticket reste en attente du demandeur.
 
 ## Sans réponse
 

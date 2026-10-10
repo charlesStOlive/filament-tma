@@ -12,6 +12,7 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
@@ -42,6 +43,9 @@ class TicketInfolist
                     ViewEntry::make('timeline')
                         ->hiddenLabel()
                         ->view('filament-tma::timeline.ticket'),
+                    // La zone de réponse de la page (`Filament\Concerns\HasComposer`), sous la chronologie.
+                    EmbeddedSchema::make('composer')
+                        ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer()),
                 ]),
         ]);
     }
@@ -68,7 +72,7 @@ class TicketInfolist
                     TextEntry::make('state')->label(__('État'))->badge()
                         ->helperText(fn (Ticket $record): ?string => $record->state->getDescription()),
                     TextEntry::make('waiting_on')->label(__('En attente de'))
-                        ->state(fn (Ticket $record): ?string => $record->waitingOn())
+                        ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
                         ->placeholder('—'),
                     TextEntry::make('handling_mode')->label(__('Traité par'))->badge()
                         ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié'))

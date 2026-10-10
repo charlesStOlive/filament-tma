@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Closure;
@@ -56,13 +57,37 @@ trait WritesMessages
         ];
     }
 
-    /** Écrit un commentaire (partagé avec l'autre partie) si le message n'est pas vide. */
-    protected function writeComment(Ticket $ticket, ?string $body, Context $context, array $meta = [], ?Entry $parent = null): ?Entry
+    /**
+     * Les fichiers joints au message (`files`, en base64, au format de `Sync\Payload::files()`) : la zone de réponse
+     * de la fiche les envoie avec le passage, et ils suivent le passage jusqu'au Support.
+     *
+     * @return array<string, mixed>
+     */
+    protected function fileRules(): array
+    {
+        return [
+            'files' => ['nullable', 'array', 'max:'.(int) config('filament-tma.attachments.max_files', 10)],
+            'files.*' => ['array'],
+        ];
+    }
+
+    /**
+     * Écrit un message (lu par l'autre partie) si le texte n'est pas vide, avec ses fichiers.
+     *
+     * @param  array<int, array<string, mixed>>  $files
+     */
+    protected function writeComment(Ticket $ticket, ?string $body, Context $context, array $meta = [], ?Entry $parent = null, array $files = []): ?Entry
     {
         if (Html::isBlank($body) || $context->actor === null) {
             return null;
         }
 
-        return app(Timeline::class)->write($ticket, EntryType::Comment, $body, $context, $parent, $meta);
+        $entry = app(Timeline::class)->write($ticket, EntryType::Comment, $body, $context, $parent, $meta);
+
+        if ($files !== []) {
+            Mirror::files($entry, $files);
+        }
+
+        return $entry;
     }
 }

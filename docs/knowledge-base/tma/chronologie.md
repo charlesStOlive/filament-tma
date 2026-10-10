@@ -18,11 +18,10 @@ volet de droite.
 | **Note interne** | seulement votre équipe : l'application où elle a été écrite, et les personnes qui ont le droit des notes |
 | **Réponse** | comme le message auquel elle répond |
 
-- **Écrire un message** et **Ajouter une note interne** sont en haut de la fiche.
-- **Répondre**, sous un message, ouvre un fil (sur un seul niveau) : pratique pour un échange question / réponse,
-  avec des images.
-- **Partager**, sous une note interne, la rend visible de l'autre équipe (l'équipe du client ou le Support), pas du
-  demandeur. Ce partage ne se retire pas. La réponse à une note partagée est partagée aussi.
+- On écrit dans la **zone de réponse**, sous la chronologie (voir plus bas).
+- Une réponse à une question s'affiche sous la question, en fil.
+- **Partager avec l'autre équipe**, sous une note interne, la rend visible de l'autre équipe (l'équipe du client ou le
+  Support), pas du demandeur. Ce partage ne se retire pas.
 
 Ce qui a été fait, écrit avec une saisie de temps (par la commande `tma:log`), est un message comme les autres.
 
@@ -32,6 +31,23 @@ internes restent possibles.
 Une note du Support ne quitte jamais le Support tant qu'elle n'est pas partagée ; une note d'une application
 cliente non plus. Chaque application peut retirer le partage, ou les notes internes elles-mêmes (voir
 [Message ou note interne ?](#modal-tma.chronologie.commentaire-ou-note)).
+
+## La zone de réponse
+
+Sous la chronologie : un texte, des pièces jointes, et des boutons qui dépendent de **qui doit agir** (la zone le
+rappelle au-dessus du texte).
+
+| Vous êtes… | Les boutons |
+| --- | --- |
+| le demandeur, et on attend votre réponse | **Répondre** |
+| le demandeur, et le ticket est résolu | **Confirmer et clore**, ou **Rouvrir** (en disant ce qui ne va pas) |
+| l'équipe qui traite, et le ticket l'attend | **Envoyer le message** (garde la main), **Demander des précisions** ou **Marquer comme résolu** (passent la main au demandeur) |
+| l'autre partie | **Envoyer le message** : une précision, qui ne change pas l'état |
+
+Sur un ticket nouveau, « Demander des précisions » et « Marquer comme résolu » le prennent en charge au passage.
+
+Seul le demandeur répond pour le demandeur ; un collègue ne peut qu'écrire un message. Ceux qui ont le droit des notes
+choisissent, au-dessus du texte, **Message** ou **Note interne**.
 
 ## Les fichiers
 

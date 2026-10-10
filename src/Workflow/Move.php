@@ -33,6 +33,17 @@ abstract class Move
         return null;
     }
 
+    /**
+     * Un passage de la zone de réponse de la fiche (sous la chronologie), plutôt qu'un bouton d'en-tête : c'est ainsi
+     * que répond la partie qu'on attend, avec son texte. La clé du texte dans les données (`answer`, `question`…) ;
+     * '' pour un passage sans texte à lui, dont le texte éventuel s'écrit en message juste avant ; null pour un
+     * passage qui reste un bouton d'en-tête.
+     */
+    public function replyField(): ?string
+    {
+        return null;
+    }
+
     public function color(): string
     {
         return 'primary';

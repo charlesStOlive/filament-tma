@@ -20,6 +20,11 @@ class Reopen extends Move
         return 'reopen';
     }
 
+    public function replyField(): ?string
+    {
+        return 'message';
+    }
+
     public function label(): string
     {
         return __('Rouvrir');
@@ -52,7 +57,7 @@ class Reopen extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['message' => $this->messageRules()];
+        return ['message' => $this->messageRules(), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
@@ -68,6 +73,6 @@ class Reopen extends Move
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
         $ticket->validation_requested_at = null;
-        $this->writeComment($ticket, $data['message'], $context, ['reopen' => true]);
+        $this->writeComment($ticket, $data['message'], $context, ['reopen' => true], files: $data['files'] ?? []);
     }
 }
