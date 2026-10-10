@@ -6,8 +6,8 @@ order: 20
 
 # Configuration de départ
 
-Cette page s'adresse à l'équipe technique : installer le module, puis relier une application cliente au centre de
-service. Exemple : Filbreeze (centre de service) et Desapp (application cliente).
+Cette page s'adresse à l'équipe technique : installer le module, puis relier une application cliente au Support.
+Exemple : Filbreeze (le Support) et Desapp (application cliente).
 
 ## 1. Installer le module dans chaque application
 
@@ -33,7 +33,7 @@ Le thème Filament de l'application doit lire les vues du module et de la base d
 
 Puis `npm run build`.
 
-## 2. Configurer le centre de service
+## 2. Configurer l'application du Support
 
 ```bash
 php artisan tma:install --mode=master --name=Filbreeze --prefix=FIL
@@ -46,20 +46,21 @@ le changer une fois des tickets créés.
 Dans `config/filament-tma.php`, déclarez aussi le modèle des clients :
 `'models' => ['client' => App\Models\Company::class, 'client_title' => 'title']`.
 
-## 3. Déclarer l'application cliente (centre de service)
+## 3. Déclarer l'application cliente (Support)
 
-**TMA › Applications clientes › Nouveau** : son nom, son adresse (telle que le centre de service la joint) et son
-client. L'**identifiant** est proposé d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà
+**Support › Applications clientes › Nouveau** : son nom, le **nom court** de son client (« EDM » : il forme
+« Équipe EDM », « Publier chez EDM », voir [Les mots du module](#modal-tma.comprendre.vocabulaire)), son adresse
+(telle que le Support la joint) et son client. L'**identifiant** est proposé d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà
 le sien (installée avant), collez-le à la place.
 
-À l'enregistrement, le centre de service crée le **compte de service** de l'application : un utilisateur dédié,
+À l'enregistrement, le Support crée le **compte de service** de l'application : un utilisateur dédié,
 sans rôle, qui n'entre dans aucun écran. On ne choisit jamais un compte existant.
 
 ## 4. Configuration de l'application
 
 Sur la fiche, **Configuration de l'application** :
 
-- **Adresse du centre de service** : celle que l'application cliente doit appeler (proposée d'après
+- **Adresse du Support** : celle que l'application cliente doit appeler (proposée d'après
   `TMA_PUBLIC_URL` ; en développement, celle du conteneur, pas `localhost`) ;
 - **Préfixe des tickets** de l'application.
 
@@ -69,31 +70,31 @@ un jeton qui n'est montré qu'une fois ; perdu, il suffit de relancer « Configu
 ## 5. Lancer la commande dans l'application cliente
 
 ```bash
-php artisan tma:install --mode=client --uid=01K… --name='Desapp' --prefix='DES' \
-    --master-url='https://filbreeze.example' --master-token=eyJ… --master-account=centre-de-service@tma.local
+php artisan tma:install --mode=client --uid=01K… --name='Desapp' --short-name='EDM' --prefix='DES' \
+    --master-url='https://filbreeze.example' --master-token=eyJ… --master-account=support@tma.local
 ```
 
 Elle :
 
-1. écrit la configuration dans le `.env` de l'application ;
-2. crée le compte par lequel le centre de service appellera l'application (`centre-de-service@tma.local`, sans rôle) ;
-3. **transmet son jeton au centre de service**, qui rappelle aussitôt l'application pour vérifier que la liaison
+1. écrit la configuration dans le `.env` de l'application, dont le nom court du client ;
+2. crée le compte par lequel le Support appellera l'application (`support@tma.local`, sans rôle) ;
+3. **transmet son jeton au Support**, qui rappelle aussitôt l'application pour vérifier que la liaison
    marche dans les deux sens.
 
 La commande dit ce qu'il en est. Sur la fiche, **Jeton de l'application** passe à « Reçu », et **Tester** vérifie la
 connexion à tout moment.
 
-Si la transmission échoue (centre de service injoignable), la commande **affiche le jeton** : collez-le dans la
+Si la transmission échoue (Support injoignable), la commande **affiche le jeton** : collez-le dans la
 fiche, champ **Saisir le jeton à la main**.
 
-Sans configuration du centre de service, une application cliente ne fait que du traitement local.
+Sans configuration du Support, les demandes d'une application cliente ne sont traitées que par l'équipe du client.
 
 ## 6. Faire tourner les tâches de fond
 
 - **Le planificateur** (`php artisan schedule:work`, ou la tâche cron de Laravel) : clôtures automatiques, reprises
   des pauses, publications programmées, récapitulatif quotidien. Voir
   [Rappels et notifications](#modal-tma.notifications).
-- **Un worker de file** dans le centre de service (`php artisan queue:work`) : les envois vers les applications
+- **Un worker de file** dans l'application du Support (`php artisan queue:work`) : les envois vers les applications
   clientes et les courriels passent par la file. Voir [La synchronisation](#modal-tma.synchronisation).
 
 ## 7. Donner les droits
@@ -103,8 +104,8 @@ php artisan permissions:sync --force
 ```
 
 Puis, dans l'écran des rôles, donnez aux rôles concernés les permissions `tma.*`. Voir [Les droits](#modal-tma.droits).
-Dans une application cliente, `tma.ticket.workflow.transmit` distingue les utilisateurs qui ont accès au centre de
-service de ceux qui n'ont que le traitement local.
+Dans une application cliente, `tma.ticket.workflow.transmit` distingue les utilisateurs qui ont accès au Support de
+ceux qui ne passent que par l'équipe du client.
 
 ## Les réglages courants (`config/filament-tma.php`)
 

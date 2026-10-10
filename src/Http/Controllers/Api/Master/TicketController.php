@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\DB;
  */
 class TicketController
 {
-    /** `POST tickets` : la transmission au centre de service. Idempotente (par l'ulid du ticket et de la transition). */
+    /** `POST tickets` : la transmission au Support. Idempotente (par l'ulid du ticket et de la transition). */
     public function store(Request $request): JsonResponse
     {
         $instance = AuthenticateInstance::instance($request);

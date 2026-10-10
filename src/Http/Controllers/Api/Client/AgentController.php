@@ -8,9 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * `POST agents` et `POST agents/unlink` : le centre de service relie (ou délie) un de ses agents à l'utilisateur
- * d'ici qui a le même e-mail. Relié, cet utilisateur agit pour le centre de service sur les tickets du centre de
- * service, avec le jeton personnel reçu ici (limité à cette application).
+ * `POST agents` et `POST agents/unlink` : le Support relie (ou délie) un de ses agents à l'utilisateur
+ * d'ici qui a le même e-mail. Relié, cet utilisateur agit pour le Support sur les tickets du Support, avec le jeton personnel reçu ici (limité à cette application).
  */
 class AgentController
 {

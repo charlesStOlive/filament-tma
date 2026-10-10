@@ -12,6 +12,7 @@ use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -29,7 +30,7 @@ final class Timeline
             return true;
         }
 
-        // Un agent du centre de service écrit dans le maître, qui contrôle ses droits de là-bas.
+        // Un membre du Support écrit dans le maître, qui contrôle ses droits de là-bas.
         if ($context->forSubject($ticket)->isAgent()) {
             return $type !== EntryType::Comment || ! $ticket->state->isFinal();
         }
@@ -50,7 +51,7 @@ final class Timeline
 
     public function canShare(Entry $note, Context $context): bool
     {
-        // Partager une note d'ici, c'est parler pour l'application cliente : pas le rôle d'un agent du centre de service.
+        // Partager une note d'ici, c'est parler pour l'application cliente : pas le rôle d'un membre du Support.
         if ($note->subject instanceof Trackable && $context->forSubject($note->subject)->isAgent()) {
             return false;
         }
@@ -90,8 +91,8 @@ final class Timeline
     }
 
     /**
-     * Un agent du centre de service écrit, depuis une application cliente, dans le maître et en son nom de là-bas ; ce
-     * qui est partagé revient ici par l'état recopié. Sa note reste une note du centre de service : elle n'est pas
+     * Un membre du Support écrit, depuis une application cliente, dans le maître et en son nom de là-bas ; ce
+     * qui est partagé revient ici par l'état recopié. Sa note reste une note du Support : elle n'est pas
      * recopiée ici (on la retrouve dans le maître).
      *
      * @param  array<int, array{path: string, name?: string}>  $uploads
@@ -100,7 +101,7 @@ final class Timeline
     {
         $result = app(MasterClient::class)->agentEntry($context->agent, $subject, $type->value, $body, $parent?->ulid, Uploads::toBase64($uploads));
 
-        DB::transaction(fn () => \CharlesStOlive\FilamentTma\Sync\Mirror::snapshot($result['snapshot']));
+        DB::transaction(fn () => Mirror::snapshot($result['snapshot']));
         Uploads::discard($uploads);
 
         return Entry::query()->where('ulid', $result['entry']['ulid'])->first()
@@ -111,7 +112,7 @@ final class Timeline
      * Écrit l'entrée, sans contrôle de droit : pour un mouvement du workflow (la question de « Demander une
      * réponse »…), déjà autorisé par sa propre permission, ou pour ce qui arrive de l'autre application.
      *
-     * Sur un ticket du centre de service, une application cliente envoie au maître ce qui est partagé, dans la
+     * Sur un ticket du Support, une application cliente envoie au maître ce qui est partagé, dans la
      * transaction : si le maître ne répond pas, rien n'est écrit.
      *
      * @param  array<string, mixed>  $meta

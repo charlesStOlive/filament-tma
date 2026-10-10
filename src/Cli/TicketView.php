@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
 use CharlesStOlive\FilamentTma\Support\TimelineItems;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
@@ -26,6 +27,7 @@ final class TicketView
                 'state' => $ticket->state::getMorphClass(),
                 'state_label' => $ticket->state->getLabel(),
                 'in_hands_of' => $ticket->state->isFinal() ? null : 'handler',
+                'waiting_on' => $ticket->state->isFinal() ? null : Terms::support(),
                 'application' => $ticket->targetInstance?->name,
                 'project' => $ticket->project,
                 'assignee' => $ticket->assignee?->name,
@@ -43,6 +45,7 @@ final class TicketView
             'state' => $ticket->state::getMorphClass(),
             'state_label' => $ticket->state->getLabel(),
             'in_hands_of' => $ticket->sideInCharge()?->value,
+            'waiting_on' => $ticket->waitingOn(),
             'handling_mode' => $ticket->handling_mode->value,
             'application' => $ticket->sourceInstance?->name,
             'priority' => $ticket->priority->value,

@@ -9,12 +9,13 @@ use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Support\Help;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 use Filament\Forms\Components\Select;
 
-/** Soumettre un brouillon à un collègue de la même application : le traitement local. */
+/** Confier un brouillon à l'équipe locale (« Confier à l'équipe EDM »), qui le traite sans le Support. */
 class Submit extends Move
 {
     public function key(): string
@@ -24,12 +25,17 @@ class Submit extends Move
 
     public function label(): string
     {
-        return __('Soumettre');
+        return Terms::submit();
+    }
+
+    public function labelFor(Ticket $ticket): string
+    {
+        return Terms::submit($ticket->source_instance_uid);
     }
 
     public function description(): ?string
     {
-        return __('Confier la demande à un intervenant de cette application.');
+        return __('L’équipe de cette application traite la demande, sans le Support.');
     }
 
     public function icon(): ?string
@@ -70,11 +76,11 @@ class Submit extends Move
 
         return [
             Select::make('assignee_user_id')
-                ->label(__('Intervenant'))
-                ->helperText(__('Facultatif : sans intervenant désigné, le premier qui le prend en charge le devient.'))
+                ->label(__('À confier à'))
+                ->helperText(__('Facultatif : sans personne désignée, le premier qui la prend en charge s’en occupe.'))
                 ->options(fn (): array => $users::query()->orderBy('name')->pluck('name', (new $users)->getKeyName())->all())
                 ->searchable()
-                ->hintAction(Help::action('tma.tickets.soumettre', __('Et sans intervenant ?'))),
+                ->hintAction(Help::action('tma.tickets.soumettre', __('Et sans personne désignée ?'))),
         ];
     }
 

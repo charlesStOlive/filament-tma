@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Instances\Pages;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Instances\InstanceResource;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -26,7 +27,7 @@ class EditInstance extends EditRecord
     }
 
     /** Affiche la configuration produite par « Configuration de l'application » (`replaceMountedAction`). */
-    public function clientEnvAction(): \Filament\Actions\Action
+    public function clientEnvAction(): Action
     {
         return InstanceResource::clientEnvAction();
     }

@@ -18,9 +18,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Les agents du centre de service dans une application cliente : des personnes de l'équipe qui ont aussi un compte
+ * Les membres du Support dans une application cliente : des personnes de l'équipe qui ont aussi un compte
  * dans l'application (même e-mail). Les relier leur émet un jeton personnel limité à cette application, envoyé à
- * l'application : sur un ticket du centre de service, elles y agissent alors en leur nom d'ici — jamais comme demandeur.
+ * l'application : sur un ticket du Support, elles y agissent alors en leur nom d'ici — jamais comme demandeur.
  */
 class AgentsRelationManager extends RelationManager
 {
@@ -28,7 +28,7 @@ class AgentsRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('Agents du centre de service');
+        return __('Membres du Support');
     }
 
     public function isReadOnly(): bool
@@ -39,14 +39,14 @@ class AgentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->description(__('Les personnes de l’équipe qui travaillent aussi depuis cette application, pour le centre de service.'))
+            ->description(__('Les personnes du Support qui travaillent aussi depuis cette application.'))
             ->columns([
                 TextColumn::make('user.name')->label(__('Agent')),
                 TextColumn::make('user.email')->label(__('E-mail')),
                 TextColumn::make('linked_at')->label(__('Relié le'))->dateTime('d/m/Y H:i'),
             ])
             ->headerActions([
-                Help::title('tma.agents', __('Les agents du centre de service')),
+                Help::title('tma.agents', __('Les membres du Support')),
                 Action::make('linkAgent')
                     ->label(__('Relier un agent'))
                     ->icon('heroicon-m-user-plus')
@@ -119,6 +119,6 @@ class AgentsRelationManager extends RelationManager
             ['linked_at' => now()],
         );
 
-        Notification::make()->success()->title(__(':name est agent du centre de service dans :app', ['name' => $user->name, 'app' => $instance->name]))->send();
+        Notification::make()->success()->title(__(':name intervient au nom du Support dans :app', ['name' => $user->name, 'app' => $instance->name]))->send();
     }
 }

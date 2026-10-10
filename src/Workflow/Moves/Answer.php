@@ -11,7 +11,7 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
- * Le demandeur répond : la main revient à l'intervenant. La réponse s'accroche à la dernière question posée.
+ * Le demandeur répond : la main revient à l'équipe qui traite la demande. La réponse s'accroche à la dernière question posée.
  * Un simple commentaire pendant l'attente, lui, ne rend pas la main (CDC §7.5).
  */
 class Answer extends Move

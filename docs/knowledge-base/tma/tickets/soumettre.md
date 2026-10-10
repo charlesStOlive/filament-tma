@@ -1,24 +1,25 @@
 ---
-title: Soumettre ou transmettre
+title: Confier à l'équipe ou transmettre au Support
 icon: heroicon-o-paper-airplane
 order: 20
 ---
 
-# Soumettre ou transmettre
+# Confier à l'équipe ou transmettre au Support
 
 Un brouillon part de deux façons.
 
-## Soumettre (traitement local)
+## Confier à l'équipe EDM
 
-La demande est confiée à un **collègue de l'application**. Le champ **Intervenant** est facultatif :
+La demande est confiée à l'**équipe de votre application** (« EDM » est le nom court du client, voir
+[Les mots du module](#modal-tma.comprendre.vocabulaire)). Le champ **À confier à** est facultatif :
 
-- choisi, ce collègue est désigné (et prévenu, si l'application l'a réglé ainsi) ;
-- vide, la demande attend : le premier qui la **prend en charge** en devient l'intervenant. Elle apparaît dans
+- choisie, cette personne est désignée (et prévenue, si l'application l'a réglé ainsi) ;
+- vide, la demande attend en **Nouveau** : le premier qui la **prend en charge** s'en occupe. Elle apparaît dans
   « À prendre en charge » du récapitulatif quotidien de ceux qui le peuvent.
 
-## Transmettre au centre de service
+## Transmettre au Support
 
-La demande part au **centre de service**, qui la traitera et fera autorité. Voir
-[Traitement local ou centre de service](#modal-tma.comprendre.traitement).
+La demande part au **Support**, qui la traitera et fera autorité. Voir
+[L'équipe du client ou le Support](#modal-tma.comprendre.traitement).
 
-Ce bouton n'existe que si l'application est reliée à un centre de service, et pour les utilisateurs qui y ont accès.
+Ce bouton n'existe que si l'application est reliée au Support, et pour les utilisateurs qui y ont accès.

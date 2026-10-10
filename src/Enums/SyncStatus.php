@@ -16,7 +16,7 @@ enum SyncStatus: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Local => __('Local'),
+            self::Local => __('Non partagé'),
             self::Pending => __('En attente de synchronisation'),
             self::Synced => __('Synchronisé'),
             self::Error => __('Synchronisation en erreur'),

@@ -7,8 +7,8 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Models\Actor;
-use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Agent;
+use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -98,7 +98,7 @@ class TicketWorkflow
         $move = is_string($move) ? $this->move($move) : $move;
         $context = $context->forSubject($ticket);
 
-        // Un agent du centre de service ne transmet pas une demande au centre de service : il en fait partie.
+        // Un membre du Support ne transmet pas une demande au Support : il en fait partie.
         if ($move->key() === 'transmit' && Agent::for($context->user) !== null) {
             return false;
         }
@@ -148,7 +148,7 @@ class TicketWorkflow
      * Fait le mouvement : contrôle, validation des données, écritures du mouvement, changement d'état, historique,
      * dans une seule transaction ; puis l'événement `TicketTransitioned`.
      *
-     * Sur un ticket du centre de service, une application cliente ne fait pas le mouvement elle-même : elle le
+     * Sur un ticket du Support, une application cliente ne fait pas le mouvement elle-même : elle le
      * demande au maître, qui fait autorité, et recopie le résultat. Si le maître ne répond pas, rien n'est fait.
      *
      * @param  array<string, mixed>  $data
@@ -206,7 +206,7 @@ class TicketWorkflow
         return $transition;
     }
 
-    /** Une application cliente demande au maître ce qui touche un ticket du centre de service. */
+    /** Une application cliente demande au maître ce qui touche un ticket du Support. */
     public function delegatesToMaster(Ticket $ticket, Context $context): bool
     {
         return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
@@ -222,7 +222,7 @@ class TicketWorkflow
     public function createForClient(Instance $instance, array $requester, array $attributes, Context $context): Ticket
     {
         if (! Tma::isMaster()) {
-            throw new AuthorizationException(__('Seul le centre de service prépare un ticket pour un client.'));
+            throw new AuthorizationException(__('Seul le Support prépare un ticket pour un client.'));
         }
 
         if (! $context->isSystem() && Gate::getPolicyFor(Ticket::class) !== null && ! Gate::forUser($context->user)->allows('create', Ticket::class)) {

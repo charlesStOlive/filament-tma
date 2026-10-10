@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Instances\Pages;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Instances\InstanceResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -16,7 +17,7 @@ class ListInstances extends ListRecords
     }
 
     /** Affiche la configuration produite par « Configuration de l'application » (`replaceMountedAction`). */
-    public function clientEnvAction(): \Filament\Actions\Action
+    public function clientEnvAction(): Action
     {
         return InstanceResource::clientEnvAction();
     }

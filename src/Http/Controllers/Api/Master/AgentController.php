@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Master;
 
 use CharlesStOlive\FilamentTma\Cli\LocalBackend;
+use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateAgent;
 use CharlesStOlive\FilamentTma\Sync\Payload;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -101,7 +102,7 @@ class AgentController
         return new LocalBackend(
             $request->user(config('filament-tma.api.guard', 'api')),
             viaApi: true,
-            scope: $request->attributes->get(\CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateAgent::SCOPE),
+            scope: $request->attributes->get(AuthenticateAgent::SCOPE),
         );
     }
 

@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** Le travail est fait : le demandeur valide ou rouvre. */
+/** Le travail est fait : le ticket est résolu, le demandeur confirme ou rouvre. */
 class SubmitForValidation extends Move
 {
     use WritesMessages;
@@ -22,7 +22,7 @@ class SubmitForValidation extends Move
 
     public function label(): string
     {
-        return __('Soumettre à validation');
+        return __('Marquer comme résolu');
     }
 
     public function color(): string

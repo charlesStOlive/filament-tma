@@ -9,7 +9,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** Le demandeur valide le travail : le ticket est clôturé. */
+/** Le demandeur confirme que le travail lui convient : le ticket est clos. */
 class Validate extends Move
 {
     public function key(): string
@@ -19,7 +19,7 @@ class Validate extends Move
 
     public function label(): string
     {
-        return __('Valider');
+        return __('Confirmer et clore');
     }
 
     public function color(): string

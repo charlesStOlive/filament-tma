@@ -11,12 +11,11 @@ Chaque installation du module a un **identifiant** : 26 lettres et chiffres (un 
 
 ## À quoi il sert
 
-- Il est **écrit dans chaque ticket** créé par l'application : c'est ainsi que le centre de service sait d'où vient un
+- Il est **écrit dans chaque ticket** créé par l'application : c'est ainsi que le Support sait d'où vient un
   ticket, et qu'une application cliente reconnaît les siens.
-- Le centre de service le connaît pour chaque application cliente (**Applications clientes**, champ **Identifiant**).
+- Le Support le connaît pour chaque application cliente (**Applications clientes**, champ **Identifiant**).
 
-Les deux doivent être **le même** : celui du `.env` de l'application cliente, et celui de sa fiche dans le centre de
-service.
+Les deux doivent être **le même** : celui du `.env` de l'application cliente, et celui de sa fiche chez le Support.
 
 ## Il ne change plus
 
@@ -25,7 +24,7 @@ bouton qui en génère un nouveau disparaît alors de la fiche, et `tma:install`
 
 ## Le plus simple
 
-Laissez le centre de service le générer : la fiche d'une nouvelle application cliente le propose d'office, et
+Laissez le Support le générer : la fiche d'une nouvelle application cliente le propose d'office, et
 **Configuration de l'application** donne la commande qui l'écrit dans le `.env` de l'application cliente.
 
 Si l'application cliente a déjà le sien (installée avant), collez-le dans la fiche à la place de celui proposé.

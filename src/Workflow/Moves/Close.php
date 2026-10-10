@@ -11,7 +11,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'intervenant clôture sans attendre le demandeur : pas de réponse, ou pas de validation. */
+/** L'équipe qui traite la demande la clôt sans attendre le demandeur : pas de réponse, ou pas de confirmation. */
 class Close extends Move
 {
     use WritesMessages;
@@ -23,7 +23,7 @@ class Close extends Move
 
     public function label(): string
     {
-        return __('Clôturer sans réponse');
+        return __('Clore sans réponse');
     }
 
     public function color(): string

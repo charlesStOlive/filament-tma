@@ -27,13 +27,13 @@ class ShowTicketCommand extends Command
             function (array $t): void {
                 $this->newLine();
                 $this->line("<options=bold>{$t['ref']} — {$t['title']}</>");
-                $this->line(__('État : :state (main : :side) · priorité : :priority · temps : :time', [
-                    'state' => $t['state_label'], 'side' => $t['in_hands_of'] ?? '—', 'priority' => $t['priority'] ?? '—',
+                $this->line(__('État : :state (en attente de : :side) · priorité : :priority · temps : :time', [
+                    'state' => $t['state_label'], 'side' => $t['waiting_on'] ?? $t['in_hands_of'] ?? '—', 'priority' => $t['priority'] ?? '—',
                     'time' => Duration::format((int) $t['time_minutes']),
                 ]));
                 $this->line($t['kind'] === 'task'
-                    ? __('Projet : :p · intervenant : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
-                    : __('Demandeur : :r · intervenant : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
+                    ? __('Projet : :p · pris en charge par : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
+                    : __('Demandeur : :r · pris en charge par : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
 
                 if (filled($t['url'] ?? null)) {
                     $this->line($t['url']);

@@ -2,10 +2,14 @@
 
 namespace CharlesStOlive\FilamentTma\Enums;
 
+use CharlesStOlive\FilamentTma\Support\Terms;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-/** Qui traite le ticket : un collègue de l'application source, ou le centre de service (le maître). */
+/**
+ * Qui traite le ticket : l'équipe locale de l'application source (« Équipe EDM », voir `Support\Terms`), ou le
+ * Support (le maître).
+ */
 enum HandlingMode: string implements HasColor, HasLabel
 {
     case Local = 'local';
@@ -14,8 +18,8 @@ enum HandlingMode: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Local => __('Traitement local'),
-            self::ServiceDesk => __('Centre de service'),
+            self::Local => Terms::team(),
+            self::ServiceDesk => Terms::support(),
         };
     }
 

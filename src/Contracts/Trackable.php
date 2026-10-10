@@ -48,6 +48,6 @@ interface Trackable
     /** Cette application fait autorité (sinon, elle envoie ce qu'elle écrit à celle qui fait autorité). */
     public function authorityIsHere(): bool;
 
-    /** La copie est partagée avec l'autre application (un ticket au centre de service, une tâche publiée). */
+    /** La copie est partagée avec l'autre application (un ticket au Support, une tâche publiée). */
     public function isShared(): bool;
 }

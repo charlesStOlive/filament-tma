@@ -2,11 +2,16 @@
 
 namespace CharlesStOlive\FilamentTma\Models;
 
+use CharlesStOlive\FilamentTma\Support\ServiceAccount;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Str;
 
 /**
  * Une application cliente, vue du maître (CDC §6.2). Elle appelle le maître avec le jeton de `apiUser` ; le maître
@@ -14,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  *
  * @property string $uid
  * @property string $name
+ * @property string|null $short_name le nom court du client (« EDM »), voir `Support\Terms`
  * @property string $url
  * @property string|null $token
  * @property bool $is_active
@@ -36,6 +42,12 @@ class Instance extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(fn () => Terms::flush());
+        static::deleted(fn () => Terms::flush());
+    }
+
     public function client(): MorphTo
     {
         return $this->morphTo();
@@ -46,7 +58,7 @@ class Instance extends Model
         return $this->belongsTo(Tma::userModel(), 'api_user_id');
     }
 
-    public function agentLinks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function agentLinks(): HasMany
     {
         return $this->hasMany(AgentLink::class);
     }
@@ -70,22 +82,22 @@ class Instance extends Model
 
     /**
      * Le compte de service de l'application, ici : créé au besoin, dédié (sans rôle, jamais un compte de quelqu'un) ;
-     * c'est à son jeton que le centre de service reconnaît l'application.
+     * c'est à son jeton que le Support reconnaît l'application.
      */
-    public function ensureServiceAccount(): \Illuminate\Contracts\Auth\Authenticatable
+    public function ensureServiceAccount(): Authenticatable
     {
         if ($this->apiUser !== null) {
             return $this->apiUser;
         }
 
-        $base = 'tma-'.(\Illuminate\Support\Str::slug($this->name) ?: 'application');
+        $base = 'tma-'.(Str::slug($this->name) ?: 'application');
         $email = $base.'@tma.local';
 
-        if (\CharlesStOlive\FilamentTma\Support\ServiceAccount::isTaken($email)) {
+        if (ServiceAccount::isTaken($email)) {
             $email = $base.'-'.strtolower(substr($this->uid, -6)).'@tma.local';
         }
 
-        $user = \CharlesStOlive\FilamentTma\Support\ServiceAccount::user($email, __('Application :name (TMA)', ['name' => $this->name]));
+        $user = ServiceAccount::user($email, __('Application :name (TMA)', ['name' => $this->name]));
         $this->forceFill(['api_user_id' => $user->getAuthIdentifier()])->save();
         $this->setRelation('apiUser', $user);
 

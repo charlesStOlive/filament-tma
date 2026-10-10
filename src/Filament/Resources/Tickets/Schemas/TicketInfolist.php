@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
+use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Grid;
@@ -36,25 +37,26 @@ class TicketInfolist
                     ]),
                 Section::make(__('Suivi'))
                     ->columnSpan(1)
-                    ->headerActions([Help::title('tma.comprendre.la-main', __('Qui a la main ?'))])
+                    ->headerActions([Help::title('tma.comprendre.la-main', __('Qui doit agir ?'))])
                     ->schema([
                         TextEntry::make('agent_mode')->hiddenLabel()
-                            ->state(fn ($record): ?string => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent()
-                                ? __('Vous agissez ici pour le centre de service, en votre nom de là-bas.')
+                            ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
+                                ? __('Vous intervenez ici au nom du Support.')
                                 : null)
-                            ->visible(fn ($record): bool => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent())
+                            ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
                             ->badge()->color('info')->icon('heroicon-m-lifebuoy')
-                            ->hintAction(Help::action('tma.agents', __('Agent du centre de service'))),
+                            ->hintAction(Help::action('tma.agents', __('Membre du Support'))),
                         TextEntry::make('state')->label(__('État'))->badge()
                             ->helperText(fn (Ticket $record): ?string => $record->state->getDescription()),
-                        TextEntry::make('in_hands')->label(__('La main est à'))
-                            ->state(fn (Ticket $record): ?string => $record->sideInCharge()?->getLabel())
+                        TextEntry::make('waiting_on')->label(__('En attente de'))
+                            ->state(fn (Ticket $record): ?string => $record->waitingOn())
                             ->placeholder('—'),
-                        TextEntry::make('handling_mode')->label(__('Traitement'))->badge()
-                            ->hintAction(Help::action('tma.comprendre.traitement', __('Local ou centre de service ?'))),
+                        TextEntry::make('handling_mode')->label(__('Traité par'))->badge()
+                            ->formatStateUsing(fn (Ticket $record): string => $record->handledBy())
+                            ->hintAction(Help::action('tma.comprendre.traitement', __('Équipe locale ou Support ?'))),
                         TextEntry::make('priority')->label(__('Priorité'))->badge(),
                         TextEntry::make('requester.name')->label(__('Demandeur')),
-                        TextEntry::make('assignee.name')->label(__('Intervenant'))->placeholder('—'),
+                        TextEntry::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—'),
                         TextEntry::make('due_on')->label(__('Échéance'))->date('d/m/Y')->placeholder('—'),
                         TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                             ->visible(fn (Ticket $record): bool => $record->paused_until !== null),

@@ -13,5 +13,5 @@ un fournisseur qui doit répondre, une période de fermeture…
   d'heure) et repasse **En cours**.
 - **Motif** : facultatif ; il reste dans l'historique.
 
-L'intervenant peut **Reprendre** avant la date. Pendant la pause, la main reste à l'intervenant ; le jour de la
-reprise, le ticket apparaît dans son récapitulatif quotidien (« Reprennent aujourd'hui »).
+L'équipe qui traite peut **Reprendre** avant la date. Pendant la pause, le ticket attend toujours cette équipe ; le
+jour de la reprise, il apparaît dans le récapitulatif quotidien de la personne qui l'a pris en charge (« Reprennent aujourd'hui »).

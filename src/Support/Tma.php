@@ -51,7 +51,7 @@ final class Tma
         return (string) config('filament-tma.instance.ticket_prefix', 'TMA');
     }
 
-    /** Le circuit « centre de service » est ouvert : un client qui connaît son maître. */
+    /** Le circuit du Support est ouvert : un client qui connaît son maître. */
     public static function serviceDeskAvailable(): bool
     {
         return self::isClient() && filled(config('filament-tma.master.url'));

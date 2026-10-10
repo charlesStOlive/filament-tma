@@ -10,8 +10,8 @@ order: 80
 
 Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** avec ce qui l'attend :
 
-- ses demandes qui attendent **sa réponse** ou **sa validation** ;
-- les tickets soumis que personne n'a pris et qu'il peut **prendre en charge** ;
+- ses demandes qui attendent **sa réponse** ou **sa confirmation** ;
+- les tickets nouveaux que personne n'a pris et qu'il peut **prendre en charge** ;
 - ce qu'il **traite** : tickets en cours, tâches projet qui lui sont confiées ;
 - ses pauses qui **reprennent aujourd'hui**.
 
@@ -24,8 +24,8 @@ Par défaut, il n'y en a pas : tout passe par le récapitulatif. L'application p
 
 | Passage | Qui est prévenu |
 | --- | --- |
-| Demander une réponse, Soumettre à validation, Prendre en charge, Publier | le demandeur |
-| Soumettre (avec un intervenant), Répondre, Rouvrir | l'intervenant |
+| Demander des précisions, Marquer comme résolu, Prendre en charge, Publier | le demandeur |
+| Confier à l'équipe (à une personne désignée), Répondre, Rouvrir | la personne qui a pris la demande en charge |
 
 L'auteur du passage n'est jamais prévenu de son propre geste.
 
@@ -36,7 +36,7 @@ L'auteur du passage n'est jamais prévenu de son propre geste.
 
 ## Chacun chez soi
 
-Chaque application prévient **ses propres utilisateurs**. Quand le centre de service pose une question sur un ticket
+Chaque application prévient **ses propres utilisateurs**. Quand le Support pose une question sur un ticket
 de Desapp, c'est Desapp qui envoie le courriel à son demandeur, à la réception.
 
 ## Les tâches automatiques

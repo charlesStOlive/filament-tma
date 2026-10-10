@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Sync;
 
 use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Http\Client\PendingRequest;
 
 /** Le maître appelle une application cliente. */
@@ -47,7 +48,7 @@ final class InstanceClient
     }
 
     /**
-     * Relie un agent : l'utilisateur de l'application qui a cet e-mail agira pour le centre de service, avec ce jeton.
+     * Relie un agent : l'utilisateur de l'application qui a cet e-mail agira pour le Support, avec ce jeton.
      *
      * @return array{name: string}
      */
@@ -56,7 +57,7 @@ final class InstanceClient
         return Http::call(__('Relier l’agent :email', ['email' => $email]), fn () => $this->http()->post($this->instance->apiUrl('agents'), [
             'email' => $email,
             'name' => $name,
-            'master_uid' => \CharlesStOlive\FilamentTma\Support\Tma::instanceUid(),
+            'master_uid' => Tma::instanceUid(),
             'master_user_id' => $masterUserId,
             'token' => $token,
         ]))->json();

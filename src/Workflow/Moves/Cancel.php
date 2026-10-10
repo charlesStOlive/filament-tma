@@ -16,8 +16,8 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
- * Abandonner la demande. Le demandeur le peut tant que personne ne l'a prise en charge (brouillon, soumise) ;
- * l'intervenant, à tout moment avant la fin. Un motif est demandé, sauf pour un brouillon.
+ * Abandonner la demande. Le demandeur le peut tant que personne ne l'a prise en charge (brouillon, nouvelle) ;
+ * l'équipe qui la traite, à tout moment avant la fin. Un motif est demandé, sauf pour un brouillon.
  */
 class Cancel extends Move
 {

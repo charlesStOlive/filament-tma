@@ -1,6 +1,6 @@
 {{-- La configuration d'une application cliente, produite par « Configuration de l'application » (InstanceResource). --}}
 <div class="fi-tma-client-env" x-data="{ copied: null, copy(id) { navigator.clipboard.writeText(this.$refs[id].innerText); this.copied = id; setTimeout(() => this.copied = null, 1500) } }">
-    <p>{{ __('Dans l’application cliente, lancez cette commande. Elle écrit sa configuration dans son .env, crée le compte du centre de service et lui transmet son jeton ; le centre de service vérifie aussitôt la connexion dans les deux sens.') }}</p>
+    <p>{{ __('Dans l’application cliente, lancez cette commande. Elle écrit sa configuration dans son .env, crée le compte du Support et lui transmet son jeton ; le Support vérifie aussitôt la connexion dans les deux sens.') }}</p>
 
     <div class="fi-tma-client-env-block">
         <pre x-ref="command">{{ $command }}</pre>

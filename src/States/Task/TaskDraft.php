@@ -23,6 +23,6 @@ class TaskDraft extends TaskState
 
     public function getDescription(): ?string
     {
-        return __('Visible dans le centre de service seulement ; pas encore chez le client.');
+        return __('Visible du Support seulement : pas encore publiée chez le client.');
     }
 }

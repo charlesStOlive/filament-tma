@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
+use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Grid;
@@ -29,12 +30,12 @@ class TaskInfolist
                 ]),
                 Section::make(__('Suivi'))->columnSpan(1)->schema([
                     TextEntry::make('agent_mode')->hiddenLabel()
-                        ->state(fn ($record): ?string => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent()
-                            ? __('Vous agissez ici pour le centre de service, en votre nom de là-bas.')
+                        ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
+                            ? __('Vous intervenez ici au nom du Support.')
                             : null)
-                        ->visible(fn ($record): bool => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent())
+                        ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
                         ->badge()->color('info')->icon('heroicon-m-lifebuoy')
-                        ->hintAction(Help::action('tma.agents', __('Agent du centre de service'))),
+                        ->hintAction(Help::action('tma.agents', __('Membre du Support'))),
                     TextEntry::make('state')->label(__('État'))->badge()
                         ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
                     TextEntry::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster()),
@@ -59,8 +60,8 @@ class TaskInfolist
             Section::make(__('Chronologie'))->columnSpanFull()
                 ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Commentaire ou note ?'))])
                 ->schema([
-                ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
-            ]),
+                    ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
+                ]),
         ]);
     }
 }

@@ -12,29 +12,30 @@ use Illuminate\Support\Str;
 
 /**
  * Configure l'installation dans `.env` : son mode, son identifiant (généré s'il n'y en a pas), son nom, son préfixe,
- * et, pour une application cliente, le centre de service.
+ * et, pour une application cliente, le nom court de son client et le Support.
  *
  *     php artisan tma:install --mode=master --name=Filbreeze --prefix=FIL
- *     php artisan tma:install --mode=client --name=Desapp --prefix=DES --uid=01K… --master-url=… --master-token=… --master-account=filbreeze@api.local
+ *     php artisan tma:install --mode=client --name=Desapp --short-name=EDM --prefix=DES --uid=01K… --master-url=… --master-token=… --master-account=support@tma.local
  *
- * `--master-account` crée, dans l'application cliente, le compte par lequel le centre de service l'appellera, et
- * affiche son jeton : il se colle dans « Applications clientes › Jeton émis par l'application ».
+ * `--master-account` crée, dans l'application cliente, le compte par lequel le Support l'appellera, et lui transmet
+ * son jeton (`POST master/register`) ; si la transmission échoue, il l'affiche.
  *
  * L'identifiant ne change plus une fois des tickets créés.
  */
 class InstallCommand extends Command
 {
     protected $signature = 'tma:install
-        {--mode= : master (centre de service) ou client}
+        {--mode= : master (le Support) ou client}
         {--uid= : L’identifiant à prendre (sinon : celui déjà réglé, ou un nouveau)}
         {--name= : Le nom de l’application}
+        {--short-name= : Client : le nom court du client (EDM donne « Équipe EDM », « Publier chez EDM »)}
         {--prefix= : Le début des numéros de tickets (DES donne DES-0042)}
-        {--master-url= : Client : l’adresse du centre de service}
-        {--master-token= : Client : le jeton émis par le centre de service}
-        {--master-account= : Client : l’e-mail du compte qu’utilisera le centre de service (créé, avec son jeton)}
+        {--master-url= : Client : l’adresse du Support}
+        {--master-token= : Client : le jeton émis par le Support}
+        {--master-account= : Client : l’e-mail du compte qu’utilisera le Support (créé, avec son jeton)}
         {--show : Afficher les lignes de .env sans rien écrire}';
 
-    protected $description = 'Configure le module TMA dans .env : mode, identifiant, centre de service';
+    protected $description = 'Configure le module TMA dans .env : mode, identifiant, Support';
 
     public function handle(): int
     {
@@ -65,6 +66,7 @@ class InstallCommand extends Command
             'TMA_MODE' => $mode,
             'TMA_INSTANCE_UID' => $uid,
             'TMA_INSTANCE_NAME' => $this->option('name'),
+            'TMA_INSTANCE_SHORT_NAME' => $mode === 'client' ? $this->option('short-name') : null,
             'TMA_TICKET_PREFIX' => $this->option('prefix') ? strtoupper($this->option('prefix')) : null,
             'TMA_MASTER_URL' => $mode === 'client' ? $this->option('master-url') : null,
             'TMA_MASTER_TOKEN' => $mode === 'client' ? $this->option('master-token') : null,
@@ -76,7 +78,7 @@ class InstallCommand extends Command
 
         if ($mode === 'client' && filled($email = $this->option('master-account'))) {
             if ($this->option('show')) {
-                $this->components->warn(__('--show : le compte du centre de service n’est pas créé.'));
+                $this->components->warn(__('--show : le compte du Support n’est pas créé.'));
             } else {
                 $this->connectMaster($email, $values);
             }
@@ -86,8 +88,8 @@ class InstallCommand extends Command
         $this->components->bulletList([
             __('Identifiant de cette application : :uid', ['uid' => $uid]),
             $mode === 'master'
-                ? __('Déclarez chaque application cliente dans TMA › Applications clientes.')
-                : __('Dans le centre de service, l’application se déclare avec cet identifiant.'),
+                ? __('Déclarez chaque application cliente dans Support › Applications clientes.')
+                : __('Chez le Support, l’application se déclare avec cet identifiant.'),
             __('Pensez à `php artisan config:clear` si la configuration est en cache.'),
         ]);
 
@@ -95,14 +97,14 @@ class InstallCommand extends Command
     }
 
     /**
-     * Crée le compte par lequel le centre de service appellera l'application, et lui transmet son jeton. Si la
+     * Crée le compte par lequel le Support appellera l'application, et lui transmet son jeton. Si la
      * transmission échoue, le jeton s'affiche : il se colle alors à la main dans la fiche de l'application.
      *
      * @param  array<string, string>  $values
      */
     private function connectMaster(string $email, array $values): void
     {
-        $token = ServiceAccount::token(ServiceAccount::user($email, __('Centre de service (TMA)')));
+        $token = ServiceAccount::token(ServiceAccount::user($email, __('Support (TMA)')));
 
         config(array_filter([
             'filament-tma.api.master_user' => $email,
@@ -111,7 +113,7 @@ class InstallCommand extends Command
         ]));
 
         if (blank(config('filament-tma.master.url')) || blank(config('filament-tma.master.token'))) {
-            $this->showToken($email, $token, __('Le centre de service n’est pas encore configuré (--master-url, --master-token).'));
+            $this->showToken($email, $token, __('Le Support n’est pas encore configuré (--master-url, --master-token).'));
 
             return;
         }
@@ -124,19 +126,19 @@ class InstallCommand extends Command
             return;
         }
 
-        $this->components->info(__('Jeton transmis au centre de service (application « :name »).', ['name' => $answer['instance'] ?? '?']));
+        $this->components->info(__('Jeton transmis au Support (application « :name »).', ['name' => $answer['instance'] ?? '?']));
 
         if ($answer['callback'] ?? false) {
-            $this->components->info(__('Le centre de service joint cette application : la liaison marche dans les deux sens.'));
+            $this->components->info(__('Le Support joint cette application : la liaison marche dans les deux sens.'));
         } else {
-            $this->components->warn(__('Le centre de service ne joint pas encore cette application : :error', ['error' => $answer['callback_error'] ?? '?']));
+            $this->components->warn(__('Le Support ne joint pas encore cette application : :error', ['error' => $answer['callback_error'] ?? '?']));
         }
     }
 
     private function showToken(string $email, string $token, string $why): void
     {
         $this->components->warn($why);
-        $this->components->info(__('Compte du centre de service : :email. Son jeton, à coller dans le centre de service (Applications clientes › Saisir le jeton à la main) :', ['email' => $email]));
+        $this->components->info(__('Compte du Support : :email. Son jeton, à coller chez le Support (Applications clientes › Saisir le jeton à la main) :', ['email' => $email]));
         $this->line($token);
     }
 

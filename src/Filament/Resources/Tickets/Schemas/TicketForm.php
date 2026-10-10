@@ -4,8 +4,8 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Models\Instance;
-use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
 use Filament\Forms\Components\DatePicker;
@@ -41,7 +41,7 @@ class TicketForm
                                 [],
                             );
                         })
-                        ->helperText(__('Les utilisateurs de l’application qui ont accès au centre de service.'))
+                        ->helperText(__('Les utilisateurs de l’application qui ont accès au Support.'))
                         ->searchable()
                         ->required()
                         ->hintAction(Help::action('tma.tickets.prepares', __('Qui peut être demandeur ?'))),

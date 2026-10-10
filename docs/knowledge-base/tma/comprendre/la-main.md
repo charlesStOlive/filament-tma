@@ -1,34 +1,34 @@
 ---
-title: Qui a la main ?
+title: Qui doit agir ?
 icon: heroicon-o-hand-raised
 order: 10
 ---
 
-# Qui a la main ?
+# Qui doit agir ?
 
-À chaque étape, un ticket attend **l'une des deux parties** : le demandeur, ou l'intervenant. C'est elle qui « a la
-main ». La fiche l'affiche dans **Suivi › La main est à**.
+À chaque étape, un ticket attend **l'une des deux parties** : le demandeur, ou l'équipe qui traite la demande (le
+Support, ou l'équipe du client). La fiche l'affiche dans **Suivi › En attente de**.
 
-| État | La main est à |
+| État | En attente de |
 | --- | --- |
 | Brouillon | celui qui l'écrit |
-| Soumis, En cours, En pause | l'intervenant |
-| En attente du demandeur, À valider | le demandeur |
-| Clôturé, Annulé | personne |
+| Nouveau, En cours, En pause | l'équipe qui traite : **Support**, ou **Équipe EDM** |
+| En attente du demandeur, Résolu | le **demandeur** |
+| Clos, Annulé | personne |
 
 ## Ce que permet la main
 
-- **Celle qui a la main** fait avancer le ticket (les boutons de passage) et, côté intervenant, peut en modifier les
-  champs.
+- **La partie attendue** fait avancer le ticket (les boutons de passage) et, du côté de l'équipe qui traite, peut en
+  modifier les champs.
 - **L'autre** ne peut qu'**ajouter** : un commentaire, une note, une pièce jointe. Elle ne modifie pas le ticket et ne
   fait pas les passages de l'autre partie.
 
 ## Un commentaire ne rend pas la main
 
-Écrire pendant que l'autre a la main est utile (une précision, une correction), mais ne change rien à l'état. Pour
-rendre la main, il faut le passage prévu :
+Écrire pendant que l'autre partie a la main est utile (une précision, une correction), mais ne change rien à l'état.
+Pour rendre la main, il faut le passage prévu :
 
-- le demandeur **Répond** à une question, **Valide** ou **Rouvre** ;
-- l'intervenant **Reprend**, **Demande une réponse**, **Soumet à validation**.
+- le demandeur **Répond**, **Confirme et clôt**, ou **Rouvre** ;
+- l'équipe qui traite **Reprend**, **Demande des précisions**, ou **Marque comme résolu**.
 
 Voir [Les tickets](#modal-tma.tickets).

@@ -22,6 +22,12 @@ abstract class Move
 
     abstract public function label(): string;
 
+    /** Le libellé pour un ticket donné : il peut nommer son client (« Publier chez EDM », voir `Support\Terms`). */
+    public function labelFor(Ticket $ticket): string
+    {
+        return $this->label();
+    }
+
     public function description(): ?string
     {
         return null;
@@ -56,7 +62,7 @@ abstract class Move
         return true;
     }
 
-    /** Disponible pour ce ticket, en dehors des états et des droits (le circuit centre de service est ouvert…). */
+    /** Disponible pour ce ticket, en dehors des états et des droits (le circuit du Support est ouvert…). */
     public function isAvailable(Ticket $ticket): bool
     {
         return true;
@@ -87,7 +93,7 @@ abstract class Move
 
     /**
      * Appelé dans la transaction, une fois l'état changé et l'historique écrit : une exception ici annule tout
-     * (la transmission au centre de service s'en sert pour appeler le maître).
+     * (la transmission au Support s'en sert pour appeler le maître).
      */
     public function committing(Ticket $ticket, StateTransition $transition, Context $context): void {}
 

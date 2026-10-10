@@ -11,9 +11,9 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Clôture les tickets où la main est au demandeur (en attente de sa réponse, ou à valider) et où rien ne s'est passé
+ * Clôt les tickets où la main est au demandeur (en attente de sa réponse, ou résolus) et où rien ne s'est passé
  * depuis `auto_close.after_days` jours (28 par défaut) ; avertit `warn_days_before` jours avant. Seule l'application
- * qui traite le ticket le fait (le maître pour le centre de service, l'application source pour le local).
+ * qui traite le ticket le fait (le maître pour le Support, l'application source pour le local).
  * Planifiée chaque jour par le plugin.
  */
 class CloseStaleTicketsCommand extends Command
@@ -82,7 +82,7 @@ class CloseStaleTicketsCommand extends Command
                 });
         }
 
-        $this->components->info(($dry ? '[simulation] ' : '')."{$closed} clôturé(s), {$warned} averti(s).");
+        $this->components->info(($dry ? '[simulation] ' : '')."{$closed} clos, {$warned} averti(s).");
 
         return self::SUCCESS;
     }

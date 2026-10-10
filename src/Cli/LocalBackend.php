@@ -5,10 +5,14 @@ namespace CharlesStOlive\FilamentTma\Cli;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\Origin;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Auditor;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentTma\Workflow\TimeLog;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -50,9 +54,9 @@ final class LocalBackend implements Backend
         $context = $this->context();
 
         if ($subject instanceof ProjectTask) {
-            Auditor::as($context, fn () => app(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class)->run($subject, $move, $data, $context));
+            Auditor::as($context, fn () => app(TaskWorkflow::class)->run($subject, $move, $data, $context));
         } elseif (! $subject->transitions()->where('ulid', $transitionUlid)->exists()) {
-            Auditor::as($context, fn () => app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->run($subject, $move, $data, $context, $transitionUlid));
+            Auditor::as($context, fn () => app(TicketWorkflow::class)->run($subject, $move, $data, $context, $transitionUlid));
         }
 
         return $subject->refresh();
@@ -69,9 +73,9 @@ final class LocalBackend implements Backend
         $context = $this->context();
         $parent = filled($parentUlid) ? $subject->entries()->where('ulid', $parentUlid)->first() : null;
 
-        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files): \CharlesStOlive\FilamentTma\Models\Entry {
+        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files): Entry {
             $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent);
-            \CharlesStOlive\FilamentTma\Sync\Mirror::files($entry, $files);
+            Mirror::files($entry, $files);
 
             return $entry;
         }));

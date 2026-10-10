@@ -22,7 +22,7 @@ class ListTicketsCommand extends Command
             {--project= : Projet (tâches)}
             {--app= : Application source (nom ou identifiant), dans le maître}
             {--search= : Texte du titre, ou numéro}
-            {--mine : Seulement ceux dont je suis l’intervenant}
+            {--mine : Seulement ceux que j’ai pris en charge}
             {--all : Y compris les tickets terminés}
             {--limit=50 : Nombre maximal}
             '.$this->backendOptions();
@@ -51,9 +51,9 @@ class ListTicketsCommand extends Command
                 }
 
                 $this->table(
-                    [__('N°'), __('Titre'), __('État'), __('Main'), __('Application'), __('Intervenant'), __('Temps')],
+                    [__('N°'), __('Titre'), __('État'), __('En attente de'), __('Application'), __('Pris en charge par'), __('Temps')],
                     collect($tickets)->map(fn (array $t): array => [
-                        $t['ref'], Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['in_hands_of'] ?? '—',
+                        $t['ref'], Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['waiting_on'] ?? $t['in_hands_of'] ?? '—',
                         $t['application'] ?? '—', $t['assignee'] ?? '—', Duration::format((int) $t['time_minutes']),
                     ])->all(),
                 );

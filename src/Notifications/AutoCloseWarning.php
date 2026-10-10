@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/** Avertit le demandeur qu'un ticket qui attend sa réponse sera bientôt clôturé (`tma:close-stale`). */
+/** Avertit le demandeur qu'un ticket qui attend sa réponse sera bientôt clos (`tma:close-stale`). */
 class AutoCloseWarning extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -26,7 +26,7 @@ class AutoCloseWarning extends Notification implements ShouldQueue
         $waitingFor = $this->ticket->state->getLabel();
 
         return (new MailMessage)
-            ->subject(__('[:number] Sans réponse, ce ticket sera clôturé le :date', [
+            ->subject(__('[:number] Sans réponse, ce ticket sera clos le :date', [
                 'number' => $this->ticket->number,
                 'date' => $this->closesOn->format('d/m/Y'),
             ]))
@@ -36,7 +36,7 @@ class AutoCloseWarning extends Notification implements ShouldQueue
                 'number' => $this->ticket->number,
                 'state' => $waitingFor,
             ]))
-            ->line(__('Sans activité de votre part, il sera clôturé automatiquement le :date.', ['date' => $this->closesOn->format('d/m/Y')]))
+            ->line(__('Sans activité de votre part, il sera clos automatiquement le :date.', ['date' => $this->closesOn->format('d/m/Y')]))
             ->action(__('Ouvrir le ticket'), TicketUrl::view($this->ticket))
             ->line(__('Un commentaire suffit à le garder ouvert.'));
     }

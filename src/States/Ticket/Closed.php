@@ -10,7 +10,7 @@ class Closed extends TicketState
 
     public function getLabel(): string
     {
-        return __('Clôturé');
+        return __('Clos');
     }
 
     public function getColor(): string

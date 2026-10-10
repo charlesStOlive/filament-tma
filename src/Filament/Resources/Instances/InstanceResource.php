@@ -21,12 +21,12 @@ use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use UnitEnum;
@@ -85,6 +85,10 @@ class InstanceResource extends Resource implements HasKnowledgeBase
         return $schema->components([
             Section::make(__('Application'))->columns(2)->columnSpanFull()->schema([
                 TextInput::make('name')->label(__('Nom'))->required()->maxLength(255),
+                TextInput::make('short_name')->label(__('Nom court du client'))->maxLength(30)
+                    ->placeholder('EDM')
+                    ->helperText(__('Il nomme l’équipe du client et certains passages : « Équipe EDM », « Publier chez EDM ». Il part chez le client avec « Configuration de l’application ».'))
+                    ->hintAction(Help::action('tma.comprendre.vocabulaire', __('Les mots du module'))),
                 TextInput::make('uid')->label(__('Identifiant (TMA_INSTANCE_UID de l’application)'))
                     ->required()->length(26)->unique(ignoreRecord: true)
                     ->default(fn (): string => self::newUid())
@@ -100,7 +104,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                     ->helperText(__('Proposé d’office : gardez-le, l’application le recevra par « Configuration de l’application ». Si elle en a déjà un, collez le sien. Il ne change plus une fois des tickets reçus.'))
                     ->hintAction(Help::action('tma.demarrer.identifiant', __('À quoi sert l’identifiant ?'))),
                 TextInput::make('url')->label(__('Adresse'))->required()->url()->maxLength(255)->columnSpanFull()
-                    ->helperText(__('La racine du site de l’application, telle que le centre de service la joint.'))
+                    ->helperText(__('La racine du site de l’application, telle que le Support la joint.'))
                     ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
                 Select::make('client_id')->label(__('Client'))
                     ->visible(filled($clientModel))
@@ -114,7 +118,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 ->schema([
                     TextEntry::make('service_account')->label(__('Compte de service de l’application'))
                         ->state(fn (?Instance $record): string => $record?->apiUser?->email ?? '—')
-                        ->helperText(__('Créé par le centre de service, sans rôle : c’est à son jeton qu’il reconnaît l’application.')),
+                        ->helperText(__('Créé par le Support, sans rôle : c’est à son jeton qu’il reconnaît l’application.')),
                     TextEntry::make('token_status')->label(__('Jeton de l’application'))
                         ->state(fn (?Instance $record): string => filled($record?->token)
                             ? __('Reçu')
@@ -135,6 +139,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
         return $table
             ->columns([
                 TextColumn::make('name')->label(__('Nom'))->searchable()->sortable(),
+                TextColumn::make('short_name')->label(__('Nom court'))->placeholder('—'),
                 TextColumn::make('client.'.config('filament-tma.models.client_title', 'name'))->label(__('Client'))->placeholder('—'),
                 TextColumn::make('url')->label(__('Adresse'))->toggleable(),
                 TextColumn::make('uid')->label(__('Identifiant'))->fontFamily('mono')->toggleable(isToggledHiddenByDefault: true),
@@ -158,7 +163,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     /**
      * « Configuration de l'application » : émet un jeton pour le compte de service de l'application (créé avec elle ;
      * l'ancien jeton est révoqué), puis montre la commande à lancer dans l'application. Cette commande écrit sa
-     * configuration, crée le compte du centre de service chez elle, et lui transmet son jeton (`POST master/register`).
+     * configuration, crée le compte du Support chez elle, et lui transmet son jeton (`POST master/register`).
      */
     public static function setupClientAction(): Action
     {
@@ -173,7 +178,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 'ticket_prefix' => strtoupper(Str::substr(Str::slug($record->name, ''), 0, 3)),
             ])
             ->schema([
-                TextInput::make('master_url')->label(__('Adresse du centre de service, vue de l’application'))->url()->required()
+                TextInput::make('master_url')->label(__('Adresse du Support, vue de l’application'))->url()->required()
                     ->helperText(__('En développement, l’adresse du conteneur (http://filbreeze.test…), pas localhost.'))
                     ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
                 TextInput::make('ticket_prefix')->label(__('Préfixe des tickets de l’application'))->required()->maxLength(10)
@@ -184,21 +189,22 @@ class InstanceResource extends Resource implements HasKnowledgeBase
 
                 $livewire->replaceMountedAction('clientEnv', [
                     'command' => self::installCommand($record, $data['master_url'], $token, $data['ticket_prefix']),
-                    'env' => EnvFile::lines([
+                    'env' => EnvFile::lines(array_filter([
                         'TMA_MODE' => 'client',
                         'TMA_INSTANCE_UID' => $record->uid,
                         'TMA_INSTANCE_NAME' => $record->name,
+                        'TMA_INSTANCE_SHORT_NAME' => $record->short_name,
                         'TMA_TICKET_PREFIX' => strtoupper($data['ticket_prefix']),
                         'TMA_MASTER_URL' => rtrim($data['master_url'], '/'),
                         'TMA_MASTER_TOKEN' => $token,
                         'TMA_MASTER_API_USER' => self::MASTER_ACCOUNT,
-                    ]),
+                    ], 'filled')),
                 ]);
             });
     }
 
-    /** Le compte que l'application cliente crée pour le centre de service (`tma:install --master-account`). */
-    public const MASTER_ACCOUNT = 'centre-de-service@tma.local';
+    /** Le compte que l'application cliente crée pour le Support (`tma:install --master-account`). */
+    public const MASTER_ACCOUNT = 'support@tma.local';
 
     /** Ce qu'affiche « Configuration de l'application » : la commande, ou les lignes de .env. */
     public static function clientEnvAction(): Action
@@ -219,11 +225,12 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             'php artisan tma:install --mode=client',
             '--uid='.$record->uid,
             '--name='.escapeshellarg($record->name),
+            filled($record->short_name) ? '--short-name='.escapeshellarg($record->short_name) : null,
             '--prefix='.escapeshellarg(strtoupper($prefix)),
             '--master-url='.escapeshellarg(rtrim($masterUrl, '/')),
             '--master-token='.$token,
             '--master-account='.self::MASTER_ACCOUNT,
-        ])->implode(' ');
+        ])->filter()->implode(' ');
     }
 
     public static function pingAction(): Action
@@ -255,7 +262,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ->icon('heroicon-m-users')
             ->modalSubmitAction(false)
             ->modalCancelActionLabel(__('Fermer'))
-            ->modalDescription(__('Les utilisateurs de l’application qui ont accès au centre de service (liste gardée une heure).'))
+            ->modalDescription(__('Les utilisateurs de l’application qui ont accès au Support (liste gardée une heure).'))
             ->modalContent(function (Instance $record): HtmlString {
                 try {
                     $users = RemoteUsers::for($record);

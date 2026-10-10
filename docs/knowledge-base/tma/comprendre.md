@@ -1,48 +1,52 @@
 ---
-title: Comprendre la TMA
+title: Comprendre le module
 icon: heroicon-o-light-bulb
 order: 10
 ---
 
-# Comprendre la TMA
+# Comprendre le module
 
-Le module TMA suit les **demandes de maintenance** (les tickets) et les **tâches projet**, avec le temps passé, les
-forfaits et ce qui reste à facturer. Il relie deux sortes d'applications.
+Le module suit les **demandes** (les tickets) et les **tâches projet**, avec le temps passé, les forfaits et ce qui
+reste à facturer. Il relie deux sortes d'applications.
 
-## Le centre de service et les applications clientes
+## Le Support et les applications clientes
 
-- **Le centre de service** est l'application de l'équipe qui fait la maintenance (Filbreeze). C'est le **maître** :
-  il reçoit les demandes de tous les clients, y saisit le temps, crée les tâches projet, suit les forfaits.
+- **Le Support** est l'équipe qui fait la maintenance, et son application (Filbreeze). C'est le **maître** : il
+  reçoit les demandes de tous les clients, y saisit le temps, crée les tâches projet, suit les forfaits.
 - **Une application cliente** est l'application d'un client (Desapp…). Ses utilisateurs y ouvrent leurs demandes et
   suivent ce qui les concerne.
 
-Une application cliente ne parle qu'au centre de service, jamais à une autre application cliente. Le centre de
-service ne voit d'un client que ce que ce client lui a confié.
+Une application cliente ne parle qu'au Support, jamais à une autre application cliente. Le Support ne voit d'un
+client que ce que ce client lui a confié.
 
-## Deux façons de traiter une demande
+## Qui traite une demande
 
-| Traitement | Qui s'en occupe | Où |
+| Traité par | Qui s'en occupe | Où |
 | --- | --- | --- |
-| **Local** | un collègue de la même application | la demande ne quitte pas l'application cliente |
-| **Centre de service** | l'équipe du centre de service | la demande est transmise au maître, qui fait autorité |
+| **L'équipe du client** (« Équipe EDM ») | des collègues de la même application | la demande ne quitte pas l'application cliente |
+| **Le Support** | l'équipe du Support | la demande est transmise au maître, qui fait autorité |
 
-Une demande commence toujours en local. On la **transmet au centre de service** quand on le décide ; l'inverse
-n'existe pas. Voir [Les tickets](#modal-tma.tickets).
+Le nom de l'équipe du client vient de son **nom court**, réglé pour chaque application (voir
+[Les mots du module](#modal-tma.comprendre.vocabulaire)).
 
-## Demandeur, intervenant, et « qui a la main »
+Une demande commence toujours chez son auteur. On la **confie à l'équipe** du client, ou on la **transmet au
+Support** ; une demande transmise au Support n'en revient pas. Voir [Les tickets](#modal-tma.tickets).
+
+## Le demandeur, et qui doit agir
 
 Chaque ticket a deux parties :
 
-- le **demandeur**, du côté de l'application qui a ouvert la demande ;
-- l'**intervenant**, qui la traite : un collègue (traitement local) ou le centre de service.
+- le **demandeur**, la personne qui a ouvert la demande ;
+- l'**équipe qui la traite** : l'équipe du client, ou le Support. Celui de l'équipe qui s'en occupe apparaît dans
+  **Pris en charge par**.
 
-À chaque étape, **la main** est à l'une des deux. Celle qui a la main fait avancer le ticket ; l'autre ne peut plus
-qu'**ajouter** : un commentaire, une note, une pièce jointe. Elle ne modifie plus le ticket et ne fait pas les
-passages réservés à l'autre partie.
+À chaque étape, le ticket attend **l'une des deux** : la fiche l'affiche dans **Suivi › En attente de**. Celle qu'on
+attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un commentaire, une note, une pièce jointe. Elle ne
+modifie plus le ticket et ne fait pas les passages réservés à l'autre partie.
 
-Exemple : le centre de service pose une question (« Demander une réponse ») ; la main passe au demandeur. Un
-commentaire de l'intervenant pendant ce temps ne la reprend pas ; la réponse du demandeur (« Répondre ») la lui
-rend.
+Exemple : le Support pose une question (« Demander des précisions ») ; le ticket attend le demandeur. Un
+commentaire du Support pendant ce temps n'y change rien ; la réponse du demandeur (« Répondre ») rend la main au
+Support.
 
 ## Ce que l'on trouve dans le module
 
@@ -60,6 +64,7 @@ Pour installer et relier les applications : [Configuration de départ](#modal-tm
 
 ## En détail
 
-- [Qui a la main ?](#modal-tma.comprendre.la-main)
-- [Les agents du centre de service](#modal-tma.agents)
-- [Traitement local ou centre de service](#modal-tma.comprendre.traitement)
+- [Les mots du module](#modal-tma.comprendre.vocabulaire)
+- [Qui doit agir ?](#modal-tma.comprendre.la-main)
+- [L'équipe du client ou le Support](#modal-tma.comprendre.traitement)
+- [Les membres du Support dans une application cliente](#modal-tma.agents)

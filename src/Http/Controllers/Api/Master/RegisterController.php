@@ -9,8 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * `POST master/register` : une application cliente (reconnue à son jeton) transmet celui par lequel le centre de
- * service l'appellera — plus rien à recopier à la main. Le centre de service la rappelle aussitôt (`GET ping`) : la
+ * `POST master/register` : une application cliente (reconnue à son jeton) transmet celui par lequel le Support
+ * l'appellera — plus rien à recopier à la main. Le Support la rappelle aussitôt (`GET ping`) : la
  * réponse dit si la connexion marche aussi dans ce sens.
  */
 class RegisterController
@@ -28,7 +28,7 @@ class RegisterController
             $error = $callback ? null : __('L’application répond, mais avec un autre identifiant (:uid).', ['uid' => $answer['instance_uid'] ?? '?']);
         } catch (SyncException $e) {
             $callback = false;
-            $error = __(':message Vérifiez l’adresse de l’application dans le centre de service (:url).', ['message' => $e->getMessage(), 'url' => $instance->url]);
+            $error = __(':message Vérifiez l’adresse de l’application dans sa fiche, chez le Support (:url).', ['message' => $e->getMessage(), 'url' => $instance->url]);
         }
 
         return response()->json([

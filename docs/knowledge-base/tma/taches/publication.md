@@ -6,7 +6,7 @@ order: 10
 
 # Publier une tâche
 
-Une tâche projet commence en **brouillon** : elle n'existe que dans le centre de service. **Publier** la fait passer
+Une tâche projet commence en **brouillon** : elle n'existe que chez le Support. **Publier** la fait passer
 **En cours** et l'envoie à son application cliente, qui la voit dès lors.
 
 ## La publication programmée

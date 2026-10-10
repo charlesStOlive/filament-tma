@@ -7,7 +7,7 @@ order: 60
 # Les tâches projet
 
 Une tâche projet est un travail planifié (une évolution, un chantier), distinct d'une demande de maintenance. Elle
-est créée **par le centre de service**, pour **une application cliente** d'un client.
+est créée **par le Support**, pour **une application cliente** d'un client.
 
 ## Le cycle d'une tâche
 
@@ -21,15 +21,15 @@ est créée **par le centre de service**, pour **une application cliente** d'un 
 **Publier** fait passer la tâche de Brouillon à En cours et l'envoie à l'application cliente. On peut aussi
 programmer la publication (**Publication programmée**) : elle partira toute seule à cette date.
 
-## Dans le centre de service
+## Chez le Support
 
-**TMA › Tâches projet › Nouveau** : titre, application destinataire, projet, période (début, fin prévue), date de
+**Support › Tâches projet › Nouveau** : titre, application destinataire, projet, période (début, fin prévue), date de
 publication éventuelle, description et pièces jointes. Puis **Publier**, **Terminer** ou **Annuler**, et le temps
 passé dans l'onglet **Temps passé** (voir [Le temps passé](#modal-tma.temps)).
 
 ## Dans l'application cliente
 
-Les tâches publiées pour l'application apparaissent dans **TMA › Tâches projet**, en lecture. On y participe par la
+Les tâches publiées pour l'application apparaissent dans **Support › Tâches projet**, en lecture. On y participe par la
 [chronologie](#modal-tma.chronologie) : commentaires, notes, images, réponses. On ne crée pas de tâche et on ne
 change pas son état.
 

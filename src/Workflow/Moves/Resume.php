@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\Paused;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'intervenant reprend la main : après une pause, ou sans attendre la réponse du demandeur. */
+/** L'équipe qui traite la demande reprend la main : après une pause, ou sans attendre la réponse du demandeur. */
 class Resume extends Move
 {
     public function key(): string

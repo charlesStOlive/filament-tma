@@ -30,6 +30,6 @@ note interne).
 
 ## Depuis une application cliente
 
-Le temps ne se saisit que dans le centre de service : depuis une application cliente, les commandes agissent **dans
-le centre de service**, avec le jeton d'un utilisateur du centre de service. `--local` les fait agir plutôt sur les
-tickets locaux de l'application, avec un jeton de l'application.
+Le temps ne se saisit que chez le Support : depuis une application cliente, les commandes agissent **chez le
+Support**, avec le jeton d'un utilisateur du Support. `--local` les fait agir plutôt sur les tickets de l'application
+(ceux de l'équipe du client), avec un jeton de l'application.

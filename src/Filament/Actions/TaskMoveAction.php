@@ -17,11 +17,11 @@ final class TaskMoveAction
     public static function make(TaskMove $move): Action
     {
         $action = Action::make('task_'.str_replace('-', '_', $move->key()))
-            ->label($move->label())
+            ->label(fn (?ProjectTask $record): string => $record ? $move->labelFor($record) : $move->label())
             ->color($move->color())
             ->icon($move->icon())
             ->tooltip($move->description())
-            ->modalHeading($move->label())
+            ->modalHeading(fn (?ProjectTask $record): string => $record ? $move->labelFor($record) : $move->label())
             ->modalDescription($move->description())
             ->schema(fn (ProjectTask $record): array => $move->formSchema($record))
             ->visible(fn (ProjectTask $record): bool => app(TaskWorkflow::class)->allows($record, $move, Context::current()))

@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentTma\Models\Entry;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 
@@ -50,7 +51,7 @@ final class Uploads
      */
     public static function toBase64(array $uploads): array
     {
-        $disk = \Illuminate\Support\Facades\Storage::disk(config('filament-tma.attachments.disk', 'local'));
+        $disk = Storage::disk(config('filament-tma.attachments.disk', 'local'));
 
         return collect($uploads)->map(function (array $upload) use ($disk): array {
             $name = $upload['name'] ?? basename($upload['path']);
@@ -69,7 +70,7 @@ final class Uploads
     /** @param  array<int, array{path: string, name?: string}>  $uploads */
     public static function discard(array $uploads): void
     {
-        $disk = \Illuminate\Support\Facades\Storage::disk(config('filament-tma.attachments.disk', 'local'));
+        $disk = Storage::disk(config('filament-tma.attachments.disk', 'local'));
 
         foreach ($uploads as $upload) {
             $disk->delete($upload['path']);

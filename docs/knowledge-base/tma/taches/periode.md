@@ -10,7 +10,7 @@ order: 20
 début.
 
 - Ils s'affichent sur la fiche et dans la liste (triable par fin prévue).
-- Une fin prévue **dépassée** signale la tâche en retard dans le récapitulatif quotidien de son intervenant.
+- Une fin prévue **dépassée** signale la tâche en retard dans le récapitulatif quotidien de la personne qui l'a prise en charge.
 
 Ils n'empêchent rien : on peut saisir du temps avant le début ou après la fin. Le temps se range dans le mois où il a
 été fait (voir [Saisir une durée](#modal-tma.temps.saisie)).

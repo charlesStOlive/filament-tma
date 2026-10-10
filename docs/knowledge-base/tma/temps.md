@@ -6,7 +6,7 @@ order: 50
 
 # Le temps passé
 
-Le temps se saisit **dans le centre de service seulement**, sur un ticket ou une tâche projet. Les applications
+Le temps se saisit **chez le Support seulement**, sur un ticket ou une tâche projet. Les applications
 clientes en voient le total, et le détail par mois.
 
 ## Saisir du temps

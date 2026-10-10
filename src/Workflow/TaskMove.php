@@ -6,7 +6,7 @@ use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\States\Task\TaskState;
 
 /**
- * Un mouvement du workflow d'une tâche projet : « Publier », « Terminer », « Annuler ». Seul le maître les fait ;
+ * Un mouvement du workflow d'une tâche projet : « Publier chez EDM », « Terminer », « Annuler ». Seul le maître les fait ;
  * le droit est `tma.task.workflow.{clé}`. Même forme que `Move` (tickets), pour des objets distincts.
  */
 abstract class TaskMove
@@ -14,6 +14,12 @@ abstract class TaskMove
     abstract public function key(): string;
 
     abstract public function label(): string;
+
+    /** Le libellé pour une tâche donnée : il peut nommer son client (« Publier chez EDM », voir `Support\Terms`). */
+    public function labelFor(ProjectTask $task): string
+    {
+        return $this->label();
+    }
 
     public function description(): ?string
     {

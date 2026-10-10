@@ -2,8 +2,8 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
-use CharlesStOlive\FilamentTma\Enums\Origin;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
+use CharlesStOlive\FilamentTma\Enums\Origin;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -15,7 +15,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
  *
  * `instanceUid` et `fromMaster` disent au nom de quelle application on agit : c'est elle qui décide de la partie
  * (demandeur, intervenant). Ici, sauf pour un appel de l'API : une application cliente n'agit sur le maître qu'en
- * demandeur de ses propres tickets, le maître sur un client qu'en intervenant du centre de service.
+ * demandeur de ses propres tickets, le maître sur un client qu'en intervenant du Support.
  */
 final class Context
 {
@@ -62,8 +62,8 @@ final class Context
     }
 
     /**
-     * Dans une application cliente, un agent du centre de service (`Models\Agent`) qui touche un ticket ou une tâche du
-     * centre de service agit pour le centre de service : en intervenant, jamais en demandeur, et dans le maître (voir
+     * Dans une application cliente, un membre du Support (`Models\Agent`) qui touche un ticket ou une tâche du
+     * Support agit pour le Support : en intervenant, jamais en demandeur, et dans le maître (voir
      * `TicketWorkflow`, `Timeline`). Ailleurs (un ticket local), il reste un utilisateur comme les autres.
      */
     public function forSubject(Trackable $subject): self

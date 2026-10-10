@@ -26,11 +26,11 @@ final class MoveAction
     public static function make(Move $move): Action
     {
         $action = Action::make(self::name($move))
-            ->label($move->label())
+            ->label(fn (?Ticket $record): string => $record ? $move->labelFor($record) : $move->label())
             ->color($move->color())
             ->icon($move->icon())
             ->tooltip($move->description())
-            ->modalHeading($move->label())
+            ->modalHeading(fn (?Ticket $record): string => $record ? $move->labelFor($record) : $move->label())
             ->modalDescription($move->description())
             ->schema(fn (Ticket $record): array => $move->formSchema($record))
             ->visible(fn (Ticket $record): bool => app(TicketWorkflow::class)->allows($record, $move, Context::current()))

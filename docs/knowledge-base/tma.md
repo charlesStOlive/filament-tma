@@ -1,5 +1,5 @@
 ---
 type: group
-title: TMA et tâches projet
+title: Support et tâches projet
 order: 30
 ---

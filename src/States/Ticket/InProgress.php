@@ -25,7 +25,7 @@ class InProgress extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Un intervenant traite la demande.');
+        return __('La demande est traitée.');
     }
 
     public function inHandsOf(): ?Side

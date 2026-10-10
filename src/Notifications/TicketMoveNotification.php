@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Notifications;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -24,16 +25,16 @@ class TicketMoveNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $who = $this->transition->actor?->name ?? __('Le centre de service');
+        $who = $this->transition->actor?->name ?? __('Le Support');
         $line = match ($this->transition->move) {
             'request-answer' => __(':who attend votre réponse.', ['who' => $who]),
-            'submit-for-validation' => __(':who a terminé : à vous de valider, ou de rouvrir.', ['who' => $who]),
+            'submit-for-validation' => __(':who a résolu votre demande : confirmez pour la clore, ou rouvrez-la.', ['who' => $who]),
             'submit' => __(':who vous confie cette demande.', ['who' => $who]),
             'take-charge' => __(':who a pris votre demande en charge.', ['who' => $who]),
             'reopen' => __(':who a rouvert la demande.', ['who' => $who]),
             'answer' => __(':who a répondu.', ['who' => $who]),
-            'publish', 'auto-publish' => __('Le centre de service a ouvert ce ticket pour vous.'),
-            default => __(':who : :move.', ['who' => $who, 'move' => $this->transition->move]),
+            'publish', 'auto-publish' => __('Le Support a ouvert ce ticket pour vous.'),
+            default => __(':who : :move.', ['who' => $who, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($this->transition->move)->labelFor($this->ticket), $this->transition->move, false)]),
         };
 
         return (new MailMessage)

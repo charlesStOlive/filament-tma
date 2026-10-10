@@ -5,10 +5,11 @@ namespace CharlesStOlive\FilamentTma\Workflow\TaskMoves;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\States\Task\TaskDraft;
 use CharlesStOlive\FilamentTma\States\Task\TaskInProgress;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TaskMove;
 
-/** Met la tâche à disposition de son application cliente : elle passe En cours et part chez le client. */
+/** « Publier chez EDM » : met la tâche à disposition de son application cliente ; elle passe En cours et part chez le client. */
 class Publish extends TaskMove
 {
     public function key(): string
@@ -18,7 +19,12 @@ class Publish extends TaskMove
 
     public function label(): string
     {
-        return __('Publier');
+        return Terms::publish();
+    }
+
+    public function labelFor(ProjectTask $task): string
+    {
+        return Terms::publish($task->target_instance_uid);
     }
 
     public function description(): ?string

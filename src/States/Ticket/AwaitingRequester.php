@@ -25,7 +25,7 @@ class AwaitingRequester extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('L’intervenant attend une réponse du demandeur.');
+        return __('Le demandeur doit apporter des précisions.');
     }
 
     public function inHandsOf(): ?Side

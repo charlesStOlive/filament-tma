@@ -11,14 +11,14 @@ l'autre application :
 
 | Statut | Ce qu'il veut dire |
 | --- | --- |
-| Local | le ticket n'est pas partagé (traitement local) |
+| Non partagé | le ticket n'est pas partagé : l'équipe du client le traite |
 | En attente de synchronisation | un envoi est en cours, ou va être retenté |
 | Synchronisé | l'autre application a la dernière version |
 | Synchronisation en erreur | l'envoi a échoué après plusieurs essais |
 
 ## Quand ça arrive
 
-Le centre de service envoie ses changements par la **file d'attente**, et réessaie plusieurs fois, de plus en plus
+Le Support envoie ses changements par la **file d'attente**, et réessaie plusieurs fois, de plus en plus
 espacé (de 30 secondes à une heure). Après le dernier essai, le ticket passe **en erreur**, et la dernière erreur
 s'affiche sous le statut (application arrêtée, adresse ou jeton changés…).
 
@@ -31,5 +31,5 @@ s'affiche sous le statut (application arrêtée, adresse ou jeton changés…).
 Rien n'est perdu : chaque envoi porte tout l'état du ticket, et l'autre application ne garde jamais deux fois la même
 chose.
 
-Dans l'autre sens (de l'application cliente vers le centre de service), il n'y a pas d'erreur différée : l'action
+Dans l'autre sens (de l'application cliente vers le Support), il n'y a pas d'erreur différée : l'action
 échoue tout de suite, avec un message, et rien n'est enregistré.

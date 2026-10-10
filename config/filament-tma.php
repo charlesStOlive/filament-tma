@@ -7,8 +7,8 @@ return [
     | Mode de l'installation
     |--------------------------------------------------------------------------
     |
-    | « master » : l'application du centre de service (Filbreeze). Elle reçoit les tickets transmis, saisit les
-    | temps, crée les tâches projet.
+    | « master » : l'application du Support (Filbreeze). Elle reçoit les tickets transmis, saisit les temps,
+    | crée les tâches projet.
     | « client » : une application cliente (Desapp…). Ses tickets sont traités localement, ou transmis au maître.
     |
     */
@@ -24,6 +24,8 @@ return [
     | Il ne doit plus changer une fois des tickets créés : il est écrit dans chacun.
     | ticket_prefix : début des numéros lisibles des tickets créés ici (DES-0042) ; task_prefix : celui des tâches
     | projet, numérotées par le maître (T-0007).
+    | short_name : mode client, le nom court du client (« EDM »). Il forme « Équipe EDM », « Publier chez EDM »… ;
+    | le maître le règle dans la fiche de l'application, et `tma:install --short-name` l'écrit ici.
     |
     */
 
@@ -31,6 +33,7 @@ return [
         'uid' => env('TMA_INSTANCE_UID'),
         'name' => env('TMA_INSTANCE_NAME', env('APP_NAME', 'Application')),
         'ticket_prefix' => env('TMA_TICKET_PREFIX', 'TMA'),
+        'short_name' => env('TMA_INSTANCE_SHORT_NAME'),
         'task_prefix' => env('TMA_TASK_PREFIX', 'T'),
     ],
 
@@ -39,7 +42,7 @@ return [
     | Le maître (mode client)
     |--------------------------------------------------------------------------
     |
-    | Sans URL, le circuit « centre de service » est fermé : seuls les tickets locaux existent.
+    | Sans URL, le circuit du Support est fermé : seuls les tickets traités par l'équipe locale existent.
     | Le jeton n'est jamais versionné : il vient de .env.
     |
     */
@@ -132,9 +135,9 @@ return [
     | Clôture automatique
     |--------------------------------------------------------------------------
     |
-    | Un ticket où la main est au demandeur (en attente de sa réponse, ou à valider) est clôturé après
+    | Un ticket où la main est au demandeur (en attente de sa réponse, ou résolu) est clos après
     | `after_days` jours sans activité. Un avertissement part `warn_days_before` jours avant (null : aucun) ; un
-    | ticket averti a toujours ce délai entier avant d'être clôturé. La commande passe chaque jour à `at`.
+    | ticket averti a toujours ce délai entier avant d'être clos. La commande passe chaque jour à `at`.
     |
     */
 
@@ -228,7 +231,7 @@ return [
     */
 
     'navigation' => [
-        'group' => 'TMA',
+        'group' => 'Support',
         'sort' => null,
     ],
 

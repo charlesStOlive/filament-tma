@@ -11,8 +11,8 @@ joint depuis l'autre**.
 
 | Adresse | Où on la renseigne | Qui l'appelle |
 | --- | --- | --- |
-| celle de l'application cliente | dans le centre de service : **Applications clientes › Adresse** | le centre de service |
-| celle du centre de service | dans l'application cliente : `TMA_MASTER_URL` (donnée par **Configuration de l'application**) | l'application cliente |
+| celle de l'application cliente | chez le Support : **Applications clientes › Adresse** | le Support |
+| celle du Support | dans l'application cliente : `TMA_MASTER_URL` (donnée par **Configuration de l'application**) | l'application cliente |
 
 Une adresse est la racine du site (`https://desapp.example`), sans `/admin` : le module y ajoute lui-même
 `/api/tma/v1/…`.
@@ -31,4 +31,4 @@ application. Il faut :
   `http://laravel.test` selon son nom de service ou son alias.
 
 Le bouton **Tester** de la fiche vérifie l'adresse de l'application cliente ; si l'application cliente n'arrive pas
-au centre de service, la transmission d'un ticket le dira.
+au Support, la transmission d'un ticket le dira.

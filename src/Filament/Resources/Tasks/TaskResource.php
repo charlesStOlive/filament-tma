@@ -20,11 +20,11 @@ use CharlesStOlive\FilamentTma\Workflow\TaskMove;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
-use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 

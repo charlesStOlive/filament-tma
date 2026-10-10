@@ -12,6 +12,7 @@ use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Filament\Forms\Components\RichEditor\FileAttachmentProviders\SpatieMediaLibraryFileAttachmentProvider;
 use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
@@ -172,8 +173,27 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     }
 
     /**
+     * Qui doit agir, en clair : « Demandeur », le Support, ou l'équipe locale du client (« Équipe EDM ») ; null pour
+     * un ticket terminé.
+     */
+    public function waitingOn(): ?string
+    {
+        return match ($this->sideInCharge()) {
+            Side::Requester => __('Demandeur'),
+            Side::Handler => $this->handledBy(),
+            null => null,
+        };
+    }
+
+    /** Qui traite la demande, en clair : l'équipe locale du client (« Équipe EDM »), ou le Support. */
+    public function handledBy(): string
+    {
+        return $this->handling_mode === HandlingMode::Local ? Terms::team($this->source_instance_uid) : Terms::support();
+    }
+
+    /**
      * Les parties que représente une application donnée. L'application source est le demandeur ; en traitement
-     * local elle est aussi l'intervenant, en centre de service c'est le maître (`Workflow\Context::$instanceUid`).
+     * local elle traite aussi la demande ; au Support, c'est le maître (`Workflow\Context::$instanceUid`).
      *
      * @return array<int, Side>
      */
@@ -215,7 +235,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return in_array($side, $this->sidesHere(), true);
     }
 
-    /** Les champs (titre, description, priorité…) ne se modifient qu'en brouillon, ou par l'intervenant qui a la main. */
+    /** Les champs (titre, description, priorité…) ne se modifient qu'en brouillon, ou par l'équipe qui traite la demande, quand elle a la main. */
     public function fieldsEditableHere(): bool
     {
         if ($this->state->isFinal()) {
@@ -244,7 +264,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return $this->source_instance_uid;
     }
 
-    /** Au centre de service, et publié : un brouillon préparé par le maître reste chez lui. */
+    /** Traité par le Support, et publié : un brouillon préparé par le maître reste chez lui. */
     public function isShared(): bool
     {
         return $this->handling_mode === HandlingMode::ServiceDesk && ! $this->state instanceof Draft;

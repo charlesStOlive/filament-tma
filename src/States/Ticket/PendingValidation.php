@@ -10,7 +10,7 @@ class PendingValidation extends TicketState
 
     public function getLabel(): string
     {
-        return __('À valider');
+        return __('Résolu');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class PendingValidation extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Le travail est fait : le demandeur valide, ou rouvre.');
+        return __('Le travail est fait : le demandeur confirme, ou rouvre.');
     }
 
     public function inHandsOf(): ?Side

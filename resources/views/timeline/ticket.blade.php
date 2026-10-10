@@ -15,7 +15,7 @@
     $states = collect($ticket->state::all())->mapWithKeys(fn ($class, $name) => [$name => new $class($ticket)]);
     $moveLabels = collect($ticket instanceof \CharlesStOlive\FilamentTma\Models\ProjectTask
         ? app(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class)->moves()
-        : app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->moves())->map(fn ($move) => $move->label());
+        : app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->moves())->map(fn ($move) => $move->labelFor($ticket));
 @endphp
 
 <div class="fi-tma-timeline">
@@ -26,6 +26,9 @@
                 <x-filament::icon icon="heroicon-m-arrow-path" class="fi-tma-timeline-event-icon" />
                 <span>
                     <strong>{{ $transition->actor?->name ?? __('Système') }}</strong>
+                    @if ($team = $transition->actor?->team())
+                        <span class="fi-tma-entry-instance">({{ $team }})</span>
+                    @endif
                     — {{ $moveLabels[$transition->move] ?? $transition->move }}
                     @if ($transition->from_state)
                         <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>

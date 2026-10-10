@@ -22,11 +22,11 @@ use CharlesStOlive\FilamentTma\Workflow\Move;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
-use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -39,7 +39,7 @@ use UnitEnum;
  * - la famille `workflow` : un droit par mouvement, `tma.ticket.workflow.take-charge`… (`TmaGate`).
  *
  * Qui a la main compte aussi, et ne dépend d'aucun droit : on ne modifie un ticket qu'en brouillon ou quand on en
- * est l'intervenant et qu'il est à nous (`Ticket::fieldsEditableHere()`).
+ * est l'équipe qui le traite et qu'il est à nous (`Ticket::fieldsEditableHere()`).
  */
 class TicketResource extends Resource implements HasKnowledgeBase
 {
@@ -141,10 +141,11 @@ class TicketResource extends Resource implements HasKnowledgeBase
                     ->visible(fn (): bool => Tma::isMaster())->toggleable(),
                 TextColumn::make('title')->label(__('Titre'))->searchable()->limit(60)->wrap(),
                 TextColumn::make('state')->label(__('État'))->badge(),
-                TextColumn::make('handling_mode')->label(__('Traitement'))->badge()->toggleable(),
+                TextColumn::make('handling_mode')->label(__('Traité par'))->badge()->toggleable()
+                    ->formatStateUsing(fn (Ticket $record): string => $record->handledBy()),
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
                 TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable(),
-                TextColumn::make('assignee.name')->label(__('Intervenant'))->placeholder('—')->toggleable(),
+                TextColumn::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—')->toggleable(),
                 TextColumn::make('due_on')->label(__('Échéance'))->date('d/m/Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('sync_status')->label(__('Synchro'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
@@ -153,7 +154,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
             ])
             ->filters([
                 StateFusionSelectFilter::make('state')->label(__('État'))->multiple(),
-                SelectFilter::make('handling_mode')->label(__('Traitement'))->options(HandlingMode::class),
+                SelectFilter::make('handling_mode')->label(__('Traité par'))->options(HandlingMode::class),
                 SelectFilter::make('priority')->label(__('Priorité'))->options(Priority::class)->multiple(),
                 SelectFilter::make('source_instance_uid')->label(__('Application'))
                     ->visible(fn (): bool => Tma::isMaster())

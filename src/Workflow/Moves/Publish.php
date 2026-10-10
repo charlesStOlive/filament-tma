@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
@@ -23,7 +24,12 @@ class Publish extends Move
 
     public function label(): string
     {
-        return __('Publier chez le client');
+        return Terms::publish();
+    }
+
+    public function labelFor(Ticket $ticket): string
+    {
+        return Terms::publish($ticket->source_instance_uid);
     }
 
     public function description(): ?string

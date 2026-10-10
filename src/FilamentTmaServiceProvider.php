@@ -74,6 +74,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'add_publish_at_to_tma_tickets_table',
                 'create_filament_tma_audits_table',
                 'create_filament_tma_agents_tables',
+                'add_short_name_to_tma_instances_table',
             ]);
     }
 

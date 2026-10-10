@@ -28,11 +28,11 @@ class DailyDigest extends Notification implements ShouldQueue
         $late = collect($this->sections)->sum(fn (Collection $items): int => $items->where('late', true)->count());
 
         $mail = (new MailMessage)
-            ->subject(__('TMA : :count élément(s) vous attendent:late', ['count' => $count, 'late' => $late > 0 ? __(' (dont :n en retard)', ['n' => $late]) : '']))
+            ->subject(__('Support : :count élément(s) vous attendent:late', ['count' => $count, 'late' => $late > 0 ? __(' (dont :n en retard)', ['n' => $late]) : '']))
             ->greeting(__('Bonjour,'));
 
         $titles = [
-            'answer' => __('Vos demandes qui attendent votre réponse ou votre validation'),
+            'answer' => __('Vos demandes qui attendent votre réponse ou votre confirmation'),
             'take' => __('À prendre en charge'),
             'mine' => __('En cours chez vous'),
             'resume' => __('Reprennent aujourd’hui'),

@@ -7,9 +7,9 @@
         <x-filament::badge :color="$entry->isShared() ? 'info' : 'gray'" size="sm">{{ $entry->isShared() ? __('Partagée') : __('Interne') }}</x-filament::badge>
     @endif
     <strong>{{ $entry->author?->name }}</strong>
-    @unless ($entry->author?->isLocal())
-        <span class="fi-tma-entry-instance">{{ __('(autre application)') }}</span>
-    @endunless
+    @if ($team = $entry->author?->team())
+        <x-filament::badge color="gray" size="sm" class="fi-tma-entry-instance">{{ $team }}</x-filament::badge>
+    @endif
     <time datetime="{{ $entry->created_at->toIso8601String() }}">{{ $entry->created_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>
 </header>
 <div class="fi-tma-entry-body prose dark:prose-invert max-w-none">

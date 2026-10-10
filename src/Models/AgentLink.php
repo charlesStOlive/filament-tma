@@ -6,7 +6,7 @@ use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Maître : une personne de l'équipe reliée à une application cliente, où elle agit pour le centre de service. */
+/** Maître : une personne de l'équipe reliée à une application cliente, où elle agit pour le Support. */
 class AgentLink extends Model
 {
     protected $table = 'tma_agent_links';

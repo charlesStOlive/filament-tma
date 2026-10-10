@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Support;
 
+use CharlesStOlive\FilamentTma\Models\Instance;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -47,7 +48,7 @@ final class ServiceAccount
 
         $hasRoles = method_exists($user, 'roles') && $user->roles()->exists();
 
-        return $hasRoles || \CharlesStOlive\FilamentTma\Models\Instance::query()->where('api_user_id', $user->getAuthIdentifier())->exists();
+        return $hasRoles || Instance::query()->where('api_user_id', $user->getAuthIdentifier())->exists();
     }
 
     /** Un nouveau jeton pour ce compte ; les anciens jetons de service sont révoqués. */

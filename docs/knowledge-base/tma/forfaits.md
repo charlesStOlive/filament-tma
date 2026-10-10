@@ -6,11 +6,11 @@ order: 70
 
 # Les forfaits
 
-Un forfait est un volume de TMA alloué à un client pour une période.
+Un forfait est un volume de maintenance alloué à un client pour une période.
 
-## Créer un forfait (centre de service)
+## Créer un forfait (Support)
 
-**TMA › Forfaits › Nouveau** :
+**Support › Forfaits › Nouveau** :
 
 - **Client**, et éventuellement une **application** : sans application, le forfait est **partagé** entre toutes
   celles du client ; avec, il ne vaut que pour elle ;
@@ -40,7 +40,7 @@ Un dépassement ne bloque pas la saisie du temps, sauf si l'application est rég
 ## Dans l'application cliente
 
 La consommation du forfait s'affiche en tête de la liste des tickets : consommé sur alloué, pourcentage, restant ou
-dépassement, et l'évolution par mois. Elle se met à jour après chaque saisie de temps du centre de service.
+dépassement, et l'évolution par mois. Elle se met à jour après chaque saisie de temps du Support.
 
 ## En détail
 

@@ -18,8 +18,8 @@ use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
- * « Transmettre au centre de service » (CDC §7.4) : le ticket part au maître, qui en devient l'autorité. Le demandeur
- * le fait d'un brouillon ; l'intervenant local, d'un ticket qu'il traite (il escalade). Le ticket repart en « Soumis ».
+ * « Transmettre au Support » (CDC §7.4) : le ticket part au maître, qui en devient l'autorité. Le demandeur le fait
+ * d'un brouillon ; l'équipe locale, d'un ticket qu'elle traite (elle escalade). Le ticket repart en « Nouveau ».
  *
  * L'appel au maître est fait dans la transaction : s'il échoue, le ticket reste tel qu'il était, et l'utilisateur
  * voit l'erreur (décision Q4).
@@ -33,12 +33,12 @@ class Transmit extends Move
 
     public function label(): string
     {
-        return __('Transmettre au centre de service');
+        return __('Transmettre au Support');
     }
 
     public function description(): ?string
     {
-        return __('Le centre de service prend la suite : il fera autorité sur ce ticket.');
+        return __('Le Support prend la suite : il fera autorité sur ce ticket.');
     }
 
     public function color(): string

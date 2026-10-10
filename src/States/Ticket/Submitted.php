@@ -10,7 +10,7 @@ class Submitted extends TicketState
 
     public function getLabel(): string
     {
-        return __('Soumis');
+        return __('Nouveau');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Submitted extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Attend d’être pris en charge par un intervenant.');
+        return __('Attend d’être pris en charge.');
     }
 
     public function inHandsOf(): ?Side

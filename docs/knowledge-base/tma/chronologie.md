@@ -13,7 +13,7 @@ messages, changements d'état, avec leur auteur et leur date.
 
 | Entrée | Qui la voit |
 | --- | --- |
-| **Commentaire** | les deux parties : c'est l'échange avec le centre de service, ou entre collègues |
+| **Commentaire** | les deux parties : c'est l'échange avec le Support, ou entre collègues |
 | **Note** | seulement l'application où elle a été écrite, et seulement les personnes qui ont le droit des notes |
 | **Résumé d'intervention** | les deux parties ; souvent écrit avec une saisie de temps |
 | **Réponse** | comme le message auquel elle répond |
@@ -27,7 +27,7 @@ messages, changements d'état, avec leur auteur et leur date.
 Ajouter une entrée ne change jamais l'état du ticket. Sur un ticket terminé, on ne commente plus ; les notes et les
 résumés d'intervention restent possibles.
 
-Une note du centre de service ne quitte jamais le centre de service tant qu'elle n'est pas partagée ; une note d'une
+Une note du Support ne quitte jamais le Support tant qu'elle n'est pas partagée ; une note d'une
 application cliente non plus.
 
 ## Les fichiers
@@ -46,9 +46,9 @@ Tout est nettoyé à l'enregistrement : ni script, ni contenu actif, ni lien aut
 
 ## Sur un ticket transmis
 
-Dans l'application cliente, un commentaire, une réponse ou une note partagée part au centre de service **au moment
+Dans l'application cliente, un commentaire, une réponse ou une note partagée part au Support **au moment
 où on l'écrit**. S'il ne répond pas, le message n'est pas enregistré et un avertissement le dit : rien n'est perdu
-en silence. Ce que le centre de service écrit arrive dans l'application cliente quelques instants plus tard. Voir
+en silence. Ce que le Support écrit arrive dans l'application cliente quelques instants plus tard. Voir
 [La synchronisation](#modal-tma.synchronisation).
 
 ## En détail

@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'intervenant pose une question : la main passe au demandeur jusqu'à sa réponse. */
+/** L'équipe qui traite la demande pose une question : la main passe au demandeur jusqu'à sa réponse. */
 class RequestAnswer extends Move
 {
     use WritesMessages;
@@ -22,7 +22,7 @@ class RequestAnswer extends Move
 
     public function label(): string
     {
-        return __('Demander une réponse');
+        return __('Demander des précisions');
     }
 
     public function color(): string

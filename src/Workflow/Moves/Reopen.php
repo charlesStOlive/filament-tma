@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** Le demandeur n'est pas satisfait : il dit pourquoi, et la main revient à l'intervenant. */
+/** Le demandeur n'est pas satisfait : il dit pourquoi, et la main revient à l'équipe qui traite la demande. */
 class Reopen extends Move
 {
     use WritesMessages;
@@ -57,7 +57,7 @@ class Reopen extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Ce qui ne va pas'), help: ['tma.tickets.validation', __('Valider ou rouvrir ?')])];
+        return [$this->messageField('message', __('Ce qui ne va pas'), help: ['tma.tickets.validation', __('Confirmer ou rouvrir ?')])];
     }
 
     public function reason(array $data): ?string

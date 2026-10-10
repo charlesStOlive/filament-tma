@@ -6,7 +6,7 @@ use CharlesStOlive\FilamentTma\Models\Instance;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Les utilisateurs d'une application cliente qui ont des droits sur le centre de service (`GET users`), gardés en
+ * Les utilisateurs d'une application cliente qui ont des droits sur le Support (`GET users`), gardés en
  * cache `api.users_cache_ttl` secondes (addendum §5). Les utilisateurs « local uniquement » n'y sont pas, sauf
  * demande explicite.
  */

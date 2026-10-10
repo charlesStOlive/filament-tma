@@ -44,7 +44,7 @@ class ViewTicket extends ViewRecord
         ];
     }
 
-    /** Maître : renvoyer un ticket du centre de service à son application (après une erreur, ou par précaution). */
+    /** Maître : renvoyer un ticket du Support à son application (après une erreur, ou par précaution). */
     protected function resyncAction(): Action
     {
         return Action::make('resync')

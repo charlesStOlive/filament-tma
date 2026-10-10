@@ -120,7 +120,7 @@ class TaskWorkflow
     public function create(array $attributes, Context $context): ProjectTask
     {
         if (! Tma::isMaster()) {
-            throw new AuthorizationException(__('Les tâches projet se créent dans le centre de service.'));
+            throw new AuthorizationException(__('Les tâches projet se créent chez le Support.'));
         }
 
         if (! $context->isSystem() && Gate::getPolicyFor(ProjectTask::class) !== null && ! Gate::forUser($context->user)->allows('create', ProjectTask::class)) {

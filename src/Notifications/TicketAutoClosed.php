@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/** Le ticket a été clôturé faute d'activité du demandeur. */
+/** Le ticket a été clos faute d'activité du demandeur. */
 class TicketAutoClosed extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -24,9 +24,9 @@ class TicketAutoClosed extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('[:number] Ticket clôturé sans réponse', ['number' => $this->ticket->number]))
+            ->subject(__('[:number] Ticket clos sans réponse', ['number' => $this->ticket->number]))
             ->greeting(__('Bonjour,'))
-            ->line(__('Le ticket « :title » (:number) attendait votre retour depuis :days jours. Il vient d’être clôturé automatiquement.', [
+            ->line(__('Le ticket « :title » (:number) attendait votre retour depuis :days jours. Il vient d’être clos automatiquement.', [
                 'title' => $this->ticket->title,
                 'number' => $this->ticket->number,
                 'days' => config('filament-tma.auto_close.after_days'),

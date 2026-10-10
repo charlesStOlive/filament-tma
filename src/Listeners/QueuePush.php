@@ -17,7 +17,7 @@ use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Support\Tma;
 
 /**
- * Côté maître : tout changement d'un ticket du centre de service, ou d'une tâche publiée, part vers son application
+ * Côté maître : tout changement d'un ticket du Support, ou d'une tâche publiée, part vers son application
  * cliente. Ce qui vient
  * d'elle par l'API n'y retourne pas : elle a déjà recopié la réponse.
  */

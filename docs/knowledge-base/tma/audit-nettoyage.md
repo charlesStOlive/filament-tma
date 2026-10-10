@@ -8,7 +8,7 @@ order: 120
 
 ## Le journal d'audit
 
-**TMA › Journal d'audit** retient les actions sensibles, en lecture seule :
+**Support › Journal d'audit** retient les actions sensibles, en lecture seule :
 
 - toute saisie, modification ou suppression de **temps** ;
 - les changements des **champs** d'un ticket ou d'une tâche ;

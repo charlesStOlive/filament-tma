@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Models;
 
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
@@ -57,6 +58,19 @@ class Actor extends Model
     public function isLocal(): bool
     {
         return Tma::isHere($this->instance_uid);
+    }
+
+    /**
+     * D'où vient une personne qui n'est pas d'ici, pour la chronologie : le Support, vu d'une application cliente ;
+     * le nom court de son client (« EDM »), vu du Support. Null pour une personne d'ici.
+     */
+    public function team(): ?string
+    {
+        if ($this->isLocal()) {
+            return null;
+        }
+
+        return Tma::isClient() ? Terms::support() : Terms::clientOrInstance($this->instance_uid);
     }
 
     public function isUser(?Authenticatable $user): bool

@@ -3,18 +3,28 @@
 namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
-use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Uploads;
+use CharlesStOlive\FilamentTma\Sync\MasterClient;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -38,49 +48,49 @@ final class TimelineActions
             ->icon('heroicon-m-pencil-square')
             ->color('warning')
             ->modalDescription(fn (Trackable $record): string => Context::current()->forSubject($record)->isAgent()
-                ? __('Votre note est enregistrée dans le centre de service, et n’est visible que là-bas.')
+                ? __('Votre note est enregistrée chez le Support, et n’est visible que là-bas.')
                 : __('Une note reste dans cette application, sauf si vous la partagez ensuite.'));
     }
 
     /**
-     * Un agent du centre de service, dans une application cliente : il saisit son temps dans le maître, en son nom.
+     * Un membre du Support, dans une application cliente : il saisit son temps dans le maître, en son nom.
      */
     public static function agentTime(): Action
     {
         return Action::make('agentTime')
             ->label(__('Saisir du temps'))
             ->icon('heroicon-m-clock')
-            ->modalDescription(__('Enregistré dans le centre de service, en votre nom ; ici, seuls les totaux s’affichent.'))
+            ->modalDescription(__('Enregistré chez le Support, en votre nom ; ici, seuls les totaux s’affichent.'))
             ->visible(fn (Trackable $record): bool => Context::current()->forSubject($record)->isAgent())
             ->schema([
-                \Filament\Schemas\Components\Grid::make(3)->schema([
-                    \Filament\Forms\Components\DatePicker::make('worked_on')->label(__('Le'))->required()->default(now()),
-                    \Filament\Forms\Components\TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step(0.25),
-                    \Filament\Forms\Components\Select::make('unit')->label(__('En'))->options(\CharlesStOlive\FilamentTma\Support\Duration::units())->required()
-                        ->default(config('filament-tma.time.display_unit', \CharlesStOlive\FilamentTma\Support\Duration::HOURS)),
+                Grid::make(3)->schema([
+                    DatePicker::make('worked_on')->label(__('Le'))->required()->default(now()),
+                    TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step(0.25),
+                    Select::make('unit')->label(__('En'))->options(Duration::units())->required()
+                        ->default(config('filament-tma.time.display_unit', Duration::HOURS)),
                 ]),
-                \Filament\Forms\Components\Textarea::make('description')->label(__('Ce qui a été fait'))->rows(3),
-                \Filament\Forms\Components\Toggle::make('billable')->label(__('Facturable'))->default(true),
+                Textarea::make('description')->label(__('Ce qui a été fait'))->rows(3),
+                Toggle::make('billable')->label(__('Facturable'))->default(true),
             ])
             ->action(function (Trackable $record, array $data, Action $action): void {
                 $context = Context::current()->forSubject($record);
 
                 try {
-                    $snapshot = app(\CharlesStOlive\FilamentTma\Sync\MasterClient::class)->agentTime(
+                    $snapshot = app(MasterClient::class)->agentTime(
                         $context->agent,
                         $record,
-                        \CharlesStOlive\FilamentTma\Support\Duration::toMinutes($data['duration'], $data['unit']),
-                        \Illuminate\Support\Carbon::parse($data['worked_on'])->toDateString(),
+                        Duration::toMinutes($data['duration'], $data['unit']),
+                        Carbon::parse($data['worked_on'])->toDateString(),
                         $data['description'] ?? null,
                         (bool) ($data['billable'] ?? true),
                     );
-                    \CharlesStOlive\FilamentTma\Sync\Mirror::snapshot($snapshot);
+                    Mirror::snapshot($snapshot);
                 } catch (SyncException|AuthorizationException|ValidationException $e) {
                     Notification::make()->danger()->title($e->getMessage())->send();
                     $action->halt();
                 }
 
-                Notification::make()->success()->title(__('Temps enregistré dans le centre de service'))->send();
+                Notification::make()->success()->title(__('Temps enregistré chez le Support'))->send();
             });
     }
 

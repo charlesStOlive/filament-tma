@@ -9,7 +9,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'intervenant prend la demande : il en devient le responsable. */
+/** Quelqu'un de l'équipe qui traite les demandes prend celle-ci : il en devient le responsable (« Pris en charge par »). */
 class TakeCharge extends Move
 {
     public function key(): string

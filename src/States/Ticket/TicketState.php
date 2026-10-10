@@ -55,7 +55,7 @@ abstract class TicketState extends State implements HasFilamentState, HasFilamen
             ->default(Draft::class)
             ->registerState([...$open, Closed::class, Cancelled::class])
             ->allowTransition(Draft::class, Submitted::class)
-            // Un ticket local transmis au centre de service repart en « Soumis ».
+            // Un ticket de l'équipe locale transmis au Support repart en « Nouveau ».
             ->allowTransition([InProgress::class, AwaitingRequester::class], Submitted::class)
             ->allowTransition([Submitted::class, AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
             ->allowTransition(InProgress::class, AwaitingRequester::class)

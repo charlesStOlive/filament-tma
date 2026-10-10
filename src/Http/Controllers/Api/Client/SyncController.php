@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * L'API du client pour le maître : il pousse l'état d'un ticket du centre de service, puis les fichiers qui
+ * L'API du client pour le maître : il pousse l'état d'un ticket du Support, puis les fichiers qui
  * manquent. Le maître ne peut pousser qu'un ticket de cette application, et ne joue que l'intervenant.
  *
  * Chaque application notifie ses propres utilisateurs : c'est ici que le demandeur apprend l'avertissement ou la

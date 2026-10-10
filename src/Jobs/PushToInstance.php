@@ -18,9 +18,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Le maître envoie l'état d'un ticket du centre de service, ou d'une tâche publiée, à son application cliente, puis
+ * Le maître envoie l'état d'un ticket du Support, ou d'une tâche publiée, à son application cliente, puis
  * les fichiers qui lui manquent. Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
- * travail du centre de service. Un seul envoi en attente par objet : il part avec l'état du moment.
+ * travail du Support. Un seul envoi en attente par objet : il part avec l'état du moment.
  */
 class PushToInstance implements ShouldBeUnique, ShouldQueue
 {

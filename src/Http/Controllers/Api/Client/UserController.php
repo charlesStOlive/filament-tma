@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * `GET users` : les utilisateurs de cette application qui ont des droits sur le centre de service, c'est-à-dire
+ * `GET users` : les utilisateurs de cette application qui ont des droits sur le Support, c'est-à-dire
  * qui peuvent transmettre un ticket (`tma.ticket.workflow.transmit`). Les utilisateurs « local uniquement » (qui
  * voient les tickets sans pouvoir les transmettre) ne sont donnés qu'avec `include_local_only=1`.
  */
@@ -30,7 +30,7 @@ class UserController
             }
 
             if (Agent::for($user) !== null) {
-                return; // un agent du centre de service n'est pas un demandeur
+                return; // un membre du Support n'est pas un demandeur
             }
 
             $serviceDesk = TmaGate::allows($user, TmaGate::workflowAction('transmit'));
