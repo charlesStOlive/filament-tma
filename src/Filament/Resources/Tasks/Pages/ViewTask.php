@@ -31,6 +31,7 @@ class ViewTask extends ViewRecord
         return [
             ...TaskMoveAction::all(),
             TimelineActions::comment(),
+            TimelineActions::agentTime(),
             ActionGroup::make([
                 TimelineActions::note(),
                 EditAction::make(),

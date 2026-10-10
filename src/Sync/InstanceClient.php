@@ -46,6 +46,27 @@ final class InstanceClient
             ->json('missing_media', []);
     }
 
+    /**
+     * Relie un agent : l'utilisateur de l'application qui a cet e-mail agira pour le centre de service, avec ce jeton.
+     *
+     * @return array{name: string}
+     */
+    public function linkAgent(string $email, string $masterUserId, string $name, string $token): array
+    {
+        return Http::call(__('Relier l’agent :email', ['email' => $email]), fn () => $this->http()->post($this->instance->apiUrl('agents'), [
+            'email' => $email,
+            'name' => $name,
+            'master_uid' => \CharlesStOlive\FilamentTma\Support\Tma::instanceUid(),
+            'master_user_id' => $masterUserId,
+            'token' => $token,
+        ]))->json();
+    }
+
+    public function unlinkAgent(string $email): void
+    {
+        Http::call(__('Délier l’agent :email', ['email' => $email]), fn () => $this->http()->post($this->instance->apiUrl('agents/unlink'), ['email' => $email]));
+    }
+
     /** @param  array<int, array<string, mixed>>  $files */
     public function pushMedia(string $owner, string $ulid, array $files): void
     {

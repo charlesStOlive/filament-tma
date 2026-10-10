@@ -27,13 +27,56 @@ use InvalidArgumentException;
  */
 final class LocalBackend implements Backend
 {
-    public function __construct(private Authenticatable $user, private bool $viaApi = false) {}
+    /**
+     * @param  string|null  $scope  l'application cliente à laquelle se limite un jeton d'agent (voir `AuthenticateAgent`)
+     */
+    public function __construct(private Authenticatable $user, private bool $viaApi = false, private ?string $scope = null) {}
 
     private function context(): Context
     {
         return $this->viaApi
             ? new Context($this->user, Actor::forUser($this->user), Origin::Api)
             : Context::command($this->user);
+    }
+
+    /**
+     * Un passage, au nom de l'utilisateur, avec ses droits (un agent qui agit depuis une application cliente).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function move(string $ref, string $move, array $data, ?string $transitionUlid = null): Ticket|ProjectTask
+    {
+        $subject = $this->find($ref);
+        $context = $this->context();
+
+        if ($subject instanceof ProjectTask) {
+            Auditor::as($context, fn () => app(\CharlesStOlive\FilamentTma\Workflow\TaskWorkflow::class)->run($subject, $move, $data, $context));
+        } elseif (! $subject->transitions()->where('ulid', $transitionUlid)->exists()) {
+            Auditor::as($context, fn () => app(\CharlesStOlive\FilamentTma\Workflow\TicketWorkflow::class)->run($subject, $move, $data, $context, $transitionUlid));
+        }
+
+        return $subject->refresh();
+    }
+
+    /**
+     * Un message (commentaire, note, réponse), avec ses fichiers reçus en base64.
+     *
+     * @param  array<int, array<string, mixed>>  $files
+     */
+    public function write(string $ref, string $type, string $body, ?string $parentUlid = null, array $files = []): array
+    {
+        $subject = $this->find($ref);
+        $context = $this->context();
+        $parent = filled($parentUlid) ? $subject->entries()->where('ulid', $parentUlid)->first() : null;
+
+        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files): \CharlesStOlive\FilamentTma\Models\Entry {
+            $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent);
+            \CharlesStOlive\FilamentTma\Sync\Mirror::files($entry, $files);
+
+            return $entry;
+        }));
+
+        return ['subject' => $subject->refresh(), 'entry' => $entry];
     }
 
     public function list(array $filters): array
@@ -59,6 +102,7 @@ final class LocalBackend implements Backend
 
         return ProjectTask::query()
             ->with(['assignee', 'targetInstance'])
+            ->when($this->scope !== null, fn (Builder $q) => $q->where('target_instance_uid', $this->scope))
             ->when(! ($filters['all'] ?? false) && blank($filters['state'] ?? null), fn (Builder $q) => $q->open())
             ->when(filled($filters['state'] ?? null), fn (Builder $q) => $q->whereIn('state', explode(',', (string) $filters['state'])))
             ->when(filled($filters['app'] ?? null), fn (Builder $q) => $q->whereHas('targetInstance', fn (Builder $i) => $i->where('name', $filters['app'])->orWhere('uid', $filters['app'])))
@@ -80,6 +124,7 @@ final class LocalBackend implements Backend
 
         return Ticket::query()
             ->with(['requester', 'assignee', 'sourceInstance'])
+            ->when($this->scope !== null, fn (Builder $q) => $q->where('source_instance_uid', $this->scope))
             ->when(! ($filters['all'] ?? false) && blank($filters['state'] ?? null), fn (Builder $q) => $q->open())
             ->when(filled($filters['state'] ?? null), fn (Builder $q) => $q->whereIn('state', explode(',', (string) $filters['state'])))
             ->when(filled($filters['app'] ?? null), fn (Builder $q) => $q->whereHas('sourceInstance', fn (Builder $i) => $i->where('name', $filters['app'])->orWhere('uid', $filters['app'])))
@@ -121,6 +166,15 @@ final class LocalBackend implements Backend
         }));
     }
 
+    /** Une saisie de temps seule, sans résumé dans la chronologie (la saisie d'un agent depuis une application cliente). */
+    public function addTime(string $ref, int $minutes, ?string $workedOn, ?string $description, bool $billable): void
+    {
+        $subject = $this->find($ref);
+        $context = $this->context();
+
+        Auditor::as($context, fn () => app(TimeLog::class)->add($subject, $minutes, $workedOn, $description, $context, $billable));
+    }
+
     public function comment(string $ref, string $body, bool $note): array
     {
         $ticket = $this->find($ref);
@@ -141,6 +195,11 @@ final class LocalBackend implements Backend
         }
 
         $ticket = $matches->first() ?? throw new InvalidArgumentException(__('Ticket ou tâche introuvable : :ref', ['ref' => $ref]));
+
+        if ($this->scope !== null && $ticket->clientInstanceUid() !== $this->scope) {
+            throw new InvalidArgumentException(__('Ticket ou tâche introuvable : :ref', ['ref' => $ref]));
+        }
+
         $this->authorize('view', $ticket);
 
         return $ticket;

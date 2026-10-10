@@ -61,4 +61,5 @@ Pour installer et relier les applications : [Configuration de départ](#modal-tm
 ## En détail
 
 - [Qui a la main ?](#modal-tma.comprendre.la-main)
+- [Les agents du centre de service](#modal-tma.agents)
 - [Traitement local ou centre de service](#modal-tma.comprendre.traitement)

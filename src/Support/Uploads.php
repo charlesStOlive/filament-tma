@@ -42,6 +42,40 @@ final class Uploads
             ->values()->all();
     }
 
+    /**
+     * Les fichiers envoyés, en base64 (format de `Payload::files()`), pour les transmettre à l'autre application.
+     *
+     * @param  array<int, array{path: string, name?: string}>  $uploads
+     * @return array<int, array<string, mixed>>
+     */
+    public static function toBase64(array $uploads): array
+    {
+        $disk = \Illuminate\Support\Facades\Storage::disk(config('filament-tma.attachments.disk', 'local'));
+
+        return collect($uploads)->map(function (array $upload) use ($disk): array {
+            $name = $upload['name'] ?? basename($upload['path']);
+
+            return [
+                'uuid' => (string) Str::uuid(),
+                'name' => pathinfo($name, PATHINFO_FILENAME),
+                'file_name' => self::safeFileName($name),
+                'mime_type' => $disk->mimeType($upload['path']),
+                'size' => $disk->size($upload['path']),
+                'content' => base64_encode((string) $disk->get($upload['path'])),
+            ];
+        })->values()->all();
+    }
+
+    /** @param  array<int, array{path: string, name?: string}>  $uploads */
+    public static function discard(array $uploads): void
+    {
+        $disk = \Illuminate\Support\Facades\Storage::disk(config('filament-tma.attachments.disk', 'local'));
+
+        foreach ($uploads as $upload) {
+            $disk->delete($upload['path']);
+        }
+    }
+
     public static function safeFileName(string $name): string
     {
         $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));

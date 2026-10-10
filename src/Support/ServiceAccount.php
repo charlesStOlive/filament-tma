@@ -64,6 +64,28 @@ final class ServiceAccount
         return $user->createToken(self::TOKEN_NAME)->accessToken;
     }
 
+    /** Le préfixe du nom d'un jeton d'agent : `tma-agent:{identifiant de l'application}`. */
+    public const AGENT_TOKEN_PREFIX = 'tma-agent:';
+
+    /**
+     * Le jeton personnel d'un agent pour une application cliente : il agit en son nom, mais seulement sur les tickets
+     * et tâches de cette application (voir `AuthenticateAgent`). Un nouveau jeton révoque le précédent.
+     */
+    public static function agentToken(Authenticatable $user, string $instanceUid): string
+    {
+        $name = self::AGENT_TOKEN_PREFIX.$instanceUid;
+        $user->tokens()->where('name', $name)->where('revoked', false)->get()->each->revoke();
+
+        self::ensurePersonalAccessClient();
+
+        return $user->createToken($name)->accessToken;
+    }
+
+    public static function revokeAgentToken(Authenticatable $user, string $instanceUid): void
+    {
+        $user->tokens()->where('name', self::AGENT_TOKEN_PREFIX.$instanceUid)->where('revoked', false)->get()->each->revoke();
+    }
+
     /** Passport émet les jetons personnels par un « client d'accès personnel » : on le crée s'il manque. */
     private static function ensurePersonalAccessClient(): void
     {

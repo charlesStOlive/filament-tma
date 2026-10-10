@@ -241,6 +241,14 @@ refusé (403). `{ref}` : le numéro (`DES-0042`, `T-0007`) ou l'ulid du ticket o
 | `GET agent/tickets/{ref}` | un ticket, sa description et sa chronologie en texte |
 | `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, billable?, internal? }` | une saisie de temps et son résumé |
 | `POST agent/tickets/{ref}/entries` `{ body, note? }` | un commentaire, ou une note interne |
+| `POST agent/tickets/{ref}/entries` `{ type, body, parent_ulid?, files? }` | un message d'agent ; la réponse donne aussi l'état à recopier (`snapshot`) |
+| `POST agent/tickets/{ref}/moves` `{ move, data?, transition_ulid? }` | un passage, avec les droits de l'agent ; réponse : `snapshot` |
+| `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, description?, billable? }` | une saisie de temps seule ; réponse : `snapshot` |
+
+**Jetons d'agent.** Un jeton nommé `tma-agent:{identifiant d'une application}` (émis par « Agents du centre de
+service ») ne vaut que pour les tickets et tâches de cette application, avec les droits de la personne dans le maître.
+L'application cliente s'en sert quand un de ses utilisateurs, agent du centre de service, agit sur un ticket du centre
+de service (voir l'aide « Les agents du centre de service »).
 
 Réponses : `{ "data": … }` ; 404 pour un ticket introuvable.
 
@@ -289,6 +297,16 @@ les entrées dont le client attend encore les fichiers.
 ```
 
 Réponse : `{ "files_count": 2 }`.
+
+### `POST agents` et `POST agents/unlink` — les agents du centre de service
+
+```json
+{ "email": "charles@notilac.fr", "name": "Charles", "master_uid": "01K…", "master_user_id": "1", "token": "eyJ…" }
+```
+
+Relie l'utilisateur d'ici qui a cet e-mail (404 s'il n'existe pas) : sur un ticket ou une tâche du centre de service,
+il agit pour le centre de service, avec ce jeton. `agents/unlink` `{ email }` retire le lien. Les agents ne figurent
+pas dans `GET users`.
 
 ### `POST allowances` — l'état des forfaits
 

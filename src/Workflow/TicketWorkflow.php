@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -95,6 +96,12 @@ class TicketWorkflow
     public function allows(Ticket $ticket, string|Move $move, Context $context): bool
     {
         $move = is_string($move) ? $this->move($move) : $move;
+        $context = $context->forSubject($ticket);
+
+        // Un agent du centre de service ne transmet pas une demande au centre de service : il en fait partie.
+        if ($move->key() === 'transmit' && Agent::for($context->user) !== null) {
+            return false;
+        }
 
         if (! $this->isPossible($ticket, $move)) {
             return false;
@@ -109,8 +116,12 @@ class TicketWorkflow
         }
 
         // L'autre application a déjà contrôlé le droit de son utilisateur ; ici, seule compte la partie qu'elle
-        // représente pour ce ticket.
-        return $context->isApi() || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
+        // représente pour ce ticket. Un agent agit avec ses droits du maître, que le maître contrôle.
+        if ($context->isAgent()) {
+            return true;
+        }
+
+        return ($context->isApi() && $context->user === null) || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
     }
 
     /** Les mouvements que ce contexte peut faire maintenant sur ce ticket. */
@@ -147,6 +158,7 @@ class TicketWorkflow
     public function run(Ticket $ticket, string|Move $move, array $data, Context $context, ?string $transitionUlid = null): StateTransition
     {
         $move = is_string($move) ? $this->move($move) : $move;
+        $context = $context->forSubject($ticket);
 
         if (! $this->allows($ticket, $move, $context)) {
             throw new AuthorizationException(__('Ce passage n’est pas possible pour ce ticket.'));
@@ -155,7 +167,11 @@ class TicketWorkflow
         $data = Validator::make($data, $move->rules($ticket))->validate();
         $transitionUlid ??= (string) Str::ulid();
 
-        if ($this->delegatesToMaster($ticket, $context)) {
+        if ($context->isAgent()) {
+            $snapshot = app(MasterClient::class)->agentMove($context->agent, $ticket, $move->key(), $data, $transitionUlid);
+            DB::transaction(fn () => Mirror::snapshot($snapshot));
+            $transition = StateTransition::query()->where('ulid', $transitionUlid)->firstOrFail();
+        } elseif ($this->delegatesToMaster($ticket, $context)) {
             $snapshot = app(MasterClient::class)->runMove($ticket, $move->key(), $data, $context, $transitionUlid);
             DB::transaction(fn () => Mirror::snapshot($snapshot));
             $transition = StateTransition::query()->where('ulid', $transitionUlid)->firstOrFail();

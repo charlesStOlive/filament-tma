@@ -46,6 +46,11 @@ class Instance extends Model
         return $this->belongsTo(Tma::userModel(), 'api_user_id');
     }
 
+    public function agentLinks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AgentLink::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

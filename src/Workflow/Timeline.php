@@ -29,6 +29,11 @@ final class Timeline
             return true;
         }
 
+        // Un agent du centre de service écrit dans le maître, qui contrôle ses droits de là-bas.
+        if ($context->forSubject($ticket)->isAgent()) {
+            return $type !== EntryType::Comment || ! $ticket->state->isFinal();
+        }
+
         return match ($type) {
             // L'échange s'arrête avec le ticket ; un résumé d'intervention (souvent écrit après coup, avec le temps) et
             // les notes internes restent possibles.
@@ -45,6 +50,11 @@ final class Timeline
 
     public function canShare(Entry $note, Context $context): bool
     {
+        // Partager une note d'ici, c'est parler pour l'application cliente : pas le rôle d'un agent du centre de service.
+        if ($note->subject instanceof Trackable && $context->forSubject($note->subject)->isAgent()) {
+            return false;
+        }
+
         return $note->type === EntryType::Note
             && $note->shared_at === null
             && $note->isWrittenHere()
@@ -70,7 +80,31 @@ final class Timeline
             throw ValidationException::withMessages(['body' => __('Le message est vide.')]);
         }
 
+        $agentContext = $context->forSubject($ticket);
+
+        if ($agentContext->isAgent()) {
+            return $this->writeAsAgent($ticket, $type, (string) $body, $agentContext, $parent, $uploads);
+        }
+
         return $this->write($ticket, $type, $body, $context, $parent, $meta, $uploads);
+    }
+
+    /**
+     * Un agent du centre de service écrit, depuis une application cliente, dans le maître et en son nom de là-bas ; ce
+     * qui est partagé revient ici par l'état recopié. Sa note reste une note du centre de service : elle n'est pas
+     * recopiée ici (on la retrouve dans le maître).
+     *
+     * @param  array<int, array{path: string, name?: string}>  $uploads
+     */
+    private function writeAsAgent(Trackable $subject, EntryType $type, string $body, Context $context, ?Entry $parent, array $uploads): Entry
+    {
+        $result = app(MasterClient::class)->agentEntry($context->agent, $subject, $type->value, $body, $parent?->ulid, Uploads::toBase64($uploads));
+
+        DB::transaction(fn () => \CharlesStOlive\FilamentTma\Sync\Mirror::snapshot($result['snapshot']));
+        Uploads::discard($uploads);
+
+        return Entry::query()->where('ulid', $result['entry']['ulid'])->first()
+            ?? (new Entry)->forceFill(['ulid' => $result['entry']['ulid'], 'type' => $type, 'body' => $body]);
     }
 
     /**

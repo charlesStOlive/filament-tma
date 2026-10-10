@@ -276,6 +276,11 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [RelationManagers\AgentsRelationManager::class];
+    }
+
     public static function getPages(): array
     {
         return [

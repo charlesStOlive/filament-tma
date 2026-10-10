@@ -35,6 +35,7 @@ class ViewTicket extends ViewRecord
         return [
             ...MoveAction::all(),
             TimelineActions::comment(),
+            TimelineActions::agentTime(),
             ActionGroup::make([
                 TimelineActions::note(),
                 EditAction::make(),

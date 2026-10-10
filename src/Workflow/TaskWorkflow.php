@@ -60,7 +60,7 @@ class TaskWorkflow
     {
         $move = is_string($move) ? $this->move($move) : $move;
 
-        if (! Tma::isMaster() || $context->isApi()
+        if (! Tma::isMaster() || ($context->isApi() && ! $context->fromMaster)
             || ! in_array($task->state::class, $move->from(), true)
             || ! $task->state->canTransitionTo($move->to())
             || ! $move->isAvailable($task)) {

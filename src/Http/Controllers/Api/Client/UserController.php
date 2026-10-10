@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Client;
 
+use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -26,6 +27,10 @@ class UserController
         $model::query()->orderBy('name')->each(function ($user) use (&$users, $includeLocalOnly, $hasPolicy): void {
             if ($user->getAuthIdentifier() === request()->user()?->getAuthIdentifier()) {
                 return; // le compte du maître lui-même
+            }
+
+            if (Agent::for($user) !== null) {
+                return; // un agent du centre de service n'est pas un demandeur
             }
 
             $serviceDesk = TmaGate::allows($user, TmaGate::workflowAction('transmit'));

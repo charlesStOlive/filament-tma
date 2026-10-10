@@ -28,6 +28,13 @@ class TaskInfolist
                         ->viewData(['collection' => ProjectTask::ATTACHMENTS_COLLECTION]),
                 ]),
                 Section::make(__('Suivi'))->columnSpan(1)->schema([
+                    TextEntry::make('agent_mode')->hiddenLabel()
+                        ->state(fn ($record): ?string => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent()
+                            ? __('Vous agissez ici pour le centre de service, en votre nom de là-bas.')
+                            : null)
+                        ->visible(fn ($record): bool => \CharlesStOlive\FilamentTma\Workflow\Context::current()->forSubject($record)->isAgent())
+                        ->badge()->color('info')->icon('heroicon-m-lifebuoy')
+                        ->hintAction(Help::action('tma.agents', __('Agent du centre de service'))),
                     TextEntry::make('state')->label(__('État'))->badge()
                         ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
                     TextEntry::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster()),

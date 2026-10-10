@@ -1,5 +1,6 @@
 <?php
 
+use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\AgentController as ClientAgentController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\AllowanceController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\SyncController;
 use CharlesStOlive\FilamentTma\Http\Controllers\Api\Client\UserController;
@@ -39,6 +40,7 @@ Route::prefix('api/tma/v1')
             Route::get('tickets/{ref}', [AgentController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ref}/time', [AgentController::class, 'time'])->name('tickets.time');
             Route::post('tickets/{ref}/entries', [AgentController::class, 'entry'])->name('tickets.entry');
+            Route::post('tickets/{ref}/moves', [AgentController::class, 'move'])->name('tickets.move');
         });
 
         // Une application cliente, appelée par le maître.
@@ -48,5 +50,7 @@ Route::prefix('api/tma/v1')
             Route::post('sync', [SyncController::class, 'sync'])->name('sync');
             Route::post('media/{owner}/{ulid}', [SyncController::class, 'media'])->name('media');
             Route::post('allowances', AllowanceController::class)->name('allowances');
+            Route::post('agents', [ClientAgentController::class, 'store'])->name('agents.store');
+            Route::post('agents/unlink', [ClientAgentController::class, 'unlink'])->name('agents.unlink');
         });
     });

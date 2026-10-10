@@ -3,7 +3,9 @@
 namespace CharlesStOlive\FilamentTma\Workflow;
 
 use CharlesStOlive\FilamentTma\Enums\Origin;
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Contracts\Auth\Authenticatable;
 
@@ -27,6 +29,7 @@ final class Context
         public readonly Origin $origin,
         ?string $instanceUid = null,
         ?bool $fromMaster = null,
+        public readonly ?Agent $agent = null,
     ) {
         $this->instanceUid = $instanceUid ?? Tma::instanceUid();
         $this->fromMaster = $fromMaster ?? Tma::isMaster();
@@ -56,6 +59,28 @@ final class Context
     public function isApi(): bool
     {
         return $this->origin === Origin::Api;
+    }
+
+    /**
+     * Dans une application cliente, un agent du centre de service (`Models\Agent`) qui touche un ticket ou une tâche du
+     * centre de service agit pour le centre de service : en intervenant, jamais en demandeur, et dans le maître (voir
+     * `TicketWorkflow`, `Timeline`). Ailleurs (un ticket local), il reste un utilisateur comme les autres.
+     */
+    public function forSubject(Trackable $subject): self
+    {
+        if ($this->agent !== null || $this->user === null || $this->isApi() || ! Tma::isClient()
+            || ! $subject->isShared() || $subject->authorityIsHere()) {
+            return $this;
+        }
+
+        $agent = Agent::for($this->user);
+
+        return $agent === null ? $this : new self($this->user, $this->actor, $this->origin, $agent->master_uid, true, $agent);
+    }
+
+    public function isAgent(): bool
+    {
+        return $this->agent !== null;
     }
 
     /** L'utilisateur connecté, depuis l'interface. */
