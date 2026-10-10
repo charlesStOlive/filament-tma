@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStates\HasStates;
@@ -33,6 +34,9 @@ use Spatie\ModelStates\HasStates;
  * @property string $number
  * @property string $target_instance_uid
  * @property TaskState $state
+ * @property Carbon|null $starts_on le début ; sans saisie, le jour de la création
+ * @property Carbon|null $due_on l'échéance prévue (pas une fin fixe : la tâche finit quand elle est terminée, `done_at`)
+ * @property Carbon|null $done_at
  */
 class ProjectTask extends Model implements HasMedia, HasRichContent, Trackable
 {
@@ -57,7 +61,7 @@ class ProjectTask extends Model implements HasMedia, HasRichContent, Trackable
             'state' => TaskState::class,
             'sync_status' => SyncStatus::class,
             'starts_on' => 'date',
-            'ends_on' => 'date',
+            'due_on' => 'date',
             'publish_at' => 'datetime',
             'published_at' => 'datetime',
             'done_at' => 'datetime',
@@ -77,6 +81,8 @@ class ProjectTask extends Model implements HasMedia, HasRichContent, Trackable
     {
         static::creating(function (ProjectTask $task): void {
             $task->last_activity_at ??= now();
+            // Sans début saisi, la tâche commence le jour de sa création.
+            $task->starts_on ??= now()->toDateString();
             $task->number ??= static::nextNumber();
         });
 

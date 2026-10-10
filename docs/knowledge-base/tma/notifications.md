@@ -15,7 +15,7 @@ Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** avec ce qui l'att
 - ce qu'il **traite** : tickets en cours, tâches projet qui lui sont confiées ;
 - ses pauses qui **reprennent aujourd'hui**.
 
-Ce qui attend depuis plus de 5 jours, ou une tâche projet dont la fin prévue est passée, est signalé **en retard**.
+Ce qui attend depuis plus de 5 jours, ou une tâche projet dont l'échéance prévue est passée, est signalé **en retard**.
 Personne ne reçoit de courriel vide. L'heure, les jours et le fuseau se règlent.
 
 ## Les notifications immédiates

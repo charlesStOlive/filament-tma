@@ -31,7 +31,8 @@ final class TicketView
                 'application' => $ticket->targetInstance?->name,
                 'project' => $ticket->project,
                 'assignee' => $ticket->assignee?->name,
-                'ends_on' => $ticket->ends_on?->toDateString(),
+                'starts_on' => $ticket->starts_on?->toDateString(),
+                'due_on' => $ticket->due_on?->toDateString(),
                 'time_minutes' => TimeTotals::for($ticket)['total_minutes'],
                 'last_activity_at' => $ticket->last_activity_at?->toIso8601String(),
             ];

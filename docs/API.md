@@ -139,7 +139,7 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
   "ulid": "01k…", "number": "T-0007", "target_instance_uid": "01K…", "project": "Portail parrain",
   "title": "Refonte de la page parrain", "description": "<p>…</p>",
   "state": "in_progress|done|cancelled",
-  "starts_on": "2026-10-01", "ends_on": "2026-11-15",
+  "starts_on": "2026-10-01", "due_on": "2026-11-15",
   "assignee": { "…acteur" }, "created_by": { "…acteur" },
   "published_at": "…", "done_at": null, "cancelled_at": null, "last_activity_at": "…", "created_at": "…",
   "version": 2,

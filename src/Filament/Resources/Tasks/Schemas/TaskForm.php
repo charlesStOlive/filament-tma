@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class TaskForm
@@ -28,8 +29,14 @@ class TaskForm
                     ->hintAction(Help::action('tma.taches.publication', __('Une seule application'))),
                 TextInput::make('project')->label(__('Projet'))->maxLength(255),
                 DatePicker::make('starts_on')->label(__('Début'))
-                    ->hintAction(Help::action('tma.taches.periode', __('À quoi sert la période ?'))),
-                DatePicker::make('ends_on')->label(__('Fin prévue'))->afterOrEqual('starts_on'),
+                    ->helperText(__('Vide : le jour de la création.'))
+                    ->hintAction(Help::action('tma.taches.periode', __('Début et échéance'))),
+                // Comparée au début saisi, sinon au jour de la création : sans début, la règle de Filament comparerait
+                // à une valeur vide et refuserait toute échéance.
+                DatePicker::make('due_on')->label(__('Échéance prévue'))
+                    ->helperText(__('Facultative : une date visée, pas une fin fixe.'))
+                    ->afterOrEqual(fn (Get $get, ?ProjectTask $record): string => $get('starts_on') ?: ($record?->created_at ?? now())->toDateString())
+                    ->validationMessages(['after_or_equal' => __('L’échéance ne peut pas précéder le début.')]),
                 DateTimePicker::make('publish_at')->label(__('Publication programmée'))
                     ->helperText(__('Laisser vide pour publier à la main. La tâche reste invisible du client jusque-là.'))
                     ->minDate(now())->seconds(false)

@@ -23,9 +23,10 @@ programmer la publication (**Publication programmée**) : elle partira toute seu
 
 ## Chez le Support
 
-**Support › Tâches projet › Nouveau** : titre, application destinataire, projet, période (début, fin prévue), date de
-publication éventuelle, description et pièces jointes. Puis **Publier**, **Terminer** ou **Annuler**, et le temps
-passé dans le volet de droite, **Temps passé** (voir [Le temps passé](#modal-tma.temps)).
+**Support › Tâches projet › Nouveau** : titre, application destinataire, projet, début et échéance prévue (tous
+deux facultatifs), date de publication éventuelle, description et pièces jointes. Puis **Publier chez EDM**,
+**Terminer** ou **Annuler**, et le temps passé dans le volet de droite, **Temps passé** (voir
+[Le temps passé](#modal-tma.temps)).
 
 ## Dans l'application cliente
 
@@ -36,4 +37,4 @@ change pas son état.
 ## En détail
 
 - [Publier une tâche](#modal-tma.taches.publication)
-- [La période d'une tâche](#modal-tma.taches.periode)
+- [Début et échéance d'une tâche](#modal-tma.taches.periode)

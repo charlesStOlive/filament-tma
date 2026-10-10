@@ -106,7 +106,7 @@ final class Mirror
         $time = $payload['time'] ?? null;
 
         $task->forceFill([
-            ...Arr::only($payload, ['number', 'target_instance_uid', 'project', 'title', 'description', 'state', 'starts_on', 'ends_on']),
+            ...Arr::only($payload, ['number', 'target_instance_uid', 'project', 'title', 'description', 'state', 'starts_on', 'due_on']),
             ...self::dates($payload, ['published_at', 'done_at', 'cancelled_at', 'last_activity_at']),
             'assignee_actor_id' => self::actor($payload['assignee'] ?? null)?->getKey(),
             'created_by_actor_id' => self::actor($payload['created_by'] ?? null)?->getKey(),

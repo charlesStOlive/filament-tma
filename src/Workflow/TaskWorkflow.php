@@ -115,7 +115,7 @@ class TaskWorkflow
     /**
      * Crée une tâche en brouillon, pour une application cliente (maître seulement).
      *
-     * @param  array<string, mixed>  $attributes  title, description, target_instance_uid, project, starts_on, ends_on, publish_at
+     * @param  array<string, mixed>  $attributes  title, description, target_instance_uid, project, starts_on, due_on, publish_at
      */
     public function create(array $attributes, Context $context): ProjectTask
     {
@@ -130,7 +130,7 @@ class TaskWorkflow
         $instance = Instance::query()->where('uid', $attributes['target_instance_uid'] ?? null)->firstOrFail();
 
         $task = ProjectTask::create([
-            ...collect($attributes)->only(['title', 'description', 'project', 'starts_on', 'ends_on', 'publish_at'])->all(),
+            ...collect($attributes)->only(['title', 'description', 'project', 'starts_on', 'due_on', 'publish_at'])->all(),
             'target_instance_uid' => $instance->uid,
             'client_type' => $instance->client_type,
             'client_id' => $instance->client_id,

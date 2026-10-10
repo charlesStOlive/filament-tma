@@ -60,11 +60,11 @@ class TaskInfolist
                     ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
                 TextEntry::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster()),
                 TextEntry::make('project')->label(__('Projet'))->placeholder('—'),
-                TextEntry::make('period')->label(__('Période'))
-                    ->state(fn (ProjectTask $record): ?string => $record->starts_on || $record->ends_on
-                        ? trim(($record->starts_on?->format('d/m/Y') ?? '…').' → '.($record->ends_on?->format('d/m/Y') ?? '…'))
-                        : null)
-                    ->placeholder('—'),
+                TextEntry::make('starts_on')->label(__('Début'))->date('d/m/Y')->placeholder('—'),
+                TextEntry::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')
+                    ->color(fn (ProjectTask $record): ?string => $record->done_at === null && $record->due_on?->isPast() ? 'danger' : null),
+                TextEntry::make('done_at')->label(__('Terminée le'))->date('d/m/Y')
+                    ->visible(fn (ProjectTask $record): bool => $record->done_at !== null),
                 TextEntry::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')
                     ->visible(fn (ProjectTask $record): bool => Tma::isMaster() && $record->publish_at !== null),
                 TextEntry::make('published_at')->label(__('Publiée le'))->dateTime('d/m/Y H:i')->placeholder('—'),

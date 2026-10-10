@@ -76,7 +76,7 @@ final class Payload
             'description' => $task->description,
             'state' => $task->state::getMorphClass(),
             'starts_on' => $task->starts_on?->toDateString(),
-            'ends_on' => $task->ends_on?->toDateString(),
+            'due_on' => $task->due_on?->toDateString(),
             'assignee' => self::actor($task->assignee),
             'created_by' => self::actor($task->createdBy),
             'published_at' => self::date($task->published_at),

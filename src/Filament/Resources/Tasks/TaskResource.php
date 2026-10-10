@@ -131,7 +131,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('state')->label(__('État'))->badge(),
                 TextColumn::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')->placeholder('—')
                     ->visible(fn (): bool => Tma::isMaster())->toggleable(),
-                TextColumn::make('ends_on')->label(__('Fin prévue'))->date('d/m/Y')->placeholder('—')->sortable()->toggleable(),
+                TextColumn::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')->sortable()->toggleable(),
                 TextColumn::make('time')->label(__('Temps'))
                     ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
                 TextColumn::make('last_activity_at')->label(__('Dernière activité'))->since()->sortable(),
