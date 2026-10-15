@@ -16,6 +16,9 @@ Saisissez une ligne par intervention, au jour où elle a eu lieu, plutôt qu'un 
 
 ## La durée
 
+Les **raccourcis** au-dessus de la durée la remplissent d'un clic, avec son unité : 10, 15, 20, 30 ou 45 minutes ;
+1, 2 ou 3 heures ; une demi-journée ou une journée. On peut ensuite la corriger à la main.
+
 En **minutes**, **heures** ou **jours** :
 
 - `1.5` heures = 1 h 30 = 90 minutes ;
@@ -23,6 +26,15 @@ En **minutes**, **heures** ou **jours** :
 
 Le temps est toujours enregistré en minutes ; il s'affiche en heures (ou en jours, selon le réglage).
 
-## Ce qui a été fait
+## Sur quoi porte le temps
 
-Une phrase suffit. Elle apparaît dans le détail du temps et, plus tard, dans la facturation.
+La saisie n'a pas de texte à elle : ce qui a été fait se lit dans un message ou une note de la fiche. **Sur** propose :
+
+- **un nouveau message** (le choix par défaut) : écrivez **ce qui a été fait** ; le message s'ajoute à l'historique
+  de la fiche (ticket ou tâche), lu des deux côtés, et le temps porte dessus ;
+- **un message** existant, réponses comprises : le temps passé à y répondre, à faire ce qu'il demande ;
+- **une note** : le temps passé sur ce qu'elle signale.
+
+Le message ou la note affiche alors son temps (« 1 h 30 ») dans l'historique, et la saisie dit sur quoi elle porte.
+Un nouveau message laissé vide : le temps porte sur la fiche entière. Sur un ticket terminé, qui ne prend plus de
+message, on choisit un message ou une note existants, ou la fiche entière.

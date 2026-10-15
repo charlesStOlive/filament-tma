@@ -11,8 +11,8 @@ Support fait **autorité** : en cas de différence, c'est sa version qui compte.
 
 ## De l'application cliente vers le Support
 
-Transmettre un ticket, répondre, confirmer, rouvrir, écrire un message, partager une note : l'application cliente l'envoie au
-Support **tout de suite**, et attend sa réponse. S'il ne répond pas, **rien n'est fait** et un message le
+Transmettre un ticket, répondre, confirmer, renvoyer au Support, écrire ou modifier un message, ajouter, archiver ou
+supprimer une note : l'application cliente l'envoie au Support **tout de suite**, et attend sa réponse. S'il ne répond pas, **rien n'est fait** et un message le
 dit. On réessaie plus tard ; rien ne part en double.
 
 ## Du Support vers l'application cliente
@@ -28,9 +28,9 @@ dernière erreur sur la fiche). **Renvoyer à l'application** (menu de la fiche)
 
 | Partagé | Jamais partagé |
 | --- | --- |
-| les champs du ticket ou de la tâche | les notes non partagées |
-| les changements d'état | le détail des lignes de temps |
-| les messages, réponses, notes partagées et leurs fichiers | les brouillons du Support |
+| les champs du ticket ou de la tâche | le détail des lignes de temps |
+| les changements d'état | les brouillons du Support |
+| les messages, réponses, notes et leurs fichiers (modifiés, archivés, supprimés compris) | |
 | les totaux de temps (global et par mois) | |
 | l'état des forfaits | |
 

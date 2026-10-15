@@ -15,9 +15,9 @@ temps, sans repasser par l'application du Support. Une fois **reliée**, elle y 
 Sur un ticket **traité par le Support** (ou une tâche projet), elle agit **pour le Support** :
 
 - elle a les passages de l'équipe qui traite (Prendre en charge, Demander des précisions, Marquer comme résolu…),
-  jamais ceux du demandeur (Répondre, Confirmer et clore, Rouvrir) : elle ne s'écrit jamais à elle-même ;
-- ses messages, réponses et notes internes sont écrits **chez le Support, en son nom de là-bas** ; une note y reste (elle
-  n'est pas visible dans l'application cliente) ;
+  jamais ceux du demandeur (Répondre, Confirmer et clore, Retour au Support) : elle ne s'écrit jamais à elle-même ;
+- ses messages, réponses et notes sont écrits **chez le Support, en son nom de là-bas**, puis reviennent dans
+  l'application cliente ; de même quand elle modifie son message ou archive une note ;
 - elle saisit son temps (**Saisir du temps**), enregistré chez le Support ;
 - elle ne transmet pas de demande au Support : elle en fait partie.
 

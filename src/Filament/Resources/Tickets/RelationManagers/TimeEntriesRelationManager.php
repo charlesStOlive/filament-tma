@@ -3,40 +3,43 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
+use CharlesStOlive\FilamentTma\Enums\EntryType;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TimeEntryForm;
+use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Duration;
-use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentTma\Workflow\TimeLog;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\Size;
 use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\PaginationMode;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Le temps passé sur un ticket ou une tâche projet, dans le maître : une ligne par intervention, avec sa date (qui la
- * range dans son mois). Une saisie rattachée à une facture est verrouillée. La liste se range dans le volet de droite
+ * Le temps passé sur un ticket ou une tâche projet, dans le maître, pour qui peut le saisir : les totaux, puis une ligne
+ * par intervention, avec son jour (qui la range dans son mois), et au besoin le message ou la note sur lequel elle porte.
+ * Une saisie rattachée à une facture est verrouillée. Les autres voient les totaux seuls (`HasInfoPane::timeBlock()`). La liste se range dans le volet de droite
  * de la fiche (`HasInfoPane`).
  */
 class TimeEntriesRelationManager extends RelationManager
 {
+    /** Envoyé à la page à chaque saisie : l'historique montre le nouveau message, et le temps de chaque message. */
+    public const TIMELINE_CHANGED = 'tma-timeline-changed';
+
     protected static string $relationship = 'timeEntries';
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
@@ -56,76 +59,103 @@ class TimeEntriesRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        return $schema->components([
-            Grid::make(3)->columnSpanFull()->schema([
-                DatePicker::make('worked_on')->label(__('Le'))->required()->default(now())->maxDate(now()->addDay())
-                    ->hintAction(Help::action('tma.temps.saisie', __('Quel jour ?'))),
-                TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step(0.25)
-                    ->hintAction(Help::action('tma.temps.saisie', __('Minutes, heures ou jours'))),
-                Select::make('unit')->label(__('En'))->options(Duration::units())->required()
-                    ->default(config('filament-tma.time.display_unit', Duration::HOURS)),
-            ]),
-            Textarea::make('description')->label(__('Ce qui a été fait'))->rows(3)->columnSpanFull(),
-            Toggle::make('billable')->label(__('Facturable'))->default(true)
-                ->hintAction(Help::action('tma.temps.facturable', __('Facturable ou non ?'))),
-        ]);
+        return $schema->components(TimeEntryForm::components(fn (): Trackable => $this->getTicket()));
     }
 
     public function table(Table $table): Table
     {
-        // Une liste compacte, faite pour le volet de droite de la fiche (voir `HasInfoPane`) : qui, quand, combien,
-        // puis ce qui a été fait.
+        // Un seul bloc pour le temps, fait pour le volet de droite de la fiche (voir `HasInfoPane`) : les totaux en tête,
+        // puis une ligne par saisie (qui, le jour, combien), et dessous, s'il y en a, le message ou la note sur lequel elle porte.
         return $table
+            ->description(fn (): string => self::totals($this->getTicket()))
             ->defaultSort('worked_on', 'desc')
             ->paginationMode(PaginationMode::Simple)
-            ->defaultPaginationPageOption(10)
+            ->paginated([10])
+            ->emptyStateHeading(__('Pas encore de temps saisi'))
+            ->emptyStateIcon('heroicon-o-clock')
             ->columns([
                 Split::make([
-                    Stack::make([
-                        TextColumn::make('actor.name')->label(__('Intervenant'))->weight(FontWeight::Medium),
-                        TextColumn::make('worked_on')->label(__('Le'))->date('d/m/Y')->color('gray')->size(TextSize::Small)->sortable(),
-                    ]),
+                    TextColumn::make('actor.name')->label(__('Intervenant'))->weight(FontWeight::Medium)->limit(24),
+                    TextColumn::make('worked_on')->label(__('Le'))->date('d/m')->color('gray')->grow(false),
                     TextColumn::make('minutes')->label(__('Durée'))
                         ->formatStateUsing(fn (int $state): string => Duration::format($state))
                         ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
                 ]),
-                Stack::make([
-                    TextColumn::make('description')->label(__('Description'))->wrap()->color('gray')->size(TextSize::Small),
-                    TextColumn::make('flags')->label(__('Facturation'))
-                        ->state(fn (TimeEntry $record): array => array_values(array_filter([
-                            $record->billable ? null : __('Non facturable'),
-                            $record->isInvoiced() ? __('Facturée') : null,
-                        ])))
-                        ->badge()->color('gray')->size(TextSize::ExtraSmall),
-                ])->space(1),
+                TextColumn::make('details')->label(__('Détail'))
+                    ->state(fn (TimeEntry $record): ?string => collect([
+                        $record->entry !== null ? __('Sur : :entry', ['entry' => TimeEntryForm::entryLabel($record->entry, short: true)]) : null,
+                        $record->billable ? null : __('Non facturable'),
+                        $record->isInvoiced() ? __('Facturée') : null,
+                    ])->filter()->implode(' · ') ?: null)
+                    ->wrap()->color('gray')->size(TextSize::ExtraSmall),
             ])
             ->headerActions([
                 Action::make('logTime')
                     ->label(__('Saisir du temps'))
-                    ->icon('heroicon-m-clock')
+                    ->icon('heroicon-m-plus')
+                    ->size(Size::Small)
                     ->schema(fn (Schema $schema) => $this->form($schema))
                     ->visible(fn (): bool => app(TimeLog::class)->canLog($this->getTicket(), Context::current()))
                     ->action(function (array $data): void {
-                        app(TimeLog::class)->add(
-                            $this->getTicket(),
-                            Duration::toMinutes($data['duration'], $data['unit']),
-                            $data['worked_on'],
-                            $data['description'] ?? null,
-                            Context::current(),
-                            (bool) ($data['billable'] ?? true),
-                        );
+                        $ticket = $this->getTicket();
+                        $message = TimeEntryForm::message($data);
+                        $minutes = TimeEntryForm::minutes($data);
+                        $billable = (bool) ($data['billable'] ?? true);
+
+                        $message !== null
+                            ? app(TimeLog::class)->addWithMessage($ticket, $minutes, $data['worked_on'], $message, Context::current(), $billable)
+                            : app(TimeLog::class)->add($ticket, $minutes, $data['worked_on'], Context::current(), $billable,
+                                filled($data['entry_id'] ?? null) ? $ticket->entries()->find($data['entry_id']) : null);
+
+                        $this->dispatch(self::TIMELINE_CHANGED);
                     }),
             ])
             ->recordActions([
                 EditAction::make()
+                    ->iconButton()
+                    ->tooltip(__('Modifier'))
                     ->hidden(fn (TimeEntry $record): bool => $record->isInvoiced())
                     ->mutateRecordDataUsing(fn (array $data): array => [...$data, 'duration' => round($data['minutes'] / 60, 2), 'unit' => Duration::HOURS])
-                    ->mutateDataUsing(fn (array $data): array => [
-                        ...collect($data)->except(['duration', 'unit'])->all(),
-                        'minutes' => Duration::toMinutes($data['duration'], $data['unit']),
-                    ]),
-                DeleteAction::make()->hidden(fn (TimeEntry $record): bool => $record->isInvoiced()),
+                    ->mutateDataUsing(function (array $data): array {
+                        $ticket = $this->getTicket();
+                        $message = TimeEntryForm::message($data);
+
+                        // Un nouveau message écrit en modifiant la saisie : elle porte désormais dessus.
+                        if ($message !== null) {
+                            $data['entry_id'] = app(Timeline::class)->add($ticket, EntryType::Comment, $message, Context::current())->getKey();
+                        }
+
+                        TimeLog::assertEntryOf($ticket, filled($data['entry_id'] ?? null) ? Entry::query()->find($data['entry_id']) : null);
+
+                        return [
+                            ...collect($data)->except(['duration', 'unit', 'message'])->all(),
+                            'entry_id' => filled($data['entry_id'] ?? null) ? $data['entry_id'] : null,
+                            'minutes' => TimeEntryForm::minutes($data),
+                        ];
+                    })
+                    ->after(fn () => $this->dispatch(self::TIMELINE_CHANGED)),
+                DeleteAction::make()
+                    ->iconButton()
+                    ->tooltip(__('Supprimer'))
+                    ->hidden(fn (TimeEntry $record): bool => $record->isInvoiced())
+                    ->after(fn () => $this->dispatch(self::TIMELINE_CHANGED)),
             ]);
+    }
+
+    /**
+     * Les totaux, sur une ligne : « Cette tâche : 6 h 01 · Tout le projet : 12 h » ; « Ce ticket : 2 h ».
+     */
+    public static function totals(Trackable $subject): string
+    {
+        $own = Duration::format(TimeTotals::for($subject)['total_minutes']);
+
+        if (! $subject instanceof ProjectTask) {
+            return __('Ce ticket : :time', ['time' => $own]);
+        }
+
+        return $subject->project === null
+            ? __('Cette tâche : :time', ['time' => $own])
+            : __('Cette tâche : :time · Tout le projet : :project', ['time' => $own, 'project' => Duration::format($subject->project->timeTotals()['total_minutes'])]);
     }
 
     private function getTicket(): Trackable

@@ -2,74 +2,98 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas;
 
+use CharlesStOlive\FilamentTma\Filament\Resources\Projects\ProjectResource;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
-use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
-use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\HtmlString;
+use Filament\Support\Enums\FontWeight;
 
 class TaskInfolist
 {
-    /** Le volet principal de la fiche : la tâche, puis sa chronologie. */
+    /** Le volet principal de la fiche : l'historique (la tâche, puis les échanges), et dessous le nouveau message. */
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('Tâche'))->columnSpanFull()->schema([
-                TextEntry::make('description')->hiddenLabel()->placeholder(__('Pas de description.'))
-                    ->state(fn (ProjectTask $record): ?HtmlString => filled($record->description) ? new HtmlString($record->renderRichContent('description')) : null)
-                    ->prose(),
-                ViewEntry::make('attachments')->hiddenLabel()->view('filament-tma::attachments')
-                    ->viewData(['collection' => ProjectTask::ATTACHMENTS_COLLECTION]),
-            ]),
-            Section::make(__('Chronologie'))->columnSpanFull()
-                ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Message ou note interne ?'))])
+            Section::make(__('Historique'))->columnSpanFull()
+                ->headerActions([Help::title('tma.chronologie.notes', __('Messages et notes'))])
                 ->schema([
                     ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
-                    // La zone de réponse de la page (`Filament\Concerns\HasComposer`), sous la chronologie.
-                    EmbeddedSchema::make('composer')
-                        ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer()),
                 ]),
+            TicketInfolist::composerSection(),
         ]);
     }
 
     /**
-     * Le volet latéral de la fiche (voir `ViewTask`) : où en est la tâche.
+     * Le volet latéral de la fiche (voir `ViewTask`) : où en est la tâche et dans quel projet, son calendrier, les tickets
+     * qui en sont partis, son temps (et celui du projet). Pas de « qui doit agir » : c'est le Support qui fait la tâche.
+     *
+     * Le temps passé (`$time`, un seul bloc : voir `HasInfoPane::timeBlock()`) vient en tête dans le maître ; chez le
+     * client, il ferme le volet, en lecture. Le calendrier et l'application ne s'affichent qu'à la demande (« Tout
+     * afficher »).
      *
      * @return array<int, Component>
      */
-    public static function side(): array
+    public static function side(Component $time): array
     {
-        return [
-            Section::make(__('Suivi'))->columnSpanFull()->schema([
-                TextEntry::make('agent_mode')->hiddenLabel()
-                    ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
-                        ? __('Vous intervenez ici au nom du Support.')
-                        : null)
-                    ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
-                    ->badge()->color('info')->icon('heroicon-m-lifebuoy')
-                    ->hintAction(Help::action('tma.agents', __('Membre du Support'))),
-                TextEntry::make('state')->label(__('État'))->badge()
-                    ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
-                TextEntry::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster()),
-                TextEntry::make('project')->label(__('Projet'))->placeholder('—'),
-                TextEntry::make('starts_on')->label(__('Début'))->date('d/m/Y')->placeholder('—'),
-                TextEntry::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')
-                    ->color(fn (ProjectTask $record): ?string => $record->done_at === null && $record->due_on?->isPast() ? 'danger' : null),
-                TextEntry::make('done_at')->label(__('Terminée le'))->date('d/m/Y')
-                    ->visible(fn (ProjectTask $record): bool => $record->done_at !== null),
-                TextEntry::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')
-                    ->visible(fn (ProjectTask $record): bool => Tma::isMaster() && $record->publish_at !== null),
-                TextEntry::make('published_at')->label(__('Publiée le'))->dateTime('d/m/Y H:i')->placeholder('—'),
-                TextEntry::make('time')->label(__('Temps passé'))
-                    ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
+        $agentMode = TextEntry::make('agent_mode')->hiddenLabel()
+            ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
+                ? __('Vous intervenez ici au nom du Support.')
+                : null)
+            ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
+            ->badge()->color('info')->icon('heroicon-m-lifebuoy')
+            ->hintAction(Help::action('tma.agents', __('Membre du Support')));
+
+        $about = [
+            Section::make(__('Suivi'))->compact()->columnSpanFull()
+                ->headerActions([Help::title('tma.projets', __('Les projets'))])
+                ->schema([
+                    TextEntry::make('state')->label(__('État'))->badge()
+                        ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
+                    TextEntry::make('project.title')->label(__('Projet'))->placeholder(__('Sans projet'))
+                        ->weight(FontWeight::SemiBold)
+                        ->url(fn (ProjectTask $record): ?string => $record->project !== null && ProjectResource::canView($record->project)
+                            ? ProjectResource::getUrl('view', ['record' => $record->project])
+                            : null),
+                    TextEntry::make('targetInstance.name')->label(__('Application'))
+                        ->visible(fn (): bool => Tma::isMaster())
+                        ->onDemand(),
+                ]),
+            Section::make(__('Calendrier'))->compact()->columnSpanFull()
+                ->headerActions([Help::title('tma.taches.periode', __('Début et échéance'))])
+                ->columns(2)
+                ->onDemand()
+                ->schema([
+                    TextEntry::make('starts_on')->label(__('Début'))->date('d/m/Y')->placeholder('—'),
+                    TextEntry::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')
+                        ->color(fn (ProjectTask $record): ?string => $record->done_at === null && $record->due_on?->isPast() ? 'danger' : null),
+                    TextEntry::make('done_at')->label(__('Terminée le'))->date('d/m/Y')
+                        ->visible(fn (ProjectTask $record): bool => $record->done_at !== null),
+                    TextEntry::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')
+                        ->visible(fn (ProjectTask $record): bool => Tma::isMaster() && $record->publish_at !== null && ! $record->isShared()),
+                    TextEntry::make('published_at')->label(__('Publiée le'))->date('d/m/Y')
+                        ->visible(fn (ProjectTask $record): bool => $record->published_at !== null),
+                ]),
+            Section::make(__('Tickets'))->compact()->columnSpanFull()
+                ->visible(fn (ProjectTask $record): bool => $record->tickets()->exists())
+                ->schema([
+                    TextEntry::make('tickets')->hiddenLabel()
+                        ->state(fn (ProjectTask $record): string => $record->tickets()->latest()->get()
+                            ->map(fn (Ticket $ticket): string => TicketResource::canView($ticket)
+                                ? '<a href="'.e(TicketResource::getUrl('view', ['record' => $ticket])).'" class="fi-link">'.e($ticket->number.' — '.$ticket->title).'</a> <span class="fi-tma-entry-instance">('.e($ticket->state->getLabel()).')</span>'
+                                : e($ticket->number.' — '.$ticket->title))
+                            ->implode('<br>'))
+                        ->html(),
+                ]),
+            Section::make()->compact()->columnSpanFull()->schema([
                 TextEntry::make('sync_status')->label(__('Synchro'))->badge()
                     ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
                     ->visible(fn (ProjectTask $record): bool => $record->isShared())
@@ -77,5 +101,9 @@ class TaskInfolist
                 TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
             ]),
         ];
+
+        return Tma::isMaster()
+            ? [$agentMode, $time, ...$about]
+            : [$agentMode, ...$about, $time];
     }
 }

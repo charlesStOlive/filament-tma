@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** Le travail est fait : le ticket est résolu, le demandeur confirme ou rouvre. */
+/** Le travail est fait : le ticket est résolu, le demandeur confirme ou renvoie la demande. */
 class SubmitForValidation extends Move
 {
     use WritesMessages;

@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 /**
@@ -67,20 +67,59 @@ final class LocalBackend implements Backend
      *
      * @param  array<int, array<string, mixed>>  $files
      */
-    public function write(string $ref, string $type, string $body, ?string $parentUlid = null, array $files = []): array
+    public function write(string $ref, string $type, string $body, ?string $parentUlid = null, array $files = [], bool $private = false): array
     {
         $subject = $this->find($ref);
         $context = $this->context();
         $parent = filled($parentUlid) ? $subject->entries()->where('ulid', $parentUlid)->first() : null;
 
-        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files): Entry {
-            $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent);
+        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files, $private): Entry {
+            $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent, private: $private);
             Mirror::files($entry, $files);
 
             return $entry;
         }));
 
         return ['subject' => $subject->refresh(), 'entry' => $entry];
+    }
+
+    /**
+     * Change une entrée : son texte et ses fichiers (`body`, `files` en base64, `remove_files`), l'archivage d'une
+     * note (`archived`), ou sa suppression (`delete`). Les droits sont ceux de `Timeline`.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function changeEntry(string $ref, string $ulid, array $data): Ticket|ProjectTask
+    {
+        $subject = $this->find($ref);
+        $context = $this->context();
+        $entry = $subject->entries()->where('ulid', $ulid)->firstOrFail();
+        $timeline = app(Timeline::class);
+
+        Auditor::as($context, fn () => DB::transaction(function () use ($timeline, $entry, $context, $data): void {
+            match (true) {
+                (bool) ($data['delete'] ?? false) => $timeline->delete($entry, $context),
+                array_key_exists('archived', $data) => $timeline->archive($entry, (bool) $data['archived'], $context),
+                default => $this->editEntry($entry, $data, $context),
+            };
+        }));
+
+        return $subject->refresh();
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function editEntry(Entry $entry, array $data, Context $context): void
+    {
+        $timeline = app(Timeline::class);
+
+        if (! $timeline->canEdit($entry, $context)) {
+            throw new AuthorizationException(__('Vous ne pouvez plus modifier cette entrée.'));
+        }
+
+        // Les fichiers arrivent en base64 : rangés d'abord, ils comptent pour une note sans texte.
+        Mirror::files($entry, (array) ($data['files'] ?? []));
+        $timeline->edit($entry->refresh(), $data['body'] ?? null, $context, removeFiles: (array) ($data['remove_files'] ?? []),
+            private: isset($data['private']) ? (bool) $data['private'] : null);
     }
 
     public function list(array $filters): array
@@ -105,12 +144,12 @@ final class LocalBackend implements Backend
         $actor = Actor::forUser($this->user);
 
         return ProjectTask::query()
-            ->with(['assignee', 'targetInstance'])
+            ->with(['assignee', 'targetInstance', 'project'])
             ->when($this->scope !== null, fn (Builder $q) => $q->where('target_instance_uid', $this->scope))
             ->when(! ($filters['all'] ?? false) && blank($filters['state'] ?? null), fn (Builder $q) => $q->open())
             ->when(filled($filters['state'] ?? null), fn (Builder $q) => $q->whereIn('state', explode(',', (string) $filters['state'])))
             ->when(filled($filters['app'] ?? null), fn (Builder $q) => $q->whereHas('targetInstance', fn (Builder $i) => $i->where('name', $filters['app'])->orWhere('uid', $filters['app'])))
-            ->when(filled($filters['project'] ?? null), fn (Builder $q) => $q->where('project', $filters['project']))
+            ->when(filled($filters['project'] ?? null), fn (Builder $q) => $q->whereHas('project', fn (Builder $p) => $p->where('title', $filters['project'])->orWhere('ulid', strtolower((string) $filters['project']))))
             ->when(filled($filters['search'] ?? null), fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('title', 'like', '%'.$filters['search'].'%')->orWhere('number', $filters['search'])))
             ->when($filters['mine'] ?? false, fn (Builder $q) => $q->where('assignee_actor_id', $actor->getKey()))
             ->orderByDesc('last_activity_at')
@@ -146,38 +185,42 @@ final class LocalBackend implements Backend
     {
         $ticket = $this->find($ref);
 
-        return TicketView::detail($ticket, app(Timeline::class)->canReadNotes($ticket, $this->context()));
+        return TicketView::detail($ticket, $this->user);
     }
 
-    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal): array
+    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal, ?string $entry = null): array
     {
         $ticket = $this->find($ref);
         $context = $this->context();
 
-        // La durée et le résumé sont enregistrés séparément (CDC §16) : le résumé est un message (ou une note
-        // interne) de la chronologie. Ensemble, ou pas du tout.
-        return Auditor::as($context, fn (): array => DB::transaction(function () use ($ticket, $minutes, $workedOn, $summary, $billable, $internal, $context): array {
-            $time = app(TimeLog::class)->add($ticket, $minutes, $workedOn, self::firstLine($summary), $context, $billable);
-            $entry = filled($summary)
-                ? app(Timeline::class)->add($ticket, $internal ? EntryType::Note : EntryType::Comment, self::toHtml($summary), $context, meta: ['time_entry' => $time->ulid])
-                : null;
+        if (filled($summary) && filled($entry)) {
+            throw ValidationException::withMessages(['entry_ulid' => __('Un résumé écrit un nouveau message : ne désignez pas en plus un message existant.')]);
+        }
+
+        $on = filled($entry) ? $this->entryOf($ticket, (string) $entry) : null;
+
+        // Le temps porte sur le message qui dit ce qui a été fait (CDC §16) : le résumé l'écrit dans l'historique (ou
+        // une note sur le ticket, avec `$internal`), ensemble ou pas du tout ; ou c'est un message qui existe déjà.
+        return Auditor::as($context, function () use ($ticket, $minutes, $workedOn, $summary, $billable, $internal, $context, $on): array {
+            $time = filled($summary)
+                ? app(TimeLog::class)->addWithMessage($ticket, $minutes, $workedOn, self::toHtml($summary), $context, $billable, $internal ? EntryType::Note : EntryType::Comment)
+                : app(TimeLog::class)->add($ticket, $minutes, $workedOn, $context, $billable, $on);
 
             return [
                 'ticket' => $ticket->number,
                 'time_entry' => ['ulid' => $time->ulid, 'minutes' => $time->minutes, 'worked_on' => $time->worked_on->toDateString(), 'billable' => $time->billable],
-                'summary_entry' => $entry?->ulid,
+                'summary_entry' => filled($summary) ? $time->entry?->ulid : null,
+                'entry' => $time->entry?->ulid,
                 'time_total_minutes' => (int) $ticket->timeEntries()->sum('minutes'),
             ];
-        }));
+        });
     }
 
-    /** Une saisie de temps seule, sans résumé dans la chronologie (la saisie d'un agent depuis une application cliente). */
-    public function addTime(string $ref, int $minutes, ?string $workedOn, ?string $description, bool $billable): void
+    /** Un message ou une note de la fiche, par son ulid, que l'utilisateur peut lire. */
+    private function entryOf(Ticket|ProjectTask $ticket, string $ulid): Entry
     {
-        $subject = $this->find($ref);
-        $context = $this->context();
-
-        Auditor::as($context, fn () => app(TimeLog::class)->add($subject, $minutes, $workedOn, $description, $context, $billable));
+        return $ticket->entries()->visibleTo($this->user)->where('ulid', strtolower($ulid))->first()
+            ?? throw new InvalidArgumentException(__('Message ou note introuvable sur :ref : :entry', ['ref' => $ticket->number, 'entry' => $ulid]));
     }
 
     public function comment(string $ref, string $body, bool $note): array
@@ -238,14 +281,5 @@ final class LocalBackend implements Backend
         return collect(preg_split("/\R{2,}/", trim($text)))
             ->map(fn (string $paragraph): string => '<p>'.nl2br(e(trim($paragraph)), false).'</p>')
             ->implode('');
-    }
-
-    private static function firstLine(?string $text): ?string
-    {
-        if ($text === null || trim($text) === '') {
-            return null;
-        }
-
-        return Str::limit(trim(strtok(strip_tags($text), "\n")), 250);
     }
 }

@@ -14,7 +14,8 @@ use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
- * Une saisie de temps (maître seulement) : qui, quel jour, combien de minutes, quoi, facturable ou non.
+ * Une saisie de temps (maître seulement) : qui, quel jour, combien de minutes, facturable ou non, et sur quel message
+ * ou quelle note de la fiche (`entry_id`, sinon la fiche entière). Ce qui a été fait se lit dans ce message.
  *
  * Verrou de facturation (CDC §10.3) : une saisie rattachée à une facture ne se modifie ni ne se supprime, quel que
  * soit l'état de la facture. Il faut d'abord défaire le rattachement (lot 3). Le verrou est dans le modèle : il vaut
@@ -81,6 +82,12 @@ class TimeEntry extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /** Le message ou la note sur lequel porte ce temps, s'il en a un. */
+    public function entry(): BelongsTo
+    {
+        return $this->belongsTo(Entry::class, 'entry_id');
     }
 
     public function actor(): BelongsTo

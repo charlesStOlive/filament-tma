@@ -22,20 +22,20 @@ use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * La zone de réponse, sous la chronologie d'un ticket ou d'une tâche : on y écrit un message (lu de tous, demandeur
- * compris) ou une note interne (lue par son équipe seulement), avec des fichiers.
+ * Le nouveau message, sous l'historique d'un ticket ou d'une tâche : un texte lu de tous, demandeur compris, avec des
+ * fichiers. Les notes s'écrivent à part, en fenêtre (`HasNotes`).
  *
  * Ses boutons suivent qui doit agir. La partie qu'on attend y trouve ses réponses, qui font avancer le ticket avec ce
- * texte (`Move::replyField()`) : le demandeur « Répondre », ou « Confirmer et clore » / « Rouvrir » un ticket résolu ;
+ * texte (`Move::replyField()`) : le demandeur « Répondre », ou « Confirmer et clore » / « Retour au Support » un ticket résolu ;
  * l'équipe qui traite « Demander des précisions » ou « Marquer comme résolu » — sur un ticket nouveau, elle le prend
  * en charge au passage. L'autre partie n'a qu'« Envoyer le message » : une précision, qui ne change pas l'état.
  */
@@ -57,22 +57,10 @@ trait HasComposer
         return $schema
             ->statePath('composerData')
             ->components([
-                ToggleButtons::make('kind')
-                    ->hiddenLabel()
-                    ->options(['comment' => __('Message'), 'note' => __('Note interne')])
-                    ->icons(['comment' => 'heroicon-m-chat-bubble-left-right', 'note' => 'heroicon-m-pencil-square'])
-                    ->colors(['comment' => 'primary', 'note' => 'warning'])
-                    ->default('comment')
-                    ->inline()
-                    ->grouped()
-                    ->live()
-                    ->visible(fn (): bool => $this->composerCan(EntryType::Note) && $this->composerCanWrite()),
                 Text::make(fn (): string => $this->composerHint())->color('gray'),
                 RichEditor::make('body')
                     ->hiddenLabel()
-                    ->placeholder(fn (): string => $this->composerKind() === EntryType::Note
-                        ? __('Une note que seule votre équipe lira…')
-                        : __('Votre message…'))
+                    ->placeholder(__('Votre message…'))
                     ->toolbarButtons([
                         ['bold', 'italic', 'underline', 'strike', 'link'],
                         ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -86,25 +74,19 @@ trait HasComposer
     /** La zone de réponse a quelque chose à proposer à cet utilisateur. */
     public function hasComposer(): bool
     {
-        return $this->composerCanMessage() || $this->composerCan(EntryType::Note) || $this->composerReplies() !== [];
+        return $this->composerCanMessage() || $this->composerReplies() !== [];
     }
 
     /** @return array<int, Action> */
     protected function composerActions(): array
     {
         $actions = [
-            Action::make('composerNote')
-                ->label(__('Ajouter la note interne'))
-                ->icon('heroicon-m-pencil-square')
-                ->color('warning')
-                ->visible(fn (): bool => $this->composerKind() === EntryType::Note && $this->composerCan(EntryType::Note))
-                ->action(fn () => $this->composerWrite(EntryType::Note)),
             Action::make('composerMessage')
                 ->label(__('Envoyer le message'))
                 ->icon('heroicon-m-paper-airplane')
                 ->color(fn (): string => $this->composerReplies() === [] ? 'primary' : 'gray')
-                ->visible(fn (): bool => $this->composerKind() === EntryType::Comment && $this->composerCanMessage())
-                ->action(fn () => $this->composerWrite(EntryType::Comment)),
+                ->visible(fn (): bool => $this->composerCanMessage())
+                ->action(fn () => $this->composerWrite()),
         ];
 
         foreach (app(TicketWorkflow::class)->moves() as $move) {
@@ -116,48 +98,28 @@ trait HasComposer
                 ->label(fn (): string => $this->getRecord() instanceof Ticket ? $move->labelFor($this->getRecord()) : $move->label())
                 ->icon($move->icon())
                 ->color($move->color())
-                ->visible(fn (): bool => $this->composerKind() === EntryType::Comment && in_array($move, $this->composerReplies(), true))
+                ->visible(fn (): bool => in_array($move, $this->composerReplies(), true))
                 ->action(fn () => $this->composerReply($move));
         }
 
         return $actions;
     }
 
-    /** Message ou note interne : ce que l'utilisateur a choisi, ou la seule chose qu'il peut écrire. */
-    protected function composerKind(): EntryType
-    {
-        if (! $this->composerCanWrite()) {
-            return EntryType::Note;
-        }
-
-        if (! $this->composerCan(EntryType::Note)) {
-            return EntryType::Comment;
-        }
-
-        return EntryType::tryFrom((string) ($this->composerData['kind'] ?? 'comment')) ?? EntryType::Comment;
-    }
-
-    /** Écrire à tout le monde : un message, ou une réponse. */
-    protected function composerCanWrite(): bool
-    {
-        return $this->composerCanMessage() || $this->composerReplies() !== [];
-    }
-
-    protected function composerCan(EntryType $type): bool
+    protected function composerCanComment(): bool
     {
         /** @var Trackable $record */
         $record = $this->getRecord();
 
-        return app(Timeline::class)->canAdd($record, $type, Context::current());
+        return app(Timeline::class)->canAdd($record, EntryType::Comment, Context::current());
     }
 
     /**
      * « Envoyer le message » : pour qui peut écrire un message, sauf qui répond pour le demandeur qu'on attend — son
-     * message est sa réponse (« Répondre », « Rouvrir »…), pas une précision à côté.
+     * message est sa réponse (« Répondre », « Retour au Support »…), pas une précision à côté.
      */
     protected function composerCanMessage(): bool
     {
-        if (! $this->composerCan(EntryType::Comment)) {
+        if (! $this->composerCanComment()) {
             return false;
         }
 
@@ -222,10 +184,6 @@ trait HasComposer
     {
         $record = $this->getRecord();
 
-        if ($this->composerKind() === EntryType::Note) {
-            return __('Seule votre équipe lira cette note ; elle ne change pas l’état.');
-        }
-
         if (! $record instanceof Ticket) {
             return __('Tout le monde lira ce message.');
         }
@@ -236,19 +194,19 @@ trait HasComposer
         return match (true) {
             $record->state instanceof Draft => __('Ce brouillon n’est encore confié à personne : votre message reste dans cette application.'),
             collect($replies)->contains(fn (Move $move): bool => $move->key() === 'answer') => __(':team attend votre réponse.', ['team' => $record->handledBy() ?? __('L’équipe')]),
-            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'validate') => __('Le travail est fait : confirmez pour clore, ou rouvrez en disant ce qui ne va pas.'),
+            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'validate') => __('Le travail est fait : confirmez pour clore, ou renvoyez la demande en disant ce qui ne va pas.'),
             $replies !== [] => __('« Envoyer le message » garde la main ; « Demander des précisions » ou « Marquer comme résolu » la passe au demandeur.'),
             $waitingOn === null => __('Tout le monde lira ce message.'),
             default => __('En attente de : :who. Votre message ne change pas l’état du ticket.', ['who' => $waitingOn]),
         };
     }
 
-    protected function composerWrite(EntryType $type): void
+    protected function composerWrite(): void
     {
         $data = $this->getSchema('composer')->getState();
         $uploads = Uploads::fromForm($data);
 
-        $this->composerRun(fn () => app(Timeline::class)->add($this->getRecord(), $type, $data['body'] ?? null, Context::current(), uploads: $uploads));
+        $this->composerRun(fn () => app(Timeline::class)->add($this->getRecord(), EntryType::Comment, $data['body'] ?? null, Context::current(), uploads: $uploads));
     }
 
     protected function composerReply(Move $move): void
@@ -273,12 +231,15 @@ trait HasComposer
             }
 
             if ($move->replyField() === '') {
-                // Un passage sans texte à lui (« Confirmer et clore ») : le texte, s'il y en a, part en message avant.
+                // Un passage sans texte à lui (« Confirmer et clore ») : le texte, s'il y en a, part en message avant,
+                // lié au passage (l'historique les montre ensemble).
+                $transitionUlid = (string) Str::ulid();
+
                 if (! Html::isBlank($body) || $uploads !== []) {
-                    app(Timeline::class)->add($ticket, EntryType::Comment, $body, $context, uploads: $uploads);
+                    app(Timeline::class)->forTransition($transitionUlid, fn () => app(Timeline::class)->add($ticket, EntryType::Comment, $body, $context, uploads: $uploads));
                 }
 
-                $workflow->run($ticket, $move, [], $context);
+                $workflow->run($ticket, $move, [], $context, $transitionUlid);
 
                 return;
             }

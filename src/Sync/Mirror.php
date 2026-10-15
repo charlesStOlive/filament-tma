@@ -7,10 +7,13 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\Uploads;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -66,6 +69,10 @@ final class Mirror
                 'submitted_at', 'taken_at', 'waiting_since', 'paused_until', 'validation_requested_at', 'closed_at',
                 'cancelled_at', 'last_activity_at', 'auto_close_warned_at',
             ]),
+            // La tâche dont il vient, si on la connaît ici ; une application d'avant les liens ne l'envoie pas.
+            ...(array_key_exists('task_ulid', $payload) ? [
+                'task_id' => filled($payload['task_ulid']) ? ProjectTask::query()->where('ulid', $payload['task_ulid'])->value('id') : null,
+            ] : []),
             'requester_actor_id' => self::actor($payload['requester'])?->getKey(),
             'assignee_actor_id' => self::actor($payload['assignee'] ?? null)?->getKey(),
             'created_by_actor_id' => self::actor($payload['created_by'] ?? $payload['requester'])?->getKey(),
@@ -106,8 +113,9 @@ final class Mirror
         $time = $payload['time'] ?? null;
 
         $task->forceFill([
-            ...Arr::only($payload, ['number', 'target_instance_uid', 'project', 'title', 'description', 'state', 'starts_on', 'due_on']),
-            ...self::dates($payload, ['published_at', 'done_at', 'cancelled_at', 'last_activity_at']),
+            ...Arr::only($payload, ['number', 'target_instance_uid', 'title', 'description', 'state', 'starts_on', 'due_on']),
+            'project_id' => self::project($payload['project'] ?? null, (string) $payload['target_instance_uid'])?->getKey(),
+            ...self::dates($payload, ['published_at', 'done_at', 'cancelled_at', 'last_activity_at', 'deleted_at']),
             'assignee_actor_id' => self::actor($payload['assignee'] ?? null)?->getKey(),
             'created_by_actor_id' => self::actor($payload['created_by'] ?? null)?->getKey(),
             'sync_version' => (int) ($payload['version'] ?? 0),
@@ -131,27 +139,25 @@ final class Mirror
     }
 
     /**
-     * Une entrée de la chronologie. Une note n'arrive que partagée : une note interne de l'autre application ne
-     * doit jamais être reçue.
+     * Une entrée de la chronologie, telle que l'application qui fait autorité la connaît : son texte, son état
+     * (modifiée, archivée, supprimée), ses fichiers. Son auteur et son origine ne changent jamais. Une note garde le numéro reçu,
+     * sauf s'il est déjà pris ici par une autre : elle prend alors le suivant.
      *
      * @param  array<string, mixed>  $payload
      */
     public static function entry(Trackable $ticket, array $payload): Entry
     {
         $type = EntryType::from($payload['type']);
-
-        if ($type === EntryType::Note && empty($payload['shared_at'])) {
-            throw ValidationException::withMessages(['type' => __('Une note interne ne se transmet pas.')]);
-        }
-
         $entry = Entry::withTrashed()->firstOrNew(['ulid' => $payload['ulid']]);
 
         if ($entry->exists && ($entry->subject_type !== $ticket->getMorphClass() || (int) $entry->subject_id !== (int) $ticket->getKey())) {
             throw ValidationException::withMessages(['ulid' => __('Cette entrée appartient à un autre ticket.')]);
         }
 
+        // Une réponse répond à un message de premier niveau ; une note commente un message de premier niveau, ou le
+        // ticket entier (ce que devient la réponse à une note d'une application plus ancienne).
         $parent = filled($payload['parent_ulid'] ?? null)
-            ? $ticket->entries()->where('ulid', $payload['parent_ulid'])->whereNull('parent_id')->first()
+            ? $ticket->entries()->messages()->where('ulid', $payload['parent_ulid'])->whereNull('parent_id')->first()
             : null;
 
         $entry->forceFill([
@@ -159,16 +165,41 @@ final class Mirror
             'subject_id' => $ticket->getKey(),
             'parent_id' => $parent?->getKey(),
             'type' => $type,
-            'body' => (string) $payload['body'],
-            'author_actor_id' => self::actor($payload['author'])->getKey(),
-            'origin_instance_uid' => $payload['origin_instance_uid'],
-            'origin' => $payload['origin'] ?? 'api',
-            'shared_at' => self::date($payload['shared_at'] ?? null),
+            'body' => (string) ($payload['body'] ?? ''),
             'meta' => $payload['meta'] ?? null,
+            'private' => $type === EntryType::Note && (bool) ($payload['private'] ?? false),
+            // Une application d'avant la modification des entrées ne les envoie pas : ce qu'on sait ici reste.
+            ...collect(['edited_at', 'archived_at', 'deleted_at'])
+                ->filter(fn (string $key): bool => array_key_exists($key, $payload))
+                ->mapWithKeys(fn (string $key): array => [$key => self::date($payload[$key])])
+                ->all(),
         ]);
 
-        if (! $entry->exists && isset($payload['created_at'])) {
-            $entry->created_at = Carbon::parse($payload['created_at']);
+        if ($type !== EntryType::Note) {
+            $entry->archived_at = null;
+        }
+
+        if (! $entry->exists) {
+            $entry->author_actor_id = self::actor($payload['author'])->getKey();
+            $entry->origin_instance_uid = $payload['origin_instance_uid'];
+            $entry->origin = $payload['origin'] ?? 'api';
+
+            if (isset($payload['created_at'])) {
+                $entry->created_at = Carbon::parse($payload['created_at']);
+            }
+        }
+
+        if ($type === EntryType::Note) {
+            $number = (int) ($payload['number'] ?? 0);
+            $taken = $number > 0 && Entry::withTrashed()
+                ->where('subject_type', $ticket->getMorphClass())->where('subject_id', $ticket->getKey())
+                ->notes()->where('number', $number)
+                ->when($entry->exists, fn ($q) => $q->whereKeyNot($entry->getKey()))
+                ->exists();
+
+            if ($number > 0 && ! $taken) {
+                $entry->number = $number;
+            }
         }
 
         $entry->save();
@@ -177,7 +208,81 @@ final class Mirror
             self::files($entry, $payload['files']);
         }
 
+        if (array_key_exists('file_uuids', $payload)) {
+            $kept = (array) $payload['file_uuids'];
+            Uploads::remove($entry, $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)
+                ->map(fn ($media): string => Uploads::uuidOf($media))
+                ->reject(fn (string $uuid): bool => in_array($uuid, $kept, true))
+                ->values()->all());
+        }
+
         return $entry;
+    }
+
+    /**
+     * Une entrée envoyée par une application qui ne fait pas autorité sur ce ticket : elle crée et change ses propres
+     * entrées ; sur celles d'ici, elle ne fait qu'archiver ou ressortir une note. Un message ne change plus quand
+     * quelqu'un d'autre a écrit après lui.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public static function entryFrom(string $instanceUid, Trackable $ticket, array $payload): Entry
+    {
+        $entry = Entry::withTrashed()->where('ulid', $payload['ulid'] ?? null)->first();
+
+        if ($entry === null) {
+            return self::entry($ticket, $payload);
+        }
+
+        if ($entry->subject_type !== $ticket->getMorphClass() || (int) $entry->subject_id !== (int) $ticket->getKey()) {
+            throw ValidationException::withMessages(['ulid' => __('Cette entrée appartient à un autre ticket.')]);
+        }
+
+        if ($entry->origin_instance_uid !== $instanceUid) {
+            if ($entry->isNote() && ! $entry->trashed() && array_key_exists('archived_at', $payload)) {
+                $entry->forceFill(['archived_at' => self::date($payload['archived_at'])])->save();
+            }
+
+            return $entry;
+        }
+
+        if (! $entry->isNote() && Html::clean((string) ($payload['body'] ?? '')) !== $entry->body && ! $entry->isStillEditable()) {
+            throw ValidationException::withMessages(['body' => __('Quelqu’un a écrit après ce message : il ne se modifie plus.')]);
+        }
+
+        return self::entry($ticket, $payload);
+    }
+
+    /**
+     * Le projet d'une tâche reçue : créé au besoin, son titre mis à jour. Une application d'avant les projets
+     * envoyait un simple libellé : il devient un projet, retrouvé par son titre.
+     *
+     * @param  array<string, mixed>|string|null  $payload
+     */
+    public static function project(array|string|null $payload, string $targetInstanceUid): ?Project
+    {
+        if (blank($payload)) {
+            return null;
+        }
+
+        if (is_string($payload)) {
+            return Project::query()->firstOrCreate(['target_instance_uid' => $targetInstanceUid, 'title' => $payload]);
+        }
+
+        // Chez le client, un projet issu de l'ancien libellé (migration `create_tma_projects_table`) prend l'identité
+        // de celui du maître au premier envoi, plutôt que d'en doubler un.
+        $project = Project::withTrashed()->where('ulid', $payload['ulid'])->first()
+            ?? (Tma::isClient() ? Project::query()->where('target_instance_uid', $targetInstanceUid)->where('title', $payload['title'])->first() : null)
+            ?? new Project;
+        $project->forceFill([
+            'ulid' => $payload['ulid'],
+            'target_instance_uid' => $targetInstanceUid,
+            'title' => (string) $payload['title'],
+            'description' => $payload['description'] ?? null,
+            'deleted_at' => null,
+        ])->save();
+
+        return $project;
     }
 
     /** @param  array<string, mixed>  $payload */
@@ -243,7 +348,7 @@ final class Mirror
      */
     public static function files(HasMedia $model, array $files): void
     {
-        $known = $model->getMedia(Entry::ATTACHMENTS_COLLECTION)->map(fn ($media) => $media->getCustomProperty('remote_uuid', $media->uuid))->all();
+        $known = $model->getMedia(Entry::ATTACHMENTS_COLLECTION)->map(fn ($media): string => Uploads::uuidOf($media))->all();
         $maxBytes = (int) config('filament-tma.attachments.max_size_kb', 10240) * 1024;
 
         foreach ($files as $file) {

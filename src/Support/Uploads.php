@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Models\Entry;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Range des fichiers envoyés (par un formulaire Filament, sur le disque des pièces jointes) dans la collection
@@ -26,6 +27,31 @@ final class Uploads
                 ->usingFileName(self::safeFileName($original))
                 ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
         }
+    }
+
+    /**
+     * L'identifiant d'un fichier, le même dans les deux applications : celui de l'application où il a été joint
+     * (`remote_uuid` quand il a été reçu).
+     */
+    public static function uuidOf(Media $media): string
+    {
+        return (string) $media->getCustomProperty('remote_uuid', $media->uuid);
+    }
+
+    /**
+     * Retire des fichiers joints, par identifiant (`uuidOf()`).
+     *
+     * @param  array<int, string>  $uuids
+     */
+    public static function remove(HasMedia $model, array $uuids): void
+    {
+        if ($uuids === []) {
+            return;
+        }
+
+        $model->getMedia(Entry::ATTACHMENTS_COLLECTION)
+            ->filter(fn (Media $media): bool => in_array(self::uuidOf($media), $uuids, true))
+            ->each(fn (Media $media) => $media->delete());
     }
 
     /**

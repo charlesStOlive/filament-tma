@@ -7,15 +7,15 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use Illuminate\Console\Command;
 
 /**
- * `tma:log DES-0042 --hours=2 --summary="…"` : saisir du temps (dans le maître) et, à part, ce qui a été fait, en
- * message dans la chronologie (CDC §16). `--summary-file` lit un résumé long dans un fichier (`-` : l'entrée
- * standard).
+ * `tma:log DES-0042 --hours=2 --summary="…"` : saisir du temps (dans le maître) sur le message qui dit ce qui a été
+ * fait, écrit dans la chronologie (CDC §16). `--summary-file` lit un résumé long dans un fichier (`-` : l'entrée
+ * standard). `--entry` porte plutôt le temps sur un message ou une note qui existe déjà (son ulid, voir `tma:show`).
  */
 class LogTimeCommand extends Command
 {
     use UsesTmaBackend;
 
-    protected $description = 'Saisit du temps sur un ticket, avec un message qui dit ce qui a été fait';
+    protected $description = 'Saisit du temps sur un ticket, sur le message qui dit ce qui a été fait';
 
     public function __construct()
     {
@@ -28,7 +28,8 @@ class LogTimeCommand extends Command
             {--summary= : Ce qui a été fait (écrit en message dans la chronologie)}
             {--summary-file= : Fichier du résumé (- pour l’entrée standard)}
             {--non-billable : Temps non facturable}
-            {--internal : Le résumé devient une note interne (non lue par le client)}
+            {--internal : Le résumé devient une note sur le ticket plutôt qu’un message}
+            {--entry= : Ulid d’un message ou d’une note de la fiche sur lequel porte le temps (au lieu d’un résumé)}
             '.$this->backendOptions();
 
         parent::__construct();
@@ -47,13 +48,17 @@ class LogTimeCommand extends Command
         $summary = $this->summary();
 
         return $this->runWithBackend(
-            fn ($backend) => $backend->logTime((string) $this->argument('ref'), $minutes, $this->option('date'), $summary, ! $this->option('non-billable'), (bool) $this->option('internal')),
+            fn ($backend) => $backend->logTime((string) $this->argument('ref'), $minutes, $this->option('date'), $summary, ! $this->option('non-billable'), (bool) $this->option('internal'), $this->option('entry')),
             function (array $result): void {
                 $this->components->info(__(':ticket : :time enregistrées le :date:summary. Total du ticket : :total.', [
                     'ticket' => $result['ticket'],
                     'time' => Duration::format((int) $result['time_entry']['minutes']),
                     'date' => $result['time_entry']['worked_on'],
-                    'summary' => $result['summary_entry'] ? __(', avec le résumé') : '',
+                    'summary' => match (true) {
+                        filled($result['summary_entry'] ?? null) => __(', avec le résumé'),
+                        filled($result['entry'] ?? null) => __(', sur le message :entry', ['entry' => $result['entry']]),
+                        default => '',
+                    },
                     'total' => Duration::format((int) $result['time_total_minutes']),
                 ]));
             },

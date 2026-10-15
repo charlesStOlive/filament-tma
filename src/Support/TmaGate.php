@@ -20,8 +20,6 @@ final class TmaGate
 
     public const NOTE = 'note';
 
-    public const SHARE_NOTE = 'share-note';
-
     public const TIME = 'time';
 
     public const SYNC = 'sync';

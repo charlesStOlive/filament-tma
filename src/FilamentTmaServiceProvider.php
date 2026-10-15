@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma;
 use CharlesStOlive\FilamentTma\Commands\CleanupCommand;
 use CharlesStOlive\FilamentTma\Commands\CloseStaleTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\CommentTicketCommand;
+use CharlesStOlive\FilamentTma\Commands\DemoCommand;
 use CharlesStOlive\FilamentTma\Commands\InstallCommand;
 use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
@@ -15,7 +16,8 @@ use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
 use CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
-use CharlesStOlive\FilamentTma\Events\NoteShared;
+use CharlesStOlive\FilamentTma\Events\EntryChanged;
+use CharlesStOlive\FilamentTma\Events\TaskDeleted;
 use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
@@ -64,6 +66,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 SendDigestCommand::class,
                 CleanupCommand::class,
                 InstallCommand::class,
+                DemoCommand::class,
             ])
             ->hasMigrations([
                 'create_filament_tma_tables',
@@ -78,6 +81,10 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'convert_tma_summary_entries_to_messages',
                 'drop_due_on_from_tma_tickets_table',
                 'rename_ends_on_to_due_on_in_tma_tasks_table',
+                'rework_tma_notes',
+                'add_private_to_tma_entries_table',
+                'create_tma_projects_table',
+                'drop_description_from_tma_time_entries_table',
             ]);
     }
 
@@ -114,14 +121,14 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
         Event::listen(TimeEntryChanged::class, QueueAllowancesPush::class);
         Event::listen(AllowanceThresholdReached::class, NotifyAllowanceThreshold::class);
         Event::listen([
-            TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, NoteShared::class,
-            TicketUpdated::class, TaskUpdated::class, AutoCloseWarned::class, TimeEntryChanged::class,
+            TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, EntryChanged::class,
+            TicketUpdated::class, TaskUpdated::class, TaskDeleted::class, AutoCloseWarned::class, TimeEntryChanged::class,
         ], QueuePush::class);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('tma:close-stale')->dailyAt((string) config('filament-tma.auto_close.at', '07:00'))->withoutOverlapping();
             $schedule->command('tma:resume-paused')->everyFifteenMinutes()->withoutOverlapping();
-            $schedule->command('tma:publish-scheduled')->everyFiveMinutes()->withoutOverlapping();
+            $schedule->command('tma:publish-scheduled')->everyMinute()->withoutOverlapping();
             $schedule->command('tma:digest')
                 ->days((array) config('filament-tma.notifications.digest.days', [1, 2, 3, 4, 5]))
                 ->dailyAt((string) config('filament-tma.notifications.digest.at', '08:00'))

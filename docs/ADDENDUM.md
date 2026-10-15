@@ -63,7 +63,7 @@ dans **Soumis**, « À vérifier » et « Résolue » dans **À valider**, et «
 | **En cours** | l'intervenant | « Demander une réponse » (question obligatoire) → En attente du demandeur · « Mettre en pause » (date obligatoire) → En pause · « Soumettre à validation » → À valider |
 | **En attente du demandeur** | le demandeur | « Répondre » (réponse obligatoire, par le demandeur) → En cours · « Reprendre » (par l'intervenant) → En cours · « Clôturer sans réponse » (par l'intervenant ou automatiquement, voir §4) → Clôturé |
 | **En pause** | l'intervenant | « Reprendre » → En cours, à la main ou automatiquement à la date prévue |
-| **À valider** | le demandeur | « Valider » → Clôturé · « Rouvrir » (motif obligatoire) → En cours · clôture par l'intervenant ou automatique (voir §4) → Clôturé |
+| **À valider** | le demandeur | « Valider » → Clôturé · « Retour au Support » (motif obligatoire ; « Retour à l'équipe EDM » en traitement local) → En cours · clôture par l'intervenant ou automatique (voir §4) → Clôturé |
 | **Clôturé** | — | état final. C'est l'état « terminé » au sens de la facturation (CDC §14.4). |
 | **Annulé** | — | état final, avec auteur et motif. |
 
@@ -128,7 +128,7 @@ transition.
 | Type | Visibilité | Synchronisation |
 |---|---|---|
 | **Commentaire** | les deux parties | automatique |
-| **Note** | l'application où elle est écrite | **manuelle** : action « Partager » sur la note, des deux côtés |
+| **Note** | les deux parties (depuis le 14/10/2026 ; avant, l'application où elle était écrite, jusqu'au partage) | automatique |
 | **Réponse** | celle du message auquel elle répond | celle du message auquel elle répond |
 | **Événement** (transition, temps, synchro, pièce jointe) | selon le type | avec la transition qui le porte |
 | **Résumé d'intervention** | les deux parties | automatique |
@@ -138,7 +138,18 @@ transition.
 - Sur une **tâche projet**, le client ne peut ni créer de tâche ni changer son état. Il peut
   commenter, ajouter des notes et des images, et répondre.
 - Les notes correctives du demandeur pendant que la main est à l'intervenant sont des commentaires
-  ou des notes partagées. Elles ne changent pas l'état.
+  ou des notes. Elles ne changent pas l'état.
+- **Notes (14/10/2026)** : une note commente un message de premier niveau ou le ticket entier, quelle que soit la
+  partie qui a la main. Numérotée par ticket (n° 1, 2…, un numéro supprimé n'est pas redonné), avec texte et images.
+  Quiconque a le droit `note` l'archive ou la ressort ; son auteur seul la modifie ou la supprime. Elle s'ouvre en
+  fenêtre : la grande fenêtre montre le message (ou la demande) et ses notes à droite ; l'onglet « Notes » du volet
+  les liste toutes. Le partage (`share-note`, `TMA_NOTES_SHARING`) disparaît.
+- **Modifier son message (14/10/2026)** : son auteur, tant que personne d'autre n'a écrit de message après lui,
+  même s'il a perdu la main.
+- **Note pour soi (14/10/2026)** : une note est lue de tous par défaut ; son auteur peut la garder pour lui
+  (« Visible de moi seul », `private`), à l'écriture ou après, et la montrer plus tard. Elle voyage comme les autres
+  (son auteur la retrouve des deux côtés), garde son numéro, ne change pas la dernière activité ; seul son auteur
+  l'archive.
 
 ---
 
@@ -161,7 +172,7 @@ transition.
   « synchro en erreur », avec alerte et relance manuelle.
 - **Ce qui est synchronisé** :
   - les transitions ;
-  - les commentaires, les notes partagées et leurs réponses ;
+  - les commentaires, les notes et les réponses, avec leurs modifications (archivage et suppression des notes) ;
   - les pièces jointes de ces éléments ;
   - les champs du ticket modifiés par la partie qui a la main ;
   - les **totaux de temps** du ticket (global et par mois), envoyés avec les synchros. Les lignes
@@ -217,6 +228,37 @@ Le workflow du CDC §8 est inchangé : **Brouillon** (invisible chez le client, 
 programmable) → **En cours** (mise à disposition et synchronisée) → **Terminée**, plus **Annulée**.
 
 Elles sont créées uniquement par le maître. Le client y participe par la chronologie (§6).
+
+Décisions du 14/10/2026 :
+
+- **Projets** : un projet a un titre (et une description), une application destinataire et N tâches ; une tâche
+  appartient à un projet, dont elle prend l'application. Le temps d'un projet est la **somme du temps de ses
+  tâches** : la facturation par projet s'appuiera dessus (§9). Le projet voyage avec ses tâches publiées.
+- **Modifier une tâche** : le maître modifie titre, description, dates et projet à tout moment, même terminée.
+- **Messages** : une tâche terminée se commente encore (surtout par le client) ; une tâche annulée n'accepte plus
+  que des notes.
+- **Ticket depuis une tâche** : « Créer un ticket » ouvre un ticket de TMA prérempli, lié à la tâche (`task_id`,
+  `task_ulid` dans l'API), des deux côtés.
+- **Temps sur un message** : une saisie de temps peut porter sur un message ou une note de la fiche (`entry_id`).
+- **Le temps n'a plus de texte (15/10/2026)** : la colonne `description` des saisies disparaît. Une saisie porte sur
+  un message ou une note existants, ou sur un **nouveau message** écrit avec elle dans l'historique de la fiche
+  (ticket ou tâche), ou, sans l'un ni l'autre, sur la fiche entière. Même chose pour un membre du Support depuis une
+  application cliente, et pour `tma:log` (`--summary` écrit le message, `--entry` désigne un message existant).
+  Au-dessus de la durée, des raccourcis la remplissent (10, 15, 20, 30, 45 min ; 1, 2, 3 h ; ½ j ; 1 j).
+- **Supprimer une tâche (15/10/2026)** : dans le maître seulement (droit `tma.task.delete`), quel que soit son état,
+  depuis la liste (icône, action groupée) ou la fiche, après un avertissement qui dit ce qui part. La tâche part avec
+  ses messages, ses notes et son temps ; publiée, elle disparaît aussi chez le client (l'état poussé porte
+  `deleted_at`). Suppression douce : numéro jamais redonné, trace dans l'audit, rien ne la défait dans l'interface.
+  Refusée si du temps est rattaché à une facture. Les tickets ouverts depuis elle restent, sans lien.
+- **Publication (15/10/2026)** : sans date, une tâche part chez le client dès l'enregistrement ; avec une date, elle
+  reste en brouillon et compte comme publiée **à l'heure dite** (date de publication, passage, dernière activité),
+  quel que soit le passage du planificateur, qui vérifie désormais chaque minute. En tête de l'historique, la tâche
+  se lit comme un premier message (auteur, heure de publication, description).
+- **Brouillon de tâche (15/10/2026)** : rien ne s'y écrit (pas de message) avant sa publication ; sa description est
+  le premier message.
+- **Jeu d'exemples** : `tma:demo` (voir le README), rejouable, par le vrai workflow.
+- **Fuseaux** : les dates s'enregistrent en UTC et s'affichent dans le fuseau du lecteur (`users.timezone` s'il
+  existe, sinon celui de Filament), y compris dans les vues propres au module et les courriels (`Support\Dates`).
 
 ---
 

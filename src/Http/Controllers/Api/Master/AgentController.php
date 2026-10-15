@@ -32,34 +32,32 @@ class AgentController
         return $this->respond(fn () => $this->backend($request)->show($ref));
     }
 
+    /**
+     * Une saisie de temps, sur le message qui dit ce qui a été fait (`summary` l'écrit ; `internal` : une note), sur
+     * un message ou une note qui existe déjà (`entry_ulid`), ou sur la fiche entière. La réponse donne aussi l'état à
+     * recopier (`snapshot`), pour un agent qui saisit son temps depuis une application cliente.
+     */
     public function time(Request $request, string $ref): JsonResponse
     {
         $data = $request->validate([
             'minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'worked_on' => ['nullable', 'date'],
-            'summary' => ['nullable', 'string', 'max:20000'],
-            'description' => ['nullable', 'string', 'max:2000'],
+            'summary' => ['nullable', 'string', 'max:500000'],
+            'entry_ulid' => ['nullable', 'string', 'max:26'],
             'billable' => ['boolean'],
             'internal' => ['boolean'],
         ]);
 
         return $this->respond(function () use ($request, $ref, $data): array {
             $backend = $this->backend($request);
-
-            if (array_key_exists('description', $data) && blank($data['summary'] ?? null)) {
-                $backend->addTime($ref, $data['minutes'], $data['worked_on'] ?? null, $data['description'], $data['billable'] ?? true);
-
-                return ['snapshot' => Payload::snapshot($backend->find($ref))];
-            }
-
-            $result = $backend->logTime($ref, $data['minutes'], $data['worked_on'] ?? null, $data['summary'] ?? null, $data['billable'] ?? true, $data['internal'] ?? false);
+            $result = $backend->logTime($ref, $data['minutes'], $data['worked_on'] ?? null, $data['summary'] ?? null, $data['billable'] ?? true, $data['internal'] ?? false, $data['entry_ulid'] ?? null);
 
             return [...$result, 'snapshot' => Payload::snapshot($backend->find($ref))];
         }, 201);
     }
 
     /**
-     * Un message ou une note interne. Avec `type` (comment, note), `parent_ulid` et `files` (base64), c'est
+     * Un message ou une note (sur le ticket entier). Avec `type` (comment, note), `parent_ulid` et `files` (base64), c'est
      * l'écriture d'un agent depuis une application cliente : la réponse donne alors aussi l'état du ticket à recopier.
      */
     public function entry(Request $request, string $ref): JsonResponse
@@ -70,6 +68,7 @@ class AgentController
             'type' => ['nullable', 'in:comment,note'],
             'parent_ulid' => ['nullable', 'string', 'size:26'],
             'files' => ['array'],
+            'private' => ['boolean'],
         ]);
 
         if (! isset($data['type'])) {
@@ -77,10 +76,31 @@ class AgentController
         }
 
         return $this->respond(function () use ($request, $ref, $data): array {
-            $result = $this->backend($request)->write($ref, $data['type'], $data['body'], $data['parent_ulid'] ?? null, $data['files'] ?? []);
+            $result = $this->backend($request)->write($ref, $data['type'], $data['body'], $data['parent_ulid'] ?? null, $data['files'] ?? [], $data['private'] ?? false);
 
             return ['entry' => Payload::entry($result['entry']), 'snapshot' => Payload::snapshot($result['subject'])];
         }, 201);
+    }
+
+    /**
+     * L'agent change son message ou sa note (`body`, avec `files` en base64, `remove_files` et `private`), archive une note
+     * (`archived`) ou supprime la sienne (`delete`) ; la réponse donne l'état à recopier.
+     */
+    public function changeEntry(Request $request, string $ref, string $ulid): JsonResponse
+    {
+        $data = $request->validate([
+            'body' => ['nullable', 'string', 'max:500000'],
+            'files' => ['array'],
+            'remove_files' => ['array'],
+            'remove_files.*' => ['string'],
+            'private' => ['boolean'],
+            'archived' => ['boolean'],
+            'delete' => ['boolean'],
+        ]);
+
+        return $this->respond(fn () => ['snapshot' => Payload::snapshot(
+            $this->backend($request)->changeEntry($ref, $ulid, $data),
+        )]);
     }
 
     /** Un passage (prendre en charge, demander une réponse…) au nom de l'agent ; la réponse donne l'état à recopier. */

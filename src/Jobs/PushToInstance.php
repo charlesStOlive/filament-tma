@@ -59,7 +59,7 @@ class PushToInstance implements ShouldBeUnique, ShouldQueue
         foreach ($missing as $ulid) {
             $entry = $ticket->entries()->where('ulid', $ulid)->first();
 
-            if ($entry instanceof Entry && $entry->isShared()) {
+            if ($entry instanceof Entry) {
                 $client->pushMedia('entry', $ulid, Payload::files($entry));
             }
         }

@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 /**
  * Publie les tâches projet, et les brouillons de tickets du maître, dont la publication programmée est arrivée.
- * Planifiée toutes les cinq minutes.
+ * Planifiée chaque minute ; une tâche compte comme publiée à l'heure dite (`TaskMoves\AutoPublish`).
  */
 class PublishScheduledTasksCommand extends Command
 {

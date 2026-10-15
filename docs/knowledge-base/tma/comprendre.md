@@ -42,7 +42,7 @@ Chaque ticket a deux parties :
   **Pris en charge par**.
 
 À chaque étape, le ticket attend **l'une des deux** : la fiche l'affiche à droite, dans **Suivi › En attente de**.
-Celle qu'on attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un message, une note interne, une pièce
+Celle qu'on attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un message, une note, une pièce
 jointe. Elle ne modifie plus le ticket et ne fait pas les passages réservés à l'autre partie.
 
 Exemple : le Support pose une question (« Demander des précisions ») ; le ticket attend le demandeur. Un
@@ -51,7 +51,7 @@ Support.
 
 ## Ce que l'on trouve dans le module
 
-- [Les tickets](#modal-tma.tickets) et leur [chronologie](#modal-tma.chronologie) ;
+- [Les tickets](#modal-tma.tickets) et leur [historique](#modal-tma.chronologie) ;
 - [le temps passé](#modal-tma.temps) ;
 - [les tâches projet](#modal-tma.taches) ;
 - [les forfaits](#modal-tma.forfaits) ;

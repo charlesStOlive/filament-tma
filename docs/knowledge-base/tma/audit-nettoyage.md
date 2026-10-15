@@ -19,14 +19,14 @@ order: 120
 Pour chacune : qui, depuis quelle application, quand, sur quoi, les valeurs **avant** et **après** (bouton
 **Détail**), et l'origine : interface, API, commande ou tâche automatique. Les jetons ne sont jamais écrits.
 
-Les changements d'état ne sont pas dans le journal : chaque ticket et chaque tâche en garde l'historique dans sa
-[chronologie](#modal-tma.chronologie).
+Les changements d'état ne sont pas dans le journal : chaque ticket et chaque tâche les garde dans son
+[historique](#modal-tma.chronologie).
 
 ## Le nettoyage
 
 La commande `tma:cleanup` supprime **définitivement**, après 90 jours (réglable) :
 
-- les tickets et les tâches supprimés, avec leur chronologie, leur temps et leurs fichiers ;
+- les tickets et les tâches supprimés, avec leur historique, leur temps et leurs fichiers ;
 - les messages supprimés ;
 - les fichiers dont le ticket ou le message n'existe plus ;
 - les fichiers envoyés mais jamais rattachés à un message.

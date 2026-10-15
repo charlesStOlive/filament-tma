@@ -61,8 +61,8 @@ class SyncController
     }
 
     /**
-     * Une tâche projet publiée pour cette application : créée à sa première réception, puis tenue à jour. Le maître
-     * n'envoie jamais un brouillon.
+     * Une tâche projet publiée pour cette application : créée à sa première réception, puis tenue à jour, jusqu'à sa
+     * suppression (`deleted_at`). Le maître n'envoie jamais un brouillon.
      */
     private function syncTask(Request $request): JsonResponse
     {
@@ -78,6 +78,12 @@ class SyncController
         ]);
 
         $isNew = ! ProjectTask::withTrashed()->where('ulid', $request->input('task.ulid'))->exists();
+
+        // Supprimée dans le maître avant d'arriver ici : rien à recopier.
+        if ($isNew && filled($request->input('task.deleted_at'))) {
+            return response()->json(['missing_media' => []]);
+        }
+
         $result = DB::transaction(fn () => Mirror::snapshot($request->all()));
 
         if ($isNew) {

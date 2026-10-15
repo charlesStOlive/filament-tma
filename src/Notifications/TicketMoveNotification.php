@@ -28,10 +28,10 @@ class TicketMoveNotification extends Notification implements ShouldQueue
         $who = $this->transition->actor?->name ?? __('Le Support');
         $line = match ($this->transition->move) {
             'request-answer' => __(':who attend votre réponse.', ['who' => $who]),
-            'submit-for-validation' => __(':who a résolu votre demande : confirmez pour la clore, ou rouvrez-la.', ['who' => $who]),
+            'submit-for-validation' => __(':who a résolu votre demande : confirmez pour la clore, ou renvoyez-la.', ['who' => $who]),
             'submit' => __(':who vous confie cette demande.', ['who' => $who]),
             'take-charge' => __(':who a pris votre demande en charge.', ['who' => $who]),
-            'reopen' => __(':who a rouvert la demande.', ['who' => $who]),
+            'reopen' => __(':who vous renvoie la demande : le résultat ne convient pas encore.', ['who' => $who]),
             'answer' => __(':who a répondu.', ['who' => $who]),
             'publish', 'auto-publish' => __('Le Support a ouvert ce ticket pour vous.'),
             default => __(':who : :move.', ['who' => $who, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($this->transition->move)->labelFor($this->ticket), $this->transition->move, false)]),

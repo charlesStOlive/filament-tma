@@ -54,7 +54,7 @@ class Publish extends TaskMove
 
     public function apply(ProjectTask $task, array $data, Context $context): void
     {
-        $task->published_at = now();
+        $task->published_at = $this->happenedAt($task);
         $task->publish_at = null;
     }
 }

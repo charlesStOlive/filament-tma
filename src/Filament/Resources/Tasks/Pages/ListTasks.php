@@ -12,6 +12,7 @@ class ListTasks extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        // Les tâches se créent chez le Support : Filament n'autorise le bouton que par la policy, pas par `canCreate()`.
+        return [CreateAction::make()->visible(fn (): bool => TaskResource::canCreate())];
     }
 }

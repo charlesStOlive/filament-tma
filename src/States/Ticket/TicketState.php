@@ -47,6 +47,13 @@ abstract class TicketState extends State implements HasFilamentState, HasFilamen
         return false;
     }
 
+    /** @return array<int, string> Les états d'un ticket qui avance : ni en pause, ni clos, ni annulé. */
+    public static function active(): array
+    {
+        return array_map(fn (string $state): string => $state::getMorphClass(),
+            [Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, PendingValidation::class]);
+    }
+
     public static function config(): StateConfig
     {
         $open = [Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class];

@@ -19,9 +19,22 @@ sont refusés.
 ## Qui peut les ouvrir
 
 Les fichiers sont rangés à part, jamais accessibles par une adresse publique : chaque ouverture vérifie que vous
-pouvez voir le ticket **et** le message (le fichier d'une note interne n'est ouvert qu'à ceux qui lisent les notes).
+pouvez voir le ticket ; le fichier d'une note supprimée ne s'ouvre plus.
 
-Une image s'affiche en vignette ; un clic l'ouvre. Les autres fichiers se téléchargent.
+Une image s'affiche en vignette ; les autres fichiers se téléchargent.
+
+## Voir une image
+
+Un clic sur la vignette ouvre l'image **par-dessus la page**, sans la télécharger, qu'elle soit jointe à la demande,
+à un message ou à une note (aussi dans la fenêtre des notes) :
+
+- les **flèches** (à l'écran ou au clavier) passent aux autres images du même message ;
+- un clic sur l'image, ou la **loupe**, la montre en **taille réelle** (elle défile) ; un second clic l'ajuste à
+  l'écran ;
+- **Plein écran**, **Ouvrir dans un onglet** et **Télécharger** sont en haut à droite ;
+- **Échap**, la croix ou un clic à côté de l'image la referment, sans fermer la fenêtre ouverte dessous.
+
+Un clic du milieu (ou Ctrl + clic) sur la vignette ouvre l'image dans un nouvel onglet, là aussi sans téléchargement.
 
 ## Entre les applications
 

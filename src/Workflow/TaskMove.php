@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
+use Carbon\CarbonInterface;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\States\Task\TaskState;
 
@@ -66,6 +67,15 @@ abstract class TaskMove
     }
 
     public function apply(ProjectTask $task, array $data, Context $context): void {}
+
+    /**
+     * Le moment où le passage compte comme fait (son historique, la dernière activité) : maintenant, sauf pour une
+     * publication programmée, faite à l'heure dite quel que soit le passage du planificateur.
+     */
+    public function happenedAt(ProjectTask $task): CarbonInterface
+    {
+        return now();
+    }
 
     public function reason(array $data): ?string
     {

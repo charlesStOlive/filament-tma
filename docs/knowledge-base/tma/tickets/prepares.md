@@ -19,7 +19,7 @@ utilisateurs : une maintenance annuelle, une anomalie repérée par l'équipe…
 Tant qu'il est en **brouillon**, le ticket n'existe que chez le Support. Il apparaît chez le client :
 
 - tout de suite, avec **Publier chez EDM** ;
-- ou à la date de **publication programmée** (vérifiée toutes les cinq minutes).
+- ou à la date de **publication programmée** (vérifiée chaque minute).
 
 Il arrive alors **Nouveau**, au nom du demandeur choisi, qui peut en être prévenu (si l'application l'a réglé ainsi).
 Ensuite, c'est un ticket comme les autres.

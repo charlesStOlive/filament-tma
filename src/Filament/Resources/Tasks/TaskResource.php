@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks;
 
 use CharlesStOlive\FilamentStateFusionEnhanced\Tables\Filters\StateFusionSelectFilter;
+use CharlesStOlive\FilamentTma\Filament\Actions\TaskDeleteActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages\CreateTask;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages\EditTask;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages\ListTasks;
@@ -11,29 +12,44 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskForm;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeEntriesRelationManager;
 use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\States\Task\TaskCancelled;
+use CharlesStOlive\FilamentTma\States\Task\TaskDone;
+use CharlesStOlive\FilamentTma\States\Task\TaskDraft;
+use CharlesStOlive\FilamentTma\Support\Dates;
 use CharlesStOlive\FilamentTma\Support\Duration;
+use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use CharlesStOlive\FilamentTma\Workflow\TaskMove;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\FontFamily;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\TextSize;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /**
- * Les tâches projet (CDC §8). Dans le maître : création, publication (tout de suite ou programmée), temps, fin.
+ * Les tâches projet (CDC §8), rangées par projet (`ProjectResource`). Dans le maître : création, publication (tout
+ * de suite ou programmée), temps, fin, suppression (quel que soit l'état).
  * Dans une application cliente : les tâches publiées pour elle, en lecture, avec leur chronologie où elle peut
  * commenter, noter, joindre des images et répondre.
  *
- * Droits (filament-permission-manager) : `tma.task.*`, avec `comment`, `note`, `share-note`, `time`, `sync` et la
+ * Droits (filament-permission-manager) : `tma.task.*`, avec `comment`, `note`, `time`, `sync` et la
  * famille `workflow` (`tma.task.workflow.publish`…).
  */
 class TaskResource extends Resource implements HasKnowledgeBase
@@ -49,7 +65,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
     protected static ?string $permissionPrefix = 'tma.task';
 
     /** @var array<int, string> */
-    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::SHARE_NOTE, TmaGate::TIME, TmaGate::SYNC];
+    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC];
 
     /** @var array<string, string> */
     protected static array $permissionFamilies = [TmaGate::WORKFLOW_FAMILY => 'Passages de la tâche'];
@@ -57,8 +73,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
     /** @var array<string, string> */
     protected static array $permissionLabels = [
         TmaGate::COMMENT => 'Commenter et répondre',
-        TmaGate::NOTE => 'Lire et écrire les notes internes',
-        TmaGate::SHARE_NOTE => 'Partager une note avec l’autre partie',
+        TmaGate::NOTE => 'Écrire des notes et les archiver',
         TmaGate::TIME => 'Saisir et modifier du temps (maître)',
         TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
     ];
@@ -97,10 +112,15 @@ class TaskResource extends Resource implements HasKnowledgeBase
         return $record->fieldsEditableHere() && parent::canEdit($record);
     }
 
+    /** Dans le maître seulement, quel que soit l'état de la tâche (`TaskWorkflow::delete()`). */
     public static function canDelete(Model $record): bool
     {
-        /** @var ProjectTask $record */
-        return Tma::isMaster() && ! $record->isShared() && parent::canDelete($record);
+        return Tma::isMaster() && parent::canDelete($record);
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return Tma::isMaster() && parent::canDeleteAny();
     }
 
     /** Le menu d'aide de la page : les tâches projet, leur chronologie, le temps passé. */
@@ -119,30 +139,90 @@ class TaskResource extends Resource implements HasKnowledgeBase
         return TaskInfolist::configure($schema);
     }
 
+    /**
+     * Une liste plutôt qu'un tableau (comme les scènes de filament-map) : chaque tâche sur une ligne souple (`Split`),
+     * avec à gauche son numéro, son titre et le début de sa description (`Stack`), au milieu son état et sa prochaine
+     * date (publication prévue, échéance, en retard, fin), à droite le temps passé et la dernière activité. Sous `md`,
+     * les blocs s'empilent. Les tâches se rangent par projet ; dans le maître, on les supprime (une ou plusieurs).
+     */
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('last_activity_at', 'desc')
             ->columns([
-                TextColumn::make('number')->label(__('N°'))->searchable()->sortable(),
-                TextColumn::make('title')->label(__('Titre'))->searchable()->limit(60)->wrap(),
-                TextColumn::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster())->toggleable(),
-                TextColumn::make('project')->label(__('Projet'))->placeholder('—')->searchable()->toggleable(),
-                TextColumn::make('state')->label(__('État'))->badge(),
-                TextColumn::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')->placeholder('—')
-                    ->visible(fn (): bool => Tma::isMaster())->toggleable(),
-                TextColumn::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')->sortable()->toggleable(),
-                TextColumn::make('time')->label(__('Temps'))
-                    ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
-                TextColumn::make('last_activity_at')->label(__('Dernière activité'))->since()->sortable(),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('number')->label(__('N°'))->searchable()->sortable()
+                            ->fontFamily(FontFamily::Mono)->size(TextSize::ExtraSmall)->color('gray'),
+                        TextColumn::make('title')->label(__('Titre'))->searchable()->sortable()
+                            ->weight(FontWeight::SemiBold)->wrap(),
+                        // Le début de la description, en texte (la colonne recevrait sinon le contenu riche).
+                        TextColumn::make('excerpt')->label(__('Description'))
+                            ->state(fn (ProjectTask $record): ?string => filled($record->description) ? Str::limit(Html::toText($record->description), 140) : null)
+                            ->color('gray')->size(TextSize::Small)->wrap(),
+                    ])->space(1),
+                    Stack::make([
+                        TextColumn::make('state')->label(__('État'))->badge(),
+                        TextColumn::make('due_on')->label(__('Échéance prévue'))->sortable()
+                            ->state(fn (ProjectTask $record): ?string => self::nextDate($record)['text'] ?? null)
+                            ->icon(fn (ProjectTask $record): ?string => self::nextDate($record)['icon'] ?? null)
+                            ->color(fn (ProjectTask $record): string => self::nextDate($record)['color'] ?? 'gray')
+                            ->size(TextSize::Small),
+                        TextColumn::make('targetInstance.name')->label(__('Application'))
+                            ->icon('heroicon-m-computer-desktop')->color('gray')->size(TextSize::ExtraSmall)
+                            ->visible(fn (): bool => Tma::isMaster()),
+                    ])->space(1)->grow(false)
+                        // Des largeurs fixes (ici et à droite) : d'une ligne à l'autre, l'état et sa date restent alignés.
+                        ->extraAttributes(['style' => 'width: 15rem']),
+                    Stack::make([
+                        TextColumn::make('time')->label(__('Temps'))
+                            ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes']))
+                            ->icon('heroicon-m-clock')->weight(FontWeight::SemiBold),
+                        TextColumn::make('last_activity_at')->label(__('Dernière activité'))->sortable()
+                            ->since()->tooltip(fn (ProjectTask $record): string => Dates::format($record->last_activity_at))->color('gray')->size(TextSize::ExtraSmall),
+                    ])->space(1)->grow(false)->extraAttributes(['style' => 'width: 8rem']),
+                ])->from('md'),
             ])
+            // Les tâches se rangent par projet.
+            ->groups([
+                Group::make('project.title')->label(__('Projet'))
+                    ->getTitleFromRecordUsing(fn (ProjectTask $record): string => $record->project?->title ?? __('Sans projet')),
+            ])
+            ->defaultGroup('project.title')
             ->filters([
+                SelectFilter::make('project_id')->label(__('Projet'))
+                    ->options(fn (): array => Project::query()->orderBy('title')->pluck('title', 'id')->all())
+                    ->searchable(),
                 StateFusionSelectFilter::make('state')->label(__('État'))->multiple(),
                 SelectFilter::make('target_instance_uid')->label(__('Application'))
                     ->visible(fn (): bool => Tma::isMaster())
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all()),
             ])
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([
+                ViewAction::make()->iconButton()->tooltip(__('Ouvrir')),
+                TaskDeleteActions::make()->iconButton()->tooltip(__('Supprimer')),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([TaskDeleteActions::bulk()]),
+            ]);
+    }
+
+    /**
+     * La date qui compte pour une tâche, selon où elle en est : sa publication prévue (brouillon programmé), le jour de
+     * sa fin ou de son annulation (sous l'état, qui le dit déjà), son échéance prévue, en rouge une fois dépassée.
+     *
+     * @return array{text: string, icon: string, color: string}|null
+     */
+    private static function nextDate(ProjectTask $task): ?array
+    {
+        return match (true) {
+            $task->state instanceof TaskDraft && $task->publish_at !== null => ['text' => __('Publication le :date à :time', ['date' => Dates::format($task->publish_at, 'd/m'), 'time' => Dates::format($task->publish_at, 'H:i')]), 'icon' => 'heroicon-m-paper-airplane', 'color' => 'info'],
+            $task->state instanceof TaskDone && $task->done_at !== null => ['text' => __('le :date', ['date' => Dates::format($task->done_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            $task->state instanceof TaskCancelled && $task->cancelled_at !== null => ['text' => __('le :date', ['date' => Dates::format($task->cancelled_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            $task->due_on !== null && $task->due_on->endOfDay()->isPast() && ! $task->state instanceof TaskDone && ! $task->state instanceof TaskCancelled => ['text' => __('En retard : échéance le :date', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-exclamation-triangle', 'color' => 'danger'],
+            $task->due_on !== null => ['text' => __('Échéance le :date', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            default => null,
+        };
     }
 
     public static function getRelations(): array

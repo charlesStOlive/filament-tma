@@ -27,7 +27,7 @@ Chaque application cliente a un **nom court** : « EDM » pour Enfants du Mékon
 - **Confier à l'équipe EDM** : le passage qui confie un brouillon à l'équipe du client ;
 - **Publier chez EDM** : le passage par lequel le Support ouvre un ticket ou une tâche au client.
 
-Dans la chronologie, il signale aussi d'où vient une personne : « EDM » à côté d'un nom, vu du Support ; « Support »,
+Dans l'historique, il signale aussi d'où vient une personne : « EDM » à côté d'un nom, vu du Support ; « Support »,
 vu de l'application du client.
 
 Le nom court se règle chez le Support, dans **Applications clientes › la fiche de l'application**. Il part chez le
@@ -45,7 +45,7 @@ Sans nom court, le module dit « Équipe locale » et « Publier chez le client 
 | En cours | l'équipe qui traite | la demande est traitée |
 | En attente du demandeur | le demandeur | des précisions lui ont été demandées |
 | En pause | l'équipe qui traite | suspendu jusqu'à une date, puis repris tout seul |
-| Résolu | le demandeur | le travail est fait : il confirme, ou rouvre |
+| Résolu | le demandeur | le travail est fait : il confirme, ou renvoie la demande |
 | Clos | — | terminé ; c'est l'état qui permet la facturation complète |
 | Annulé | — | abandonné ou refusé, avec son motif |
 

@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Models;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +25,30 @@ class Actor extends Model
     protected $table = 'tma_actors';
 
     protected $guarded = [];
+
+    /**
+     * Les acteurs qu'est une personne : elle-même ici ; un membre du Support, dans une application cliente, aussi
+     * lui-même dans le maître (`Agent`).
+     *
+     * @return array<int, int>
+     */
+    public static function idsFor(?Authenticatable $user): array
+    {
+        if ($user === null) {
+            return [];
+        }
+
+        $agent = Agent::for($user);
+
+        return static::query()
+            ->where(fn (Builder $q): Builder => $q->where('instance_uid', Tma::instanceUid())->where('user_id', $user->getAuthIdentifier()))
+            ->when($agent, fn (Builder $q): Builder => $q->orWhere(fn (Builder $q): Builder => $q
+                ->where('instance_uid', $agent->master_uid)
+                ->where('remote_id', (string) $agent->master_user_id)))
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->all();
+    }
 
     /** L'acteur d'un utilisateur de cette application (créé au besoin, nom et e-mail mis à jour). */
     public static function forUser(Authenticatable $user): self

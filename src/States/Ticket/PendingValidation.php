@@ -25,7 +25,7 @@ class PendingValidation extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Le travail est fait : le demandeur confirme, ou rouvre.');
+        return __('Le travail est fait : le demandeur confirme, ou renvoie la demande.');
     }
 
     public function inHandsOf(): ?Side

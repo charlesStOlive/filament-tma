@@ -7,14 +7,12 @@ use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
 /**
- * Une entrée de la chronologie.
+ * Une entrée de la chronologie, lue par tout le monde sur le ticket, des deux côtés.
  *
- * - Message : l'échange entre les deux parties, demandeur compris, partagé d'office. Ce qui a été fait (la commande
- *   `tma:log`, avec une saisie de temps) est aussi un message.
- * - Note interne : seule l'équipe de l'application où elle est écrite la lit, sauf si on la partage (`shared_at`) ;
- *   voir `filament-tma.notes`.
- *
- * Une réponse est une entrée qui a un parent ; elle a le type de son parent.
+ * - Message : l'échange entre les deux parties, demandeur compris. Ce qui a été fait (la commande `tma:log`, avec
+ *   une saisie de temps) est aussi un message. Une réponse est un message qui a un parent (un seul niveau).
+ * - Note : un commentaire posé à côté de l'échange, sur un message (son parent) ou sur le ticket entier. Numérotée,
+ *   elle s'archive quand on n'a plus besoin de la lire ; voir `Models\Entry`.
  */
 enum EntryType: string implements HasColor, HasIcon, HasLabel
 {
@@ -25,7 +23,7 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Comment => __('Message'),
-            self::Note => __('Note interne'),
+            self::Note => __('Note'),
         };
     }
 
@@ -43,11 +41,5 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
             self::Comment => 'heroicon-m-chat-bubble-left-right',
             self::Note => 'heroicon-m-pencil-square',
         };
-    }
-
-    /** Visible de l'autre partie sans action de partage. */
-    public function isSharedByDefault(): bool
-    {
-        return $this !== self::Note;
     }
 }

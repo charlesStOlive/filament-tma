@@ -40,6 +40,7 @@ Route::prefix('api/tma/v1')
             Route::get('tickets/{ref}', [AgentController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ref}/time', [AgentController::class, 'time'])->name('tickets.time');
             Route::post('tickets/{ref}/entries', [AgentController::class, 'entry'])->name('tickets.entry');
+            Route::patch('tickets/{ref}/entries/{ulid}', [AgentController::class, 'changeEntry'])->name('tickets.entry.change');
             Route::post('tickets/{ref}/moves', [AgentController::class, 'move'])->name('tickets.move');
         });
 

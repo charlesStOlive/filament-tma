@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
 use CharlesStOlive\FilamentTma\Support\TimelineItems;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 /** Un ticket en tableau simple, pour une commande (texte ou JSON). Le HTML devient du texte. */
 final class TicketView
@@ -29,7 +30,7 @@ final class TicketView
                 'in_hands_of' => $ticket->state->isFinal() ? null : 'handler',
                 'waiting_on' => $ticket->state->isFinal() ? null : Terms::support(),
                 'application' => $ticket->targetInstance?->name,
-                'project' => $ticket->project,
+                'project' => $ticket->project?->title,
                 'assignee' => $ticket->assignee?->name,
                 'starts_on' => $ticket->starts_on?->toDateString(),
                 'due_on' => $ticket->due_on?->toDateString(),
@@ -59,16 +60,17 @@ final class TicketView
     }
 
     /** @return array<string, mixed> */
-    public static function detail(Ticket|ProjectTask $ticket, bool $withNotes): array
+    public static function detail(Ticket|ProjectTask $ticket, ?Authenticatable $user): array
     {
         return [
             ...self::summary($ticket),
             'description' => Html::toText($ticket->description),
             'time_by_month' => TimeTotals::for($ticket)['by_month'],
-            'timeline' => TimelineItems::for($ticket, $withNotes)->map(fn (array $row): array => match ($row['kind']) {
+            'timeline' => TimelineItems::for($ticket)->map(fn (array $row): array => match ($row['kind']) {
                 'transition' => self::transition($row['item']),
                 default => self::entry($row['item']),
             })->all(),
+            'notes' => $ticket->noteEntries($user, withArchived: true)->map(fn (Entry $note): array => self::note($note))->all(),
         ];
     }
 
@@ -77,12 +79,28 @@ final class TicketView
     {
         return [
             'kind' => $entry->type->value,
+            'ulid' => $entry->ulid,
             'at' => $entry->created_at->toIso8601String(),
             'author' => $entry->author?->name,
-            'shared' => $entry->isShared(),
+            'edited_at' => $entry->edited_at?->toIso8601String(),
             'text' => Html::toText($entry->body),
             'files' => $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)->pluck('file_name')->all(),
             'replies' => $entry->replies->map(fn (Entry $reply): array => self::entry($reply))->all(),
+        ];
+    }
+
+    /** @return array<string, mixed> une note : son numéro, le message qu'elle commente (sinon le ticket entier) */
+    private static function note(Entry $note): array
+    {
+        return [
+            'number' => $note->number,
+            'on' => $note->parent?->ulid,
+            'at' => $note->created_at->toIso8601String(),
+            'author' => $note->author?->name,
+            'archived' => $note->isArchived(),
+            'private' => $note->private,
+            'text' => Html::toText($note->body),
+            'files' => $note->getMedia(Entry::ATTACHMENTS_COLLECTION)->pluck('file_name')->all(),
         ];
     }
 

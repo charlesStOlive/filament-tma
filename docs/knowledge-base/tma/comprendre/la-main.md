@@ -20,7 +20,7 @@ Support, ou l'équipe du client). La fiche l'affiche à droite, dans **Suivi ›
 
 - **La partie attendue** fait avancer le ticket (les boutons de passage) et, du côté de l'équipe qui traite, peut en
   modifier les champs.
-- **L'autre** ne peut qu'**ajouter** : un message, une note interne, une pièce jointe. Elle ne modifie pas le
+- **L'autre** ne peut qu'**ajouter** : un message, une note, une pièce jointe. Elle ne modifie pas le
   ticket et ne fait pas les passages de l'autre partie.
 
 ## Un message ne rend pas la main

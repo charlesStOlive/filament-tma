@@ -27,7 +27,7 @@ final class RemoteBackend implements Backend
         return Http::call(__('Support'), fn () => Http::to($this->token)->get($this->url('tickets/'.rawurlencode($ref))))->json('data', []);
     }
 
-    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal): array
+    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal, ?string $entry = null): array
     {
         return Http::call(__('Support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/time'), [
             'minutes' => $minutes,
@@ -35,6 +35,7 @@ final class RemoteBackend implements Backend
             'summary' => $summary,
             'billable' => $billable,
             'internal' => $internal,
+            'entry_ulid' => $entry,
         ]))->json('data', []);
     }
 

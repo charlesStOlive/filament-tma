@@ -108,7 +108,7 @@ Quand la main est à l'autre partie, on ne peut plus qu'ajouter des commentaires
 | Reprendre | En pause, En attente du demandeur | En cours | intervenant |
 | Soumettre à validation | En cours | À valider | intervenant |
 | Valider | À valider | Clôturé | demandeur |
-| Rouvrir (motif) | À valider | En cours | demandeur |
+| Retour au Support / à l'équipe EDM (motif) | À valider | En cours | demandeur |
 | Clôturer sans réponse | En attente du demandeur, À valider | Clôturé | intervenant |
 | Annuler (motif) | tout état ouvert | Annulé | demandeur avant prise en charge, intervenant ensuite |
 | Clôture automatique | En attente du demandeur, À valider | Clôturé | planificateur |
@@ -146,7 +146,7 @@ Le contrat `Contracts\Trackable` (CDC §5) couvre :
 
 - **la chronologie** (`Workflow\Timeline`) :
   - les commentaires, partagés avec l'autre partie ;
-  - les notes, qui restent dans l'application où elles sont écrites jusqu'à leur partage ;
+  - les notes, lues de tous : sur un message ou sur le ticket entier, numérotées, archivables ;
   - les réponses, sur un seul niveau ;
   - les résumés d'intervention ;
   - les fichiers joints à tout cela.
@@ -180,6 +180,28 @@ blanche. Ils ne se téléchargent que par `tma/media/{media}`, qui vérifie les 
 
 Le client reçoit l'état de ses forfaits et l'affiche en tête de ses tickets (widget `AllowanceOverview`).
 
+## Jeu d'exemples
+
+`tma:demo` vide les données de travail du module dans l'application où on la lance (tickets, tâches, projets,
+messages, notes, temps et leurs fichiers ; restent les applications reliées, les membres du Support, les forfaits et
+les utilisateurs) et rejoue des cas par le vrai workflow : les deux applications se synchronisent comme en vrai. Pour
+repartir de zéro, dans l'ordre :
+
+```bash
+# application cliente : vider
+php artisan tma:demo --wipe --force
+# maître : vider, puis projets, tâches (terminée, en cours, en retard, programmée, annulée), temps, tickets préparés
+php artisan tma:demo --fresh --force
+# application cliente : tickets de l'équipe dans tous les états, demandes transmises au Support et traitées par le
+# membre du Support relié (question, en cours avec notes et temps, résolue, nouvelle, partie d'une tâche),
+# messages et notes sur les tâches
+php artisan tma:demo --force
+```
+
+Le jeu du client prend ses vrais utilisateurs : demandeurs (qui créent des demandes), équipe (qui peut transmettre au
+Support) et le membre du Support relié ici. Les histoires sont datées dans le passé, à l'heure du narrateur. Jamais en
+production sans `--force`.
+
 ## Tâches planifiées et notifications
 
 Le plugin déclare lui-même ses tâches planifiées :
@@ -188,7 +210,7 @@ Le plugin déclare lui-même ses tâches planifiées :
 |---|---|---|
 | `tma:close-stale` | chaque jour à `auto_close.at` (7 h) | Avertit le demandeur `warn_days_before` jours (7) avant de clôturer un ticket où la main est à lui et où rien ne s'est passé depuis `after_days` jours (28). Un ticket averti a toujours ce délai entier. Toute activité remet le compte à zéro. |
 | `tma:resume-paused` | tous les quarts d'heure | Reprend les pauses arrivées à leur date. |
-| `tma:publish-scheduled` | toutes les cinq minutes | Publie les tâches et les brouillons du maître arrivés à leur date. |
+| `tma:publish-scheduled` | chaque minute | Publie les tâches et les brouillons du maître arrivés à leur date. |
 | `tma:digest` | jours ouvrés à 8 h (`notifications.digest`) | Envoie à chacun ce qui l'attend : réponses et validations, tickets à prendre, en cours, reprises du jour. Les retards sont signalés et personne ne reçoit de courriel vide. |
 
 Les **notifications immédiates** sont désactivées par défaut (CDC §12.2) : tout passe par le récapitulatif.
@@ -232,7 +254,7 @@ Les droits suivent le format de `filament-permission-manager`, sans en dépendre
 
 - **tickets** :
   - `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` ;
-  - `comment`, `note` (lire et écrire les notes internes), `share-note`, `time`, `sync` ;
+  - `comment`, `note` (écrire des notes et les archiver), `time`, `sync` ;
   - la famille « Passages du ticket » : `tma.ticket.workflow.{mouvement}`.
 - **tâches** : les mêmes en `tma.task.*`, avec la famille « Passages de la tâche ».
 - **applications clientes** : `tma.instance.*`.
@@ -255,6 +277,7 @@ php artisan tma:list [--type=tickets|tasks|all] [--state=in_progress,awaiting_re
 php artisan tma:show DES-0042|T-0007 [--json]
 php artisan tma:log DES-0042 --hours=2 --summary="…" [--date=2026-10-07] [--non-billable] [--internal] [--json]
 php artisan tma:log T-0007 --days=0.5 --summary-file=resume.md
+php artisan tma:log DES-0042 --minutes=30 --entry=01k…   (sur un message ou une note existants, voir tma:show)
 php artisan tma:comment DES-0042 --body="…" [--note] [--json]
 ```
 
@@ -264,8 +287,9 @@ php artisan tma:comment DES-0042 --body="…" [--note] [--json]
 - **Dans une application cliente**, elle agit dans le maître par son API « agent », puisque le temps ne se saisit
   que là. Le jeton est alors celui d'un utilisateur du maître. `--local` la fait agir sur les tickets locaux de
   l'application, avec un jeton de l'application.
-- `tma:log` enregistre séparément la durée (une saisie de temps) et le résumé (une entrée « Résumé
-  d'intervention », partagée avec le client ; `--internal` en fait une note interne).
+- `tma:log` enregistre la durée (une saisie de temps) sur le message qui la résume, écrit dans l'historique et
+  partagé avec le client (`--internal` en fait une note sur le ticket) ; `--entry` la porte plutôt sur un message ou
+  une note existants.
 
 ## Tests
 

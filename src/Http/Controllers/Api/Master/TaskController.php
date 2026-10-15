@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Les tâches projet, pour l'application cliente à laquelle elles sont destinées : leur état, et ce qu'elle y ajoute
- * (commentaires, réponses, notes partagées, images). Une tâche en brouillon n'existe pas pour elle.
+ * (messages, réponses, notes, images). Une tâche en brouillon n'existe pas pour elle.
  */
 class TaskController
 {
@@ -25,29 +25,35 @@ class TaskController
         return response()->json(Payload::snapshot($this->task($request, $ulid)));
     }
 
-    /** `POST tasks/{ulid}/entries` */
+    /** `POST tasks/{ulid}/entries` : comme pour un ticket (`TicketController::entry()`). */
     public function entry(Request $request, string $ulid): JsonResponse
     {
         $instance = AuthenticateInstance::instance($request);
         $task = $this->task($request, $ulid);
 
+        // Une nouvelle entrée est de l'application appelante ; renvoyée, une entrée garde son auteur et son origine.
+        $isNew = ! $task->entries()->withTrashed()->where('ulid', (string) $request->input('ulid'))->exists();
         $payload = $request->validate([
             'ulid' => ['required', 'string', 'size:26'],
             'type' => ['required', 'in:'.EntryType::Comment->value.','.EntryType::Note->value],
-            'body' => ['required', 'string'],
-            'author' => ['required', 'array'],
-            'author.instance_uid' => ['required', 'in:'.$instance->uid],
-            'origin_instance_uid' => ['required', 'in:'.$instance->uid],
+            'body' => ['nullable', 'string'],
+            'author' => [$isNew ? 'required' : 'nullable', 'array'],
+            'author.instance_uid' => $isNew ? ['required', 'in:'.$instance->uid] : ['nullable'],
+            'origin_instance_uid' => $isNew ? ['required', 'in:'.$instance->uid] : ['nullable'],
             'files' => ['array'],
+            'file_uuids' => ['array'],
+            'private' => ['boolean'],
         ]);
 
-        abort_if($task->state->isFinal() && $payload['type'] !== EntryType::Note->value, 422, __('Cette tâche est terminée.'));
+        abort_if($isNew && ! $task->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('Cette tâche est annulée.'));
 
-        $isNew = ! $task->entries()->where('ulid', $payload['ulid'])->exists();
-        $entry = DB::transaction(fn () => Mirror::entry($task, $request->all()));
+        $entry = DB::transaction(fn () => Mirror::entryFrom($instance->uid, $task, $request->all()));
 
         if ($isNew) {
-            $task->touchActivity();
+            if (! $entry->private) {
+                $task->touchActivity();
+            }
+
             event(new EntryAdded($entry, Context::api(Mirror::actor($request->input('author')), $instance->uid, fromMaster: false)));
         }
 

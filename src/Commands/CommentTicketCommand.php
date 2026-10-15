@@ -5,7 +5,7 @@ namespace CharlesStOlive\FilamentTma\Commands;
 use CharlesStOlive\FilamentTma\Commands\Concerns\UsesTmaBackend;
 use Illuminate\Console\Command;
 
-/** `tma:comment DES-0042 --body="…"` : un commentaire (partagé) ou, avec `--note`, une note interne. */
+/** `tma:comment DES-0042 --body="…"` : un message ou, avec `--note`, une note sur le ticket entier. */
 class CommentTicketCommand extends Command
 {
     use UsesTmaBackend;
@@ -18,7 +18,7 @@ class CommentTicketCommand extends Command
             {ref : Numéro (DES-0042) ou ulid du ticket}
             {--body= : Le texte}
             {--body-file= : Fichier du texte (- pour l’entrée standard)}
-            {--note : Une note interne plutôt qu’un commentaire}
+            {--note : Une note sur le ticket plutôt qu’un message}
             '.$this->backendOptions();
 
         parent::__construct();

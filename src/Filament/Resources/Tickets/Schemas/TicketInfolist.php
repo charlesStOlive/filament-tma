@@ -3,11 +3,10 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
-use CharlesStOlive\FilamentTma\Sync\TimeTotals;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
@@ -15,39 +14,36 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\HtmlString;
 
 class TicketInfolist
 {
-    /** Le volet principal de la fiche : la demande, puis les échanges. */
+    /**
+     * Le volet principal de la fiche : l'historique (la demande, puis les échanges, chacun avec ses notes), et
+     * dessous, à part, le nouveau message.
+     */
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('Demande'))
+            Section::make(__('Historique'))
                 ->columnSpanFull()
-                ->schema([
-                    TextEntry::make('description')
-                        ->hiddenLabel()
-                        ->placeholder(__('Pas de description.'))
-                        ->state(fn (Ticket $record): ?HtmlString => filled($record->description) ? new HtmlString($record->renderRichContent('description')) : null)
-                        ->prose(),
-                    ViewEntry::make('attachments')
-                        ->hiddenLabel()
-                        ->view('filament-tma::attachments')
-                        ->viewData(['collection' => Ticket::ATTACHMENTS_COLLECTION]),
-                ]),
-            Section::make(__('Chronologie'))
-                ->columnSpanFull()
-                ->headerActions([Help::title('tma.chronologie.commentaire-ou-note', __('Message ou note interne ?'))])
+                ->headerActions([Help::title('tma.chronologie.notes', __('Messages et notes'))])
                 ->schema([
                     ViewEntry::make('timeline')
                         ->hiddenLabel()
                         ->view('filament-tma::timeline.ticket'),
-                    // La zone de réponse de la page (`Filament\Concerns\HasComposer`), sous la chronologie.
-                    EmbeddedSchema::make('composer')
-                        ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer()),
                 ]),
+            self::composerSection(),
         ]);
+    }
+
+    /** Le nouveau message, sous l'historique (`Filament\Concerns\HasComposer`). */
+    public static function composerSection(): Section
+    {
+        return Section::make(__('Nouveau message'))
+            ->columnSpanFull()
+            ->headerActions([Help::title('tma.chronologie', __('Qui répond ?'))])
+            ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer())
+            ->schema([EmbeddedSchema::make('composer')]);
     }
 
     /**
@@ -82,10 +78,12 @@ class TicketInfolist
                     TextEntry::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—'),
                     TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                         ->visible(fn (Ticket $record): bool => $record->paused_until !== null),
-                    TextEntry::make('time_total')->label(__('Temps passé'))
-                        ->state(fn (Ticket $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
                     TextEntry::make('sourceInstance.name')->label(__('Application'))
                         ->visible(fn (): bool => Tma::isMaster()),
+                    TextEntry::make('task.number')->label(__('À partir de la tâche'))
+                        ->formatStateUsing(fn (Ticket $record): string => $record->task->number.' — '.$record->task->title)
+                        ->url(fn (Ticket $record): ?string => TaskResource::canView($record->task) ? TaskResource::getUrl('view', ['record' => $record->task]) : null)
+                        ->visible(fn (Ticket $record): bool => $record->task !== null),
                     TextEntry::make('sync_status')->label(__('Synchro'))->badge()
                         ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
                         ->visible(fn (Ticket $record): bool => $record->handling_mode === HandlingMode::ServiceDesk)

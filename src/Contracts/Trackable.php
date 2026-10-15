@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Contracts;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Spatie\ModelStates\State;
@@ -33,8 +34,14 @@ interface Trackable
 
     public function touchActivity(): void;
 
-    /** @return Collection<int, Entry> */
-    public function timelineEntries(bool $withNotes): Collection;
+    /** On peut encore y écrire des messages (les notes, elles, restent toujours possibles). */
+    public function acceptsMessages(): bool;
+
+    /** @return Collection<int, Entry> les messages de premier niveau, avec leurs réponses et leurs notes */
+    public function timelineEntries(): Collection;
+
+    /** @return Collection<int, Entry> les notes qu'une personne peut lire, sur le ticket entier ou sur un message */
+    public function noteEntries(?Authenticatable $user, bool $withArchived = false): Collection;
 
     /** @return array<int, Side> les parties que représente cette application */
     public function sidesHere(): array;

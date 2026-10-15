@@ -8,8 +8,8 @@ order: 130
 
 **Application cliente** — L'application d'un client (Desapp…), reliée au Support.
 
-**Chronologie** — L'historique d'un ticket ou d'une tâche : messages et changements d'état. Voir
-[La chronologie](#modal-tma.chronologie).
+**Historique** — Sur la fiche d'un ticket ou d'une tâche : la demande, puis les messages et les changements d'état,
+dans l'ordre. Voir [L'historique](#modal-tma.chronologie).
 
 **Demandeur** — La personne qui a ouvert la demande.
 
@@ -27,13 +27,14 @@ Elle porte le nom court du client : « Équipe EDM ».
 **Membre du Support** — Une personne du Support qui travaille aussi depuis l'application d'un client, au nom du
 Support. Voir [Les membres du Support](#modal-tma.agents).
 
-**Message** — Une entrée de la chronologie que tout le monde lit, demandeur compris.
+**Message** — Une entrée de l'historique que tout le monde lit, demandeur compris. Son auteur le modifie tant que
+personne d'autre n'a écrit après lui.
 
 **Nom court** — Le nom court d'un client (« EDM »), qui forme « Équipe EDM » et « Publier chez EDM ». Voir
 [Les mots du module](#modal-tma.comprendre.vocabulaire).
 
-**Note interne** — Une entrée de la chronologie que seule l'équipe de l'application où elle est écrite lit, jusqu'à
-ce qu'on la partage avec l'autre équipe.
+**Note** — Un commentaire posé à côté de l'échange, sur un message ou sur le ticket entier, numéroté (n° 1, n° 2…)
+et lu de tous. Voir [Les notes](#modal-tma.chronologie.notes).
 
 **Passage** — Ce qui fait changer l'état d'un ticket ou d'une tâche : « Prendre en charge », « Marquer comme
 résolu »…

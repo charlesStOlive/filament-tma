@@ -17,8 +17,13 @@ interface Backend
     /** @return array<string, mixed> */
     public function show(string $ref): array;
 
-    /** @return array<string, mixed> la saisie de temps et le résumé enregistrés */
-    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal): array;
+    /**
+     * Une saisie de temps, sur le message (ou la note) qui dit ce qui a été fait : `$summary` l'écrit, ou `$entry`
+     * (ulid) en désigne un qui existe déjà sur la fiche. Sans l'un ni l'autre, sur la fiche entière.
+     *
+     * @return array<string, mixed> la saisie de temps et le message sur lequel elle porte
+     */
+    public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal, ?string $entry = null): array;
 
     /** @return array<string, mixed> */
     public function comment(string $ref, string $body, bool $note): array;

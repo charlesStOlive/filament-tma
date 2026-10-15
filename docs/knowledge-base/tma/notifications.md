@@ -25,7 +25,7 @@ Par défaut, il n'y en a pas : tout passe par le récapitulatif. L'application p
 | Passage | Qui est prévenu |
 | --- | --- |
 | Demander des précisions, Marquer comme résolu, Prendre en charge, Publier | le demandeur |
-| Confier à l'équipe (à une personne désignée), Répondre, Rouvrir | la personne qui a pris la demande en charge |
+| Confier à l'équipe (à une personne désignée), Répondre, Retour à l'équipe | la personne qui a pris la demande en charge |
 
 L'auteur du passage n'est jamais prévenu de son propre geste.
 
@@ -45,5 +45,5 @@ de Desapp, c'est Desapp qui envoie le courriel à son demandeur, à la réceptio
 | --- | --- | --- |
 | Clôture automatique | chaque jour à 7 h | avertit puis clôture les tickets sans réponse du demandeur |
 | Reprise des pauses | tous les quarts d'heure | reprend les tickets en pause arrivés à leur date |
-| Publications programmées | toutes les 5 minutes | publie les tâches et les tickets préparés arrivés à leur date |
+| Publications programmées | chaque minute | publie les tâches et les tickets préparés arrivés à leur date |
 | Récapitulatif | jours ouvrés à 8 h | envoie le récapitulatif |

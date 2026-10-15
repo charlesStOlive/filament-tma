@@ -15,6 +15,9 @@ chez le Support, à **un seul client**. Son numéro dit d'où il vient : `DES-00
 demande commence en **Brouillon** : vous seul (et votre application) la voyez. Vous pouvez la modifier autant que
 vous voulez.
 
+Depuis une [tâche projet](#modal-tma.taches), **Créer un ticket** ouvre la même page, préremplie avec la tâche ; le
+ticket reste lié à elle.
+
 Ensuite, selon votre rôle :
 
 - **Confier à l'équipe EDM** : vous n'êtes pas en lien avec le Support ; l'équipe de votre application traite la
@@ -33,7 +36,7 @@ Ensuite, selon votre rôle :
 | En cours | l'équipe qui traite | la demande est traitée |
 | En attente du demandeur | le demandeur | des précisions lui ont été demandées |
 | En pause | l'équipe qui traite | suspendu jusqu'à une date, puis repris tout seul |
-| Résolu | le demandeur | le travail est fait : il confirme, ou rouvre |
+| Résolu | le demandeur | le travail est fait : il confirme, ou renvoie la demande |
 | Clos | — | terminé ; c'est l'état qui permet la facturation complète |
 | Annulé | — | abandonné ou refusé, avec son motif |
 
@@ -43,8 +46,8 @@ L'équipe qui traite est le **Support**, ou l'**équipe du client** (« Équipe 
 ## Les passages
 
 Les boutons ne montrent que les passages possibles **maintenant**, pour **vous** : en haut de la fiche, et dans la
-**zone de réponse** sous la chronologie pour ceux qui portent un texte (Répondre, Demander des précisions, Marquer
-comme résolu, Confirmer et clore, Rouvrir). Voir [La chronologie](#modal-tma.chronologie).
+**zone Nouveau message**, sous l'historique, pour ceux qui portent un texte (Répondre, Demander des précisions, Marquer
+comme résolu, Confirmer et clore, Retour au Support). Voir [L'historique](#modal-tma.chronologie).
 
 | Passage | Par | Ce qu'il demande |
 | --- | --- | --- |
@@ -58,17 +61,26 @@ comme résolu, Confirmer et clore, Rouvrir). Voir [La chronologie](#modal-tma.ch
 | Reprendre | l'équipe qui traite | — |
 | Marquer comme résolu | l'équipe qui traite | ce qui a été fait (facultatif) |
 | Confirmer et clore | le demandeur | une confirmation |
-| Rouvrir | le demandeur | ce qui ne va pas |
+| Retour au Support (ou à l'équipe EDM) | le demandeur | ce qui ne va pas |
 | Clore sans réponse | l'équipe qui traite | un motif (facultatif) |
 | Annuler | le demandeur avant la prise en charge, l'équipe qui traite ensuite | un motif (sauf en brouillon) |
 
 Un **message** ne fait jamais changer l'état : pour rendre la main, il faut le passage qui le dit (« Répondre »,
-« Confirmer et clore »…). Voir [La chronologie](#modal-tma.chronologie).
+« Confirmer et clore »…). Voir [L'historique](#modal-tma.chronologie).
 
 ## La liste
 
-Dans une application cliente, la liste montre d'office **vos demandes** (filtre « Mes demandes », qu'on retire pour
-voir celles des autres). La colonne **En attente de** dit qui doit agir : **Vous**, le demandeur par son nom, le
+Au-dessus de la liste, des **raccourcis** remplissent ses filtres d'un clic ; on peut ensuite les affiner, et le
+raccourci s'éteint dès que les filtres ne sont plus les siens :
+
+| Raccourci | Filtres |
+| --- | --- |
+| En attente de moi | vos brouillons, vos demandes qui attendent votre réponse ou votre confirmation, ce qu'on vous a confié, et les nouvelles demandes de votre équipe que personne n'a prises (si vous pouvez les prendre) |
+| Mes demandes | vos demandes, sauf celles en pause, closes ou annulées (application cliente) |
+| Actifs | tous les tickets, sauf ceux en pause, clos ou annulés |
+| Tous | aucun filtre |
+
+On arrive sur **Mes demandes** dans une application cliente, sur **Actifs** chez le Support et pour ses membres. La colonne **En attente de** dit qui doit agir : **Vous**, le demandeur par son nom, le
 **Support** ou l'**Équipe EDM**.
 
 ## Qui peut modifier un ticket
@@ -76,7 +88,7 @@ voir celles des autres). La colonne **En attente de** dit qui doit agir : **Vous
 - En **brouillon** : son auteur.
 - Ensuite : l'**équipe qui traite** la demande, quand le ticket l'attend.
 - Une fois un ticket transmis au Support, l'application cliente ne modifie plus ses champs : elle ajoute des
-  messages, des notes internes, des fichiers.
+  messages, des notes, des fichiers.
 
 ## La clôture automatique
 
@@ -97,7 +109,7 @@ programmée**.
 - [Confier à l'équipe ou transmettre au Support](#modal-tma.tickets.soumettre)
 - [Demander des précisions, répondre](#modal-tma.tickets.question-reponse)
 - [La pause et sa reprise](#modal-tma.tickets.pause)
-- [Résolu : confirmer ou rouvrir](#modal-tma.tickets.validation)
+- [Résolu : confirmer ou renvoyer](#modal-tma.tickets.validation)
 - [Annuler, refuser, clore sans réponse](#modal-tma.tickets.annuler)
 - [La clôture automatique](#modal-tma.tickets.cloture-automatique)
 - [Les tickets préparés par le Support](#modal-tma.tickets.prepares)

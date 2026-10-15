@@ -3,8 +3,10 @@
 namespace CharlesStOlive\FilamentTma\Notifications;
 
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Dates;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -28,7 +30,7 @@ class AutoCloseWarning extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject(__('[:number] Sans réponse, ce ticket sera clos le :date', [
                 'number' => $this->ticket->number,
-                'date' => $this->closesOn->format('d/m/Y'),
+                'date' => Dates::format($this->closesOn, 'd/m/Y', $notifiable instanceof Authenticatable ? $notifiable : null),
             ]))
             ->greeting(__('Bonjour,'))
             ->line(__('Le ticket « :title » (:number) attend votre retour : il est à l’état « :state ».', [
@@ -36,7 +38,7 @@ class AutoCloseWarning extends Notification implements ShouldQueue
                 'number' => $this->ticket->number,
                 'state' => $waitingFor,
             ]))
-            ->line(__('Sans activité de votre part, il sera clos automatiquement le :date.', ['date' => $this->closesOn->format('d/m/Y')]))
+            ->line(__('Sans activité de votre part, il sera clos automatiquement le :date.', ['date' => Dates::format($this->closesOn, 'd/m/Y', $notifiable instanceof Authenticatable ? $notifiable : null)]))
             ->action(__('Ouvrir le ticket'), TicketUrl::view($this->ticket))
             ->line(__('Un commentaire suffit à le garder ouvert.'));
     }

@@ -14,6 +14,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Filament\Forms\Components\RichEditor\FileAttachmentProviders\SpatieMediaLibraryFileAttachmentProvider;
 use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
 use Filament\Forms\Components\RichEditor\Models\Contracts\HasRichContent;
@@ -150,6 +151,18 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return $this->belongsTo(Actor::class, 'created_by_actor_id');
     }
 
+    /** La tâche projet dont ce ticket est parti, s'il en vient une. */
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(ProjectTask::class, 'task_id');
+    }
+
+    /** L'échange s'arrête avec le ticket ; les notes restent possibles. */
+    public function acceptsMessages(): bool
+    {
+        return ! $this->state->isFinal();
+    }
+
     /** L'application source, quand le maître la connaît (« Applications clientes »). */
     public function sourceInstance(): BelongsTo
     {
@@ -164,6 +177,29 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNotIn('state', ['closed', 'cancelled']);
+    }
+
+    /**
+     * Ce qui attend une personne : ses brouillons, ses demandes qui attendent sa réponse ou sa confirmation, ce qui
+     * lui est confié (Nouveau, En cours), et les nouvelles demandes de son équipe que personne n'a prises, si elle
+     * peut les prendre. Dans une application cliente, un membre du Support (`Agent`) est aussi lui-même côté maître
+     * et prend les demandes du Support.
+     */
+    public function scopeAwaiting(Builder $query, Authenticatable $user): Builder
+    {
+        $agent = Agent::for($user);
+        $me = Actor::idsFor($user);
+
+        $mayTake = TmaGate::allows($user, TmaGate::workflowAction('take-charge'));
+        $takes = array_keys(array_filter(Tma::isMaster()
+            ? [HandlingMode::ServiceDesk->value => $mayTake]
+            : [HandlingMode::Local->value => $mayTake, HandlingMode::ServiceDesk->value => $agent !== null]));
+
+        return $query->where(fn (Builder $q): Builder => $q
+            ->where(fn (Builder $q): Builder => $q->where('state', 'draft')->whereIn('created_by_actor_id', $me))
+            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['awaiting_requester', 'pending_validation'])->whereIn('requester_actor_id', $me))
+            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['submitted', 'in_progress'])->whereIn('assignee_actor_id', $me))
+            ->orWhere(fn (Builder $q): Builder => $q->where('state', 'submitted')->whereNull('assignee_actor_id')->whereIn('handling_mode', $takes)));
     }
 
     /** La partie qui doit agir. Un brouillon est à la partie qui l'a créé. */

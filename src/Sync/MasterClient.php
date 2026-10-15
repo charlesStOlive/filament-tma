@@ -40,7 +40,7 @@ final class MasterClient
     }
 
     /**
-     * Transmet un ticket au Support, avec ses entrées partagées et leurs fichiers. Le maître le crée (ou
+     * Transmet un ticket au Support, avec ses entrées et leurs fichiers. Le maître le crée (ou
      * le retrouve : la transmission est idempotente) et renvoie son état.
      *
      * @return array<string, mixed> l'état du ticket chez le maître (`Payload::snapshot()`)
@@ -48,7 +48,6 @@ final class MasterClient
     public function transmit(Ticket $ticket, StateTransition $transition, Context $context): array
     {
         $entries = $ticket->entries()->with(['author', 'parent', 'media'])->oldest('id')->get()
-            ->filter(fn (Entry $entry): bool => $entry->isShared())
             ->map(fn (Entry $entry): array => Payload::entry($entry, withFiles: true))
             ->values()->all();
 
@@ -111,29 +110,45 @@ final class MasterClient
      * @param  array<int, array<string, mixed>>  $files
      * @return array{entry: array<string, mixed>, snapshot: array<string, mixed>}
      */
-    public function agentEntry(Agent $agent, Trackable $subject, string $type, string $body, ?string $parentUlid, array $files = []): array
+    public function agentEntry(Agent $agent, Trackable $subject, string $type, string $body, ?string $parentUlid, array $files = [], bool $private = false): array
     {
         return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/entries"), [
             'type' => $type,
             'body' => $body,
             'parent_ulid' => $parentUlid,
             'files' => $files,
+            'private' => $private,
         ]))->json('data');
     }
 
     /**
-     * Un agent saisit du temps, dans le maître, en son nom.
+     * Un agent change, dans le maître et en son nom, son message ou sa note (`body`, `files`, `remove_files`,
+     * `private`), archive une note (`archived`) ou supprime la sienne (`delete`).
      *
-     * @return array<string, mixed> l'état du ticket ou de la tâche à recopier (ses totaux de temps)
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed> l'état du ticket ou de la tâche à recopier
      */
-    public function agentTime(Agent $agent, Trackable $subject, int $minutes, ?string $workedOn, ?string $description, bool $billable): array
+    public function agentChangeEntry(Agent $agent, Trackable $subject, string $entryUlid, array $data): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/time"), [
+        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/entries/{$entryUlid}"), $data))
+            ->json('data.snapshot');
+    }
+
+    /**
+     * Un agent saisit du temps, dans le maître, en son nom : sur un nouveau message (`$message`, HTML), sur un
+     * message ou une note de la fiche (`$entryUlid`), ou sur la fiche entière.
+     *
+     * @return array<string, mixed> l'état du ticket ou de la tâche à recopier (ses totaux de temps, le message)
+     */
+    public function agentTime(Agent $agent, Trackable $subject, int $minutes, ?string $workedOn, bool $billable, ?string $message = null, ?string $entryUlid = null): array
+    {
+        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/time"), array_filter([
             'minutes' => $minutes,
             'worked_on' => $workedOn,
-            'description' => $description,
             'billable' => $billable,
-        ]))->json('data.snapshot');
+            'summary' => $message,
+            'entry_ulid' => $entryUlid,
+        ], fn (mixed $value): bool => $value !== null)))->json('data.snapshot');
     }
 
     private function agentHttp(Agent $agent): PendingRequest
@@ -145,12 +160,17 @@ final class MasterClient
         return Http::to($agent->token);
     }
 
-    /** Envoie une entrée (commentaire, note partagée, réponse) avec ses fichiers. */
-    public function sendEntry(Entry $entry): void
+    /**
+     * Envoie une entrée (message, réponse, note) avec ses fichiers ; renvoyée, elle est modifiée, archivée ou
+     * supprimée là-bas.
+     *
+     * @return array<string, mixed> l'entrée telle que le maître l'a enregistrée (le numéro d'une note)
+     */
+    public function sendEntry(Entry $entry): array
     {
-        Http::call(__('Envoi au Support'), fn () => $this->http()->post(
+        return (array) Http::call(__('Envoi au Support'), fn () => $this->http()->post(
             $this->url(($entry->subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$entry->subject->ulid}/entries"),
             Payload::entry($entry, withFiles: true),
-        ));
+        ))->json('entry');
     }
 }

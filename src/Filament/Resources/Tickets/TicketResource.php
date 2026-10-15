@@ -15,9 +15,11 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeE
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketForm;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
+use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Move;
@@ -39,7 +41,7 @@ use UnitEnum;
  *
  * Droits, au format de charlesstolive/filament-permission-manager (`permissions:sync` les crée), sans en dépendre :
  * - la liste : `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` (policy de repli du gestionnaire) ;
- * - `$specificPermissions` : `comment`, `note` (lire et écrire les notes internes), `share-note`, `time`, `sync` ;
+ * - `$specificPermissions` : `comment`, `note` (écrire des notes et les archiver ; tout le monde les lit), `time`, `sync` ;
  * - la famille `workflow` : un droit par mouvement, `tma.ticket.workflow.take-charge`… (`TmaGate`).
  *
  * Qui a la main compte aussi, et ne dépend d'aucun droit : on ne modifie un ticket qu'en brouillon ou quand on en
@@ -59,7 +61,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
     protected static ?string $permissionPrefix = 'tma.ticket';
 
     /** @var array<int, string> */
-    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::SHARE_NOTE, TmaGate::TIME, TmaGate::SYNC];
+    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC];
 
     /** @var array<string, string> */
     protected static array $permissionFamilies = [TmaGate::WORKFLOW_FAMILY => 'Passages du ticket'];
@@ -67,8 +69,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
     /** @var array<string, string> */
     protected static array $permissionLabels = [
         TmaGate::COMMENT => 'Commenter et répondre',
-        TmaGate::NOTE => 'Lire et écrire les notes internes',
-        TmaGate::SHARE_NOTE => 'Partager une note avec l’autre partie',
+        TmaGate::NOTE => 'Écrire des notes et les archiver',
         TmaGate::TIME => 'Saisir et modifier du temps (maître)',
         TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
     ];
@@ -163,15 +164,18 @@ class TicketResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('last_activity_at')->label(__('Dernière activité'))->since()->sortable(),
             ])
             ->filters([
-                // Dans une application cliente, chacun voit d'abord ses propres demandes ; on retire le filtre pour
-                // voir celles des autres.
+                // Les valeurs d'office sont celles d'un raccourci de la liste (`ListTickets::shortcuts()`) : « Mes
+                // demandes » dans une application cliente, « Actifs » ailleurs et pour un membre du Support.
+                Filter::make('awaiting')->label(__('En attente de moi'))->toggle()
+                    ->query(fn (Builder $query): Builder => $query->awaiting(auth()->user())),
                 Filter::make('mine')->label(__('Mes demandes'))->toggle()
-                    ->default(Tma::isClient())
+                    ->default(fn (): bool => static::showsOwnRequestsFirst())
                     ->query(fn (Builder $query): Builder => $query->whereIn('requester_actor_id', Actor::query()
                         ->where('instance_uid', Tma::instanceUid())
                         ->where('user_id', auth()->id())
                         ->select('id'))),
-                StateFusionSelectFilter::make('state')->label(__('État'))->multiple(),
+                StateFusionSelectFilter::make('state')->label(__('État'))->multiple()
+                    ->default(TicketState::active()),
                 SelectFilter::make('handling_mode')->label(__('Traité par'))->options(HandlingMode::class),
                 SelectFilter::make('priority')->label(__('Priorité'))->options(Priority::class)->multiple(),
                 SelectFilter::make('source_instance_uid')->label(__('Application'))
@@ -183,6 +187,15 @@ class TicketResource extends Resource implements HasKnowledgeBase
             ->recordActions([
                 ViewAction::make(),
             ]);
+    }
+
+    /**
+     * Dans une application cliente, chacun voit d'abord ses propres demandes. Pas un membre du Support : il n'y
+     * demande rien, il traite celles de tous.
+     */
+    public static function showsOwnRequestsFirst(): bool
+    {
+        return Tma::isClient() && Agent::for(auth()->user()) === null;
     }
 
     public static function getRelations(): array

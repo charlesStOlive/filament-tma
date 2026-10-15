@@ -5,9 +5,9 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
-use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasNotes;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
@@ -19,22 +19,26 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Component;
 
 /**
- * La fiche d'un ticket : la demande et sa chronologie, avec à droite le suivi et le temps passé (`HasInfoPane`). En
- * tête, les passages possibles maintenant pour l'utilisateur ; sous la chronologie, la zone de réponse
- * (`HasComposer`) : messages, notes internes, et les réponses de la partie qu'on attend.
+ * La fiche d'un ticket : l'historique (la demande, puis les échanges) et, dessous, le nouveau message (`HasComposer`,
+ * avec les réponses de la partie qu'on attend) ; à droite, le suivi, le temps passé et les notes (`HasInfoPane`). En
+ * tête, les passages possibles maintenant pour l'utilisateur. Les notes et la modification d'un message s'ouvrent en
+ * fenêtres (`HasNotes`).
  */
 class ViewTicket extends ViewRecord
 {
     use HasComposer;
     use HasInfoPane;
+    use HasNotes;
 
     protected static string $resource = TicketResource::class;
 
-    protected function sideComponents(): array
+    /** Le temps passé en tête dans le maître ; chez le client, il ferme le volet. */
+    protected function sideComponents(Component $time): array
     {
-        return TicketInfolist::side();
+        return Tma::isMaster() ? [$time, ...TicketInfolist::side()] : [...TicketInfolist::side(), $time];
     }
 
     public function getTitle(): string
@@ -46,7 +50,6 @@ class ViewTicket extends ViewRecord
     {
         return [
             ...MoveAction::all(),
-            TimelineActions::agentTime(),
             ActionGroup::make([
                 EditAction::make(),
                 $this->resyncAction(),
@@ -75,10 +78,5 @@ class ViewTicket extends ViewRecord
                     ->title($record->sync_status === SyncStatus::Error ? $record->last_sync_error : __('Envoi demandé'))
                     ->send();
             });
-    }
-
-    public function shareNoteAction(): Action
-    {
-        return TimelineActions::shareNote();
     }
 }

@@ -112,29 +112,38 @@ class TicketController
         return response()->json(Payload::snapshot($ticket->refresh()));
     }
 
-    /** `POST tickets/{ulid}/entries` : un commentaire, une réponse, une note partagée de l'application appelante. */
+    /**
+     * `POST tickets/{ulid}/entries` : un message, une réponse ou une note de l'application appelante ; renvoyé, le
+     * même `ulid` modifie l'entrée, l'archive ou la supprime (voir `Mirror::entryFrom()`).
+     */
     public function entry(Request $request, string $ulid): JsonResponse
     {
         $instance = AuthenticateInstance::instance($request);
         $ticket = $this->ticket($request, $ulid);
 
+        // Une nouvelle entrée est de l'application appelante ; renvoyée, une entrée garde son auteur et son origine.
+        $isNew = ! $ticket->entries()->withTrashed()->where('ulid', (string) $request->input('ulid'))->exists();
         $payload = $request->validate([
             'ulid' => ['required', 'string', 'size:26'],
             'type' => ['required', 'in:'.implode(',', array_column(EntryType::cases(), 'value'))],
-            'body' => ['required', 'string'],
-            'author' => ['required', 'array'],
-            'author.instance_uid' => ['required', 'in:'.$instance->uid],
-            'origin_instance_uid' => ['required', 'in:'.$instance->uid],
+            'body' => ['nullable', 'string'],
+            'author' => [$isNew ? 'required' : 'nullable', 'array'],
+            'author.instance_uid' => $isNew ? ['required', 'in:'.$instance->uid] : ['nullable'],
+            'origin_instance_uid' => $isNew ? ['required', 'in:'.$instance->uid] : ['nullable'],
             'files' => ['array'],
+            'file_uuids' => ['array'],
+            'private' => ['boolean'],
         ]);
 
-        abort_if($ticket->state->isFinal() && $payload['type'] !== EntryType::Note->value, 422, __('Ce ticket est terminé.'));
+        abort_if($isNew && ! $ticket->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('Ce ticket est terminé.'));
 
-        $isNew = ! $ticket->entries()->where('ulid', $payload['ulid'])->exists();
-        $entry = DB::transaction(fn () => Mirror::entry($ticket, $request->all()));
+        $entry = DB::transaction(fn () => Mirror::entryFrom($instance->uid, $ticket, $request->all()));
 
         if ($isNew) {
-            $ticket->touchActivity();
+            if (! $entry->private) {
+                $ticket->touchActivity();
+            }
+
             event(new EntryAdded($entry, $this->context($request, $instance)));
         }
 

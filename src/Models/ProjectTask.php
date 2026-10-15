@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
 use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
+use CharlesStOlive\FilamentTma\States\Task\TaskCancelled;
 use CharlesStOlive\FilamentTma\States\Task\TaskDraft;
 use CharlesStOlive\FilamentTma\States\Task\TaskState;
 use CharlesStOlive\FilamentTma\Support\Html;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -26,9 +28,11 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStates\HasStates;
 
 /**
- * Une tâche projet (CDC §6.4, §8) : créée dans le maître, destinée à une seule application cliente
- * (`target_instance_uid`) d'un seul client. Le maître en est l'intervenant et fait autorité ; l'application
- * cliente la voit une fois publiée et n'y fait qu'ajouter (commentaires, notes, images, réponses).
+ * Une tâche projet (CDC §6.4, §8) : créée dans le maître, rangée dans un projet (`project_id`), destinée à une
+ * seule application cliente (`target_instance_uid`, celle du projet) d'un seul client. Le maître en est
+ * l'intervenant et fait autorité ; l'application cliente la voit une fois publiée et n'y fait qu'ajouter
+ * (messages, notes, images, réponses), même une fois la tâche terminée (`acceptsMessages()`). Un ticket de TMA peut
+ * en partir (`tickets()`).
  *
  * @property string $ulid
  * @property string $number
@@ -127,6 +131,18 @@ class ProjectTask extends Model implements HasMedia, HasRichContent, Trackable
         return $this->belongsTo(Instance::class, 'target_instance_uid', 'uid');
     }
 
+    /** Le projet de la tâche ; il porte son application destinataire. */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id');
+    }
+
+    /** Les tickets de TMA ouverts à partir de cette tâche. */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'task_id');
+    }
+
     public function client(): MorphTo
     {
         return $this->morphTo();
@@ -174,8 +190,18 @@ class ProjectTask extends Model implements HasMedia, HasRichContent, Trackable
         return ! $this->state instanceof TaskDraft;
     }
 
+    /** Le maître modifie sa tâche (titre, description, dates…) à tout moment, même terminée. */
     public function fieldsEditableHere(): bool
     {
-        return Tma::isMaster() && ! $this->state->isFinal();
+        return Tma::isMaster();
+    }
+
+    /**
+     * On écrit sur une tâche publiée, tant qu'elle n'est pas annulée : une tâche terminée se commente encore. Pas sur un
+     * brouillon : sa description est le premier message, publié à l'heure dite ; rien ne doit le précéder.
+     */
+    public function acceptsMessages(): bool
+    {
+        return ! $this->state instanceof TaskCancelled && ! $this->state instanceof TaskDraft;
     }
 }

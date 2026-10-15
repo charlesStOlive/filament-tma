@@ -3,36 +3,56 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Filament\Actions\TaskDeleteActions;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskMoveAction;
-use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasNotes;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
+use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentUi\OnDemand\HasOnDemand;
+use CharlesStOlive\FilamentUi\OnDemand\OnDemandAction;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Component;
 
 /**
- * La fiche d'une tâche projet : sa description et sa chronologie, avec à droite le suivi et le temps passé
- * (`HasInfoPane`) ; dans le maître, ses passages. Sous la chronologie, la zone de réponse (`HasComposer`).
+ * La fiche d'une tâche projet : l'historique (la tâche, puis les échanges) et, dessous, le nouveau message
+ * (`HasComposer`) ; à droite, la tâche dans son projet, son temps et les notes (`HasInfoPane`) ; dans le maître, ses
+ * passages. « Créer un ticket » ouvre un ticket de TMA à partir d'elle. Le calendrier et l'application ne s'affichent
+ * qu'à la demande (« Tout afficher », `HasOnDemand`).
+ * Les notes et la modification d'un message s'ouvrent en fenêtres (`HasNotes`).
  */
 class ViewTask extends ViewRecord
 {
     use HasComposer;
     use HasInfoPane;
+    use HasNotes;
+    use HasOnDemand;
 
     protected static string $resource = TaskResource::class;
 
-    protected function sideComponents(): array
+    protected function sideComponents(Component $time): array
     {
-        return TaskInfolist::side();
+        return TaskInfolist::side($time);
+    }
+
+    protected function sideTabLabel(): string
+    {
+        return __('Tâche');
+    }
+
+    protected function sideTabIcon(): string
+    {
+        return 'heroicon-m-clipboard-document-list';
     }
 
     public function getTitle(): string
@@ -44,7 +64,13 @@ class ViewTask extends ViewRecord
     {
         return [
             ...TaskMoveAction::all(),
-            TimelineActions::agentTime(),
+            Action::make('createTicket')
+                ->label(__('Créer un ticket'))
+                ->icon('heroicon-m-lifebuoy')
+                ->color('gray')
+                ->url(fn (ProjectTask $record): string => TicketResource::getUrl('create', ['task' => $record->getKey()]))
+                ->visible(fn (ProjectTask $record): bool => $record->isShared() && TicketResource::canCreate()),
+            OnDemandAction::make(),
             ActionGroup::make([
                 EditAction::make(),
                 Action::make('resync')
@@ -58,12 +84,8 @@ class ViewTask extends ViewRecord
                         });
                         Notification::make()->success()->title(__('Envoi demandé'))->send();
                     }),
+                TaskDeleteActions::make(),
             ]),
         ];
-    }
-
-    public function shareNoteAction(): Action
-    {
-        return TimelineActions::shareNote();
     }
 }

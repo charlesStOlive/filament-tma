@@ -21,7 +21,7 @@ C'est le cas pour les utilisateurs qui n'ont pas accès au Support. Le nom de l'
 **Transmettre au Support** envoie la demande au maître (Filbreeze), qui la traite et **fait autorité** :
 
 - ses champs ne se modifient plus dans l'application d'origine ;
-- les passages du demandeur (Répondre, Confirmer et clore, Rouvrir…) sont faits par le Support, à la demande de
+- les passages du demandeur (Répondre, Confirmer et clore, Retour au Support…) sont faits par le Support, à la demande de
   l'application ;
 - tout ce qui est partagé est copié d'une application à l'autre (voir [La synchronisation](#modal-tma.synchronisation)).
 

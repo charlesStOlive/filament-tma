@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 
@@ -40,14 +41,26 @@ trait IsTrackable
         return false;
     }
 
-    /** Les entrées de premier niveau visibles ici, avec leurs réponses. */
-    public function timelineEntries(bool $withNotes): Collection
+    /** Les messages de premier niveau, avec leurs réponses et leurs notes. */
+    public function timelineEntries(): Collection
     {
         return $this->entries()
+            ->messages()
             ->whereNull('parent_id')
-            ->visibleHere($withNotes)
-            ->with(['author', 'media', 'replies' => fn ($q) => $q->visibleHere($withNotes)->with(['author', 'media'])])
+            ->with(['author', 'media', 'replies' => fn ($q) => $q->with(['author', 'media']), 'notes' => fn ($q) => $q->with(['author', 'media'])])
             ->oldest()
+            ->get();
+    }
+
+    /** Les notes qu'une personne peut lire, par numéro : sur le ticket entier ou sur un message ; les archivées sur demande. */
+    public function noteEntries(?Authenticatable $user, bool $withArchived = false): Collection
+    {
+        return $this->entries()
+            ->notes()
+            ->visibleTo($user)
+            ->when(! $withArchived, fn ($q) => $q->whereNull('archived_at'))
+            ->with(['author', 'media', 'parent.author'])
+            ->orderBy('number')
             ->get();
     }
 

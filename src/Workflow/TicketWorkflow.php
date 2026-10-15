@@ -186,7 +186,7 @@ class TicketWorkflow
                 $from = $ticket->state;
                 $to = $move->to($ticket);
 
-                $move->apply($ticket, $data, $context);
+                app(Timeline::class)->forTransition($transitionUlid, fn () => $move->apply($ticket, $data, $context));
                 $ticket->state->transitionTo($to);
 
                 $transition = $ticket->transitions()->create([
@@ -238,7 +238,7 @@ class TicketWorkflow
         $actor = Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
 
         $ticket = Ticket::create([
-            ...collect($attributes)->only(['title', 'description', 'priority', 'publish_at'])->all(),
+            ...collect($attributes)->only(['title', 'description', 'priority', 'publish_at', 'task_id'])->all(),
             'source_instance_uid' => $instance->uid,
             'created_on_instance_uid' => Tma::instanceUid(),
             'handling_mode' => HandlingMode::ServiceDesk,
@@ -256,7 +256,7 @@ class TicketWorkflow
     /**
      * Crée un ticket en brouillon, au nom de l'utilisateur du contexte.
      *
-     * @param  array<string, mixed>  $attributes  title, description, priority
+     * @param  array<string, mixed>  $attributes  title, description, priority, task_id (la tâche dont il part)
      */
     public function create(array $attributes, Context $context): Ticket
     {
@@ -265,7 +265,7 @@ class TicketWorkflow
         }
 
         $ticket = Ticket::create([
-            ...collect($attributes)->only(['title', 'description', 'priority'])->all(),
+            ...collect($attributes)->only(['title', 'description', 'priority', 'task_id'])->all(),
             'requester_actor_id' => $context->actor->getKey(),
             'created_by_actor_id' => $context->actor->getKey(),
         ]);

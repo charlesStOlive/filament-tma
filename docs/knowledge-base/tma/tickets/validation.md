@@ -1,26 +1,27 @@
 ---
-title: Résolu, confirmer, rouvrir
+title: Résolu, confirmer, renvoyer
 icon: heroicon-o-check-badge
 order: 50
 ---
 
-# Résolu : confirmer ou rouvrir
+# Résolu : confirmer ou renvoyer
 
-Tout se fait dans la **zone de réponse**, sous la chronologie : le texte écrit accompagne le passage.
+Tout se fait dans la zone **Nouveau message**, sous l'historique : le texte écrit accompagne le passage.
 
 ## Marquer comme résolu (l'équipe qui traite)
 
-Le travail est fait. **Ce qui a été fait** (facultatif) s'ajoute à la chronologie, et le ticket, **Résolu**, attend
+Le travail est fait. **Ce qui a été fait** (facultatif) s'ajoute à l'historique, et le ticket, **Résolu**, attend
 le demandeur.
 
 ## Confirmer et clore (le demandeur)
 
 Le résultat convient : le ticket est **Clos**. C'est l'état qui permet de le facturer entièrement.
 
-## Rouvrir (le demandeur)
+## Retour au Support (le demandeur)
 
-Le résultat ne convient pas : **Ce qui ne va pas** est obligatoire, s'ajoute à la chronologie, et le ticket revient
-**En cours**, chez l'équipe qui le traite.
+Le résultat ne convient pas : **Ce qui ne va pas** est obligatoire, s'ajoute à l'historique, et le ticket revient
+**En cours**, chez l'équipe qui le traite. Le bouton la nomme : **Retour au Support**, ou **Retour à l'équipe EDM**
+quand c'est l'équipe du client qui traite la demande.
 
 ## Sans confirmation
 

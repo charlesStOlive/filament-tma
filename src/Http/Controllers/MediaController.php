@@ -4,8 +4,6 @@ namespace CharlesStOlive\FilamentTma\Http\Controllers;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Workflow\Context;
-use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -13,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Le téléchargement d'un fichier d'un ticket ou d'une entrée, avec contrôle à chaque fois (CDC §17.3) : on doit
- * pouvoir voir le ticket, et l'entrée (une note interne n'est lisible qu'avec le droit des notes).
+ * pouvoir voir le ticket ; l'entrée ne doit pas avoir été supprimée.
  * Les fichiers sont sur un disque privé : il n'y a pas d'autre chemin vers eux.
  */
 class MediaController
@@ -34,11 +32,7 @@ class MediaController
         $policy = Gate::getPolicyFor($ticket::class);
         abort_if($policy !== null && ! Gate::forUser($user)->allows('view', $ticket), 403);
 
-        if ($owner instanceof Entry) {
-            $withNotes = app(Timeline::class)->canReadNotes($ticket, Context::ui($user));
-            $visible = Entry::query()->whereKey($owner->getKey())->visibleHere($withNotes)->exists();
-            abort_unless($visible, 403);
-        }
+        abort_if($owner instanceof Entry && $owner->trashed(), 404);
 
         $inline = $request->boolean('inline') && str_starts_with((string) $media->mime_type, 'image/');
 

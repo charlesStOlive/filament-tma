@@ -6,7 +6,8 @@ use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
-use CharlesStOlive\FilamentTma\Events\NoteShared;
+use CharlesStOlive\FilamentTma\Events\EntryChanged;
+use CharlesStOlive\FilamentTma\Events\TaskDeleted;
 use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
@@ -23,12 +24,11 @@ use CharlesStOlive\FilamentTma\Support\Tma;
  */
 class QueuePush
 {
-    public function handle(TicketTransitioned|TaskTransitioned|EntryAdded|NoteShared|TicketUpdated|TaskUpdated|AutoCloseWarned|TimeEntryChanged $event): void
+    public function handle(TicketTransitioned|TaskTransitioned|EntryAdded|EntryChanged|TicketUpdated|TaskUpdated|TaskDeleted|AutoCloseWarned|TimeEntryChanged $event): void
     {
         $ticket = match (true) {
-            $event instanceof TaskTransitioned, $event instanceof TaskUpdated => $event->task,
-            $event instanceof EntryAdded => $event->entry->subject,
-            $event instanceof NoteShared => $event->note->subject,
+            $event instanceof TaskTransitioned, $event instanceof TaskUpdated, $event instanceof TaskDeleted => $event->task,
+            $event instanceof EntryAdded, $event instanceof EntryChanged => $event->entry->subject,
             $event instanceof TimeEntryChanged => $event->entry->subject,
             default => $event->ticket,
         };
@@ -37,10 +37,6 @@ class QueuePush
 
         if (! $ticket instanceof Trackable || ! Tma::isMaster() || ! $ticket->isShared()) {
             return;
-        }
-
-        if ($event instanceof EntryAdded && ! $event->entry->isShared()) {
-            return; // une note interne du maître ne part pas
         }
 
         if ($context?->isApi() && $context->instanceUid === $ticket->clientInstanceUid()) {

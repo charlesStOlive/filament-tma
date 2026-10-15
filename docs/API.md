@@ -70,7 +70,7 @@ conteneurs dans l'adresse du centre de service et dans celle de l'application cl
 | 401 | jeton absent ou invalide |
 | 403 | jeton d'un autre compte, application désactivée, ou mouvement d'une autre partie |
 | 404 | ticket inconnu de cette application, ou route de l'autre mode |
-| 422 | données invalides (`errors` par champ), note interne envoyée, ticket d'une autre application |
+| 422 | données invalides (`errors` par champ), message modifié après qu'un autre a écrit, ticket d'une autre application |
 | 429 | trop de requêtes |
 
 ## Objets
@@ -92,7 +92,7 @@ Une personne, dans l'application où elle existe.
   "title": "Export des parrains", "description": "<p>…</p>",
   "priority": "low|normal|high|urgent",
   "state": "draft|submitted|in_progress|awaiting_requester|paused|pending_validation|closed|cancelled",
-  "handling_mode": "local|service_desk",
+  "handling_mode": "local|service_desk", "task_ulid": null,
   "requester": { "…acteur" }, "assignee": { "…acteur" } , "created_by": { "…acteur" },
   "submitted_at": "…", "taken_at": "…", "waiting_since": "…", "paused_until": "…",
   "validation_requested_at": "…", "closed_at": "…", "cancelled_at": "…",
@@ -102,6 +102,9 @@ Une personne, dans l'application où elle existe.
 }
 ```
 
+`task_ulid` : la tâche projet dont le ticket est parti (« Créer un ticket » sur sa fiche), ou null. Celle qui reçoit
+le relie à sa copie de la tâche si elle la connaît ; absent, le lien qu'elle sait reste.
+
 Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 
 ### Entrée de chronologie
@@ -109,17 +112,26 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 ```json
 {
   "ulid": "01k…", "ticket_ulid": "01k…", "parent_ulid": null,
-  "type": "comment|note", "body": "<p>…</p>",
+  "type": "comment|note", "number": null, "private": false, "body": "<p>…</p>",
   "author": { "…acteur" }, "origin_instance_uid": "01K…", "origin": "ui|api|command|scheduler",
   "shared_at": null, "meta": { "question": true }, "created_at": "…",
-  "files_count": 1,
+  "edited_at": null, "archived_at": null, "deleted_at": null,
+  "files_count": 1, "file_uuids": [ "…" ],
   "files": [ { "uuid": "…", "name": "capture", "file_name": "capture.png", "mime_type": "image/png", "size": 2048, "content": "<base64>" } ]
 }
 ```
 
-- `comment` est un **message** (lu de tous, demandeur compris) ; `note`, une **note interne**.
-- Une **note** n'est transmise que partagée (`shared_at` non nul) ; une note non partagée est refusée (422).
-- `parent_ulid` : une réponse, sur un seul niveau.
+- `comment` est un **message** ; `note`, une **note**. Les deux sont lus de tous, des deux côtés, sauf une note
+  `private` : elle voyage comme les autres, mais ne se montre qu'à son auteur.
+- `parent_ulid` : pour un message, la question à laquelle il répond (un seul niveau) ; pour une note, le message de
+  premier niveau qu'elle commente (sans parent, elle porte sur le ticket entier).
+- `number` : le numéro d'une note dans son ticket. Celle qui reçoit le garde s'il est libre chez elle, sinon elle
+  prend le suivant et le dit dans sa réponse.
+- `edited_at` (message ou note modifié), `archived_at` (note archivée), `deleted_at` (note supprimée) : absents,
+  ce que sait l'application qui reçoit ne change pas.
+- `file_uuids` : les fichiers de l'entrée ; ceux qui n'y sont plus sont retirés chez celle qui reçoit.
+- `shared_at` ne sert plus qu'aux applications d'avant les notes lues de tous, qui n'acceptaient une note que
+  « partagée » : il vaut la date de la note, et null pour une note privée (qu'elles ignorent donc).
 - `files` : contenu en base64. Les types suivent la liste blanche de l'application qui reçoit
   (`filament-tma.attachments.accepted_types`), sur le contenu réel ; taille maximale `attachments.max_size_kb`.
 
@@ -136,23 +148,28 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 
 ```json
 {
-  "ulid": "01k…", "number": "T-0007", "target_instance_uid": "01K…", "project": "Portail parrain",
+  "ulid": "01k…", "number": "T-0007", "target_instance_uid": "01K…",
+  "project": { "ulid": "01k…", "title": "Portail parrain", "description": null },
   "title": "Refonte de la page parrain", "description": "<p>…</p>",
   "state": "in_progress|done|cancelled",
   "starts_on": "2026-10-01", "due_on": "2026-11-15",
   "assignee": { "…acteur" }, "created_by": { "…acteur" },
   "published_at": "…", "done_at": null, "cancelled_at": null, "last_activity_at": "…", "created_at": "…",
+  "deleted_at": null,
   "version": 2,
   "time": { "total_minutes": 630, "by_month": { "2026-09": 420, "2026-10": 210 } }
 }
 ```
 
-Une tâche en brouillon (`draft`) n'est jamais envoyée.
+Une tâche en brouillon (`draft`) n'est jamais envoyée. `project` : son projet (null pour une tâche d'avant les
+projets) ; celle qui reçoit le crée ou met son titre à jour, par son `ulid`. Le temps d'un projet est la somme de
+celui de ses tâches : il ne voyage pas à part. `deleted_at` : la tâche a été supprimée dans le maître (avec ses
+entrées, envoyées supprimées elles aussi) ; celle qui reçoit la retire, et n'en crée pas une qu'elle ne connaissait pas.
 
 ### État complet (snapshot)
 
 ```json
-{ "kind": "ticket", "ticket": { "…" }, "entries": [ "…entrées partagées, sans fichiers" ], "transitions": [ "…" ] }
+{ "kind": "ticket", "ticket": { "…" }, "entries": [ "…toutes les entrées, notes supprimées comprises, sans fichiers" ], "transitions": [ "…" ] }
 { "kind": "task", "task": { "…" }, "entries": [ "…" ], "transitions": [ "…" ] }
 ```
 
@@ -195,7 +212,7 @@ Le maître le range (chiffré) dans la fiche de l'application appelante, puis l'
 ```json
 {
   "ticket": { "…ticket, tel qu'il est chez le client" },
-  "entries": [ "…commentaires et notes partagées, avec leurs fichiers" ],
+  "entries": [ "…messages et notes, avec leurs fichiers" ],
   "files": [ "…pièces jointes du ticket" ],
   "transition": { "…la transition transmit, avec son ulid" }
 }
@@ -218,16 +235,25 @@ Mouvements du demandeur : `answer`, `validate`, `reopen`, `cancel` (avant prise 
 les règles du mouvement (voir `Workflow\Moves`). Un mouvement de l'intervenant répond 403. Réponse : l'état
 complet, à recopier.
 
-### `POST tickets/{ulid}/entries` — un commentaire, une réponse, une note partagée
+### `POST tickets/{ulid}/entries` — un message, une réponse, une note ; ou leur changement
 
-Corps : une entrée (avec `files`). Réponse : `201`, ou `200` si l'entrée était déjà reçue. Sur un ticket
-terminé, seules les notes sont acceptées (422 sinon).
+Corps : une entrée (avec `files`). Réponse : `201` et l'entrée enregistrée (`entry`, avec son `number`), ou `200`
+si elle était déjà reçue. Sur un ticket terminé, une nouvelle entrée n'est acceptée que si c'est une note (422
+sinon).
+
+Renvoyée avec le même `ulid`, une entrée **change** :
+
+- une entrée de l'application appelante prend le nouveau texte, `edited_at`, `archived_at`, `deleted_at` et ses
+  fichiers. Un message dont un autre auteur a écrit après lui ne change plus (422) ;
+- sur une entrée du maître, seul `archived_at` d'une note est pris (archiver ou ressortir une note du Support).
+
+L'auteur et l'origine d'une entrée ne changent jamais.
 
 ### `GET tasks/{ulid}` et `POST tasks/{ulid}/entries`
 
-L'état d'une tâche projet publiée pour l'application appelante, et ce qu'elle y ajoute (commentaire, réponse, note
-partagée, avec ses fichiers). Une tâche en brouillon répond 404. Sur une tâche terminée, seules les notes sont
-acceptées.
+L'état d'une tâche projet publiée pour l'application appelante, et ce qu'elle y ajoute ou change (message, réponse,
+note, avec ses fichiers), comme pour un ticket. Une tâche en brouillon répond 404. Sur une tâche terminée, seules
+les notes sont acceptées.
 
 ## Routes « agent » du maître (appelées par ses utilisateurs)
 
@@ -239,11 +265,11 @@ refusé (403). `{ref}` : le numéro (`DES-0042`, `T-0007`) ou l'ulid du ticket o
 |---|---|
 | `GET agent/tickets?type=all|tickets|tasks&state=&app=&project=&search=&mine=1&all=1&limit=` | la liste des tickets et des tâches (ouverts par défaut) |
 | `GET agent/tickets/{ref}` | un ticket, sa description et sa chronologie en texte |
-| `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, billable?, internal? }` | une saisie de temps et son résumé |
-| `POST agent/tickets/{ref}/entries` `{ body, note? }` | un commentaire, ou une note interne |
-| `POST agent/tickets/{ref}/entries` `{ type, body, parent_ulid?, files? }` | un message d'agent ; la réponse donne aussi l'état à recopier (`snapshot`) |
+| `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, entry_ulid?, billable?, internal? }` | une saisie de temps : sur le message que `summary` écrit (une note avec `internal`), sur un message ou une note existants (`entry_ulid`, pas avec `summary`), ou sur la fiche entière ; réponse : la saisie, `entry`, `snapshot` |
+| `POST agent/tickets/{ref}/entries` `{ body, note? }` | un message, ou une note sur le ticket entier |
+| `POST agent/tickets/{ref}/entries` `{ type, body, parent_ulid?, files?, private? }` | un message ou une note d'agent ; la réponse donne aussi l'état à recopier (`snapshot`) |
+| `PATCH agent/tickets/{ref}/entries/{ulid}` `{ body?, files?, remove_files?, private?, archived?, delete? }` | l'agent modifie son message ou sa note (la garde pour lui ou la montre : `private`), archive une note (`archived`), supprime la sienne (`delete`) ; réponse : `snapshot` |
 | `POST agent/tickets/{ref}/moves` `{ move, data?, transition_ulid? }` | un passage, avec les droits de l'agent ; réponse : `snapshot` |
-| `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, description?, billable? }` | une saisie de temps seule ; réponse : `snapshot` |
 
 **Jetons d'agent.** Un jeton nommé `tma-agent:{identifiant d'une application}` (émis par « Agents du centre de
 service ») ne vaut que pour les tickets et tâches de cette application, avec les droits de la personne dans le maître.
