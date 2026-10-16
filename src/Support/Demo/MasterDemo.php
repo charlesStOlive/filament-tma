@@ -23,7 +23,7 @@ use RuntimeException;
 /**
  * Le jeu d'exemples du maître (le Support) : deux projets et leurs tâches dans tous les états (terminée, en cours, en
  * retard, programmée, annulée), du temps (parfois sur un message), et deux tickets préparés pour le client (l'un
- * publié et pris en charge, l'autre programmé). Ce qui est publié part tout de suite chez le client.
+ * publié, avec une note, l'autre programmé). Ce qui est publié part tout de suite chez le client.
  */
 final class MasterDemo extends Scenario
 {
@@ -110,7 +110,7 @@ final class MasterDemo extends Scenario
         $this->preparedTickets($instance, $ctx);
     }
 
-    /** Deux tickets préparés pour le client : l'un publié et pris en charge, l'autre programmé. */
+    /** Deux tickets préparés pour le client : l'un publié, avec une note, l'autre programmé. */
     private function preparedTickets(Instance $instance, Context $ctx): void
     {
         $users = rescue(fn (): array => RemoteUsers::for($instance), [], false);
@@ -132,12 +132,11 @@ final class MasterDemo extends Scenario
                 'priority' => 'high',
             ], $ctx);
             $tickets->run($ticket, 'publish', [], $ctx);
-            $this->at(1, '09:15', function () use ($tickets, $timeline, $ticket, $ctx): void {
-                $tickets->run($ticket->refresh(), 'take-charge', [], $ctx);
-                $timeline->add($ticket, EntryType::Comment, self::html('Installation prévue jeudi à 20 h. Rien à faire de votre côté.'), $ctx);
+            $this->at(1, '09:15', function () use ($timeline, $ticket, $ctx): void {
+                $timeline->add($ticket, EntryType::Note, self::html('Installation prévue jeudi à 20 h. Rien à faire de votre côté.'), $ctx);
             });
         });
-        $this->say('Ticket préparé, publié et pris en charge : « Mise à jour de sécurité de l’application »');
+        $this->say('Ticket préparé, publié, avec une note : « Mise à jour de sécurité de l’application »');
 
         $tickets->createForClient($instance, $requester, [
             'title' => 'Renouvellement du certificat du site',

@@ -10,13 +10,29 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Les droits propres du plugin, au format de filament-permission-manager sans en dépendre : la Resource des tickets
- * déclare ses actions (`comment`, `note`, `workflow.take-charge`…), filament-permission-manager crée les permissions
+ * déclare ses actions (`correspond`, `handle`, `note`, `force-close`…), filament-permission-manager crée les permissions
  * `tma.ticket.{action}` et une ability `{TicketResource}.{action}` qui les vérifie. Sans lui, l'ability n'existe pas
  * et l'action reste ouverte à qui voit le ticket, comme dans les autres plugins.
+ *
+ * Sur un ticket, les droits disent qui est qui (correspondant du Support, membre du Support) et ouvrent ce qui est à
+ * côté du workflow (notes, relance, forçages) ; les passages normaux, eux, suivent le tour (`Workflow\TicketWorkflow`).
+ * Les tâches projet gardent un droit par passage (`workflow.{passage}`).
  */
 final class TmaGate
 {
     public const COMMENT = 'comment';
+
+    /** Correspondant du Support (application cliente) : faire une demande, la transmettre, en être le demandeur. */
+    public const CORRESPOND = 'correspond';
+
+    /** Membre du Support (maître) : traiter les demandes. */
+    public const HANDLE = 'handle';
+
+    /** Forçage : clore un ticket ouvert, quel que soit le tour. */
+    public const FORCE_CLOSE = 'force-close';
+
+    /** Forçage : reprendre la main quand c'est le tour du demandeur. */
+    public const FORCE_RETURN = 'force-return';
 
     public const NOTE = 'note';
 

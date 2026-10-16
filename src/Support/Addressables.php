@@ -3,32 +3,25 @@
 namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Instance;
-use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Support\Facades\Gate;
 
 /**
  * Les personnes qu'on peut nommer destinataires d'un ticket ou d'une tâche, et leur clé dans les formulaires.
  *
- * Une seule chose compte pour le Support : le droit d'écrire au Support (« Correspondant du Support »,
- * `tma.ticket.workflow.transmit`). Qui l'a est adressable des deux côtés ; qui ne l'a pas est interne à son
- * application et n'échange qu'avec elle.
+ * Côté client, seuls comptent les correspondants du Support (`tma.ticket.correspond`, addendum §2) : ils font les
+ * demandes et sont adressables des deux côtés.
  *
- * - Dans une application cliente : ses correspondants du Support (`u:{id}`) ; sur un ticket qu'elle traite elle-même,
- *   aussi ses internes ; sur un ticket du Support ou une tâche, le Support : son compte passerelle (`support`, celui
+ * - Dans une application cliente : ses correspondants (`u:{id}`) ; le Support : son compte passerelle (`support`, celui
  *   avec lequel le maître appelle l'application, `api.master_user`), que le maître traduit en ses destinataires par
  *   défaut (`recipients.support_defaults`), et les membres du Support reliés ici que l'application autorise
  *   (`recipients.support_members`, `m:{id dans le maître}`).
- * - Dans le maître : ses membres du Support (qui peuvent prendre en charge, `u:{id}`) et les correspondants de
- *   l'application cliente (`GET users`, `c:{id chez le client}`).
- *
- * L'équipe qui traite (confier, prendre en charge) est à part : `handlers()`.
+ * - Dans le maître : ses membres du Support (`tma.ticket.handle`, `u:{id}`) et les correspondants de l'application
+ *   cliente (`GET users`, `c:{id chez le client}`).
  */
 final class Addressables
 {
@@ -41,7 +34,7 @@ final class Addressables
      */
     public static function options(?string $clientInstanceUid, ?Trackable $subject = null): array
     {
-        $groups = Tma::isMaster() ? self::forMaster($clientInstanceUid) : self::forClient(self::isLocal($subject));
+        $groups = Tma::isMaster() ? self::forMaster($clientInstanceUid) : self::forClient();
         $known = array_merge(...array_values($groups));
 
         foreach ($subject?->recipients()->with('actor')->get() ?? [] as $recipient) {
@@ -56,22 +49,30 @@ final class Addressables
     }
 
     /**
-     * Qui traite ici, pour confier un ticket ou le prendre en charge : dans une application cliente, son équipe (qui
-     * peut prendre en charge, membres du Support exclus) ; dans le maître, le Support.
+     * Client : les contacts possibles au Support, à la transmission d'une demande : les membres du Support reliés à cette
+     * application, par leur id dans le maître.
      *
-     * @return array<string, array<string, string>>
+     * @return array<string, string>
      */
-    public static function handlers(?Trackable $subject = null): array
+    public static function supportContacts(): array
     {
-        $gateway = self::gateway();
-        $people = Tma::userModel()::query()->orderBy('name')->lazy()
-            ->filter(fn (Authenticatable $user): bool => (Tma::isMaster() || Agent::for($user) === null)
-                && (string) $user->getAuthIdentifier() !== (string) $gateway?->getAuthIdentifier()
-                && TmaGate::allows($user, TmaGate::workflowAction('take-charge'), $subject instanceof Ticket ? $subject : null))
-            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
+        return Agent::query()->orderBy('name')->get()
+            ->mapWithKeys(fn (Agent $agent): array => [(string) $agent->master_user_id => (string) $agent->name])
             ->all();
+    }
 
-        return [Tma::isMaster() ? Terms::support() : Terms::team() => $people];
+    /**
+     * Le contact au Support choisi (son id dans le maître) ; sans choix, le seul membre relié s'il n'y en a qu'un.
+     * Null : le Support le choisira lui-même.
+     */
+    public static function supportContact(?string $masterUserId): ?Actor
+    {
+        $agents = Agent::query()->get();
+        $agent = filled($masterUserId)
+            ? $agents->first(fn (Agent $agent): bool => (string) $agent->master_user_id === (string) $masterUserId)
+            : ($agents->count() === 1 ? $agents->first() : null);
+
+        return $agent === null ? null : Actor::fromInstance($agent->master_uid, (string) $agent->master_user_id, (string) $agent->name, $agent->email);
     }
 
     /**
@@ -135,75 +136,36 @@ final class Addressables
         return $actor->team() !== null ? "{$actor->name} ({$actor->team()})" : $actor->name;
     }
 
-    /** Interne : une personne d'une application cliente sans le droit d'écrire au Support (membres du Support à part). */
-    public static function isInternal(?Authenticatable $user): bool
-    {
-        return $user !== null && Tma::isClient() && Agent::for($user) === null && ! self::isCorrespondent($user);
-    }
-
-    /** Ce qui touche le Support, dans une application cliente : un ticket transmis, une tâche. */
-    public static function concernsSupport(Trackable $subject): bool
-    {
-        return Tma::isClient() && ($subject instanceof ProjectTask
-            || ($subject instanceof Ticket && $subject->handling_mode === HandlingMode::ServiceDesk));
-    }
-
     /**
-     * Un interne reste en dehors de ce qui touche le Support : il n'y écrit pas, n'y fait aucun passage, et n'en est
-     * jamais prévenu, même pour sa propre demande transmise (un correspondant répond à sa place).
+     * Correspondant du Support : le droit d'écrire au Support (`tma.ticket.correspond`). Un membre du Support relié ici
+     * ne l'est jamais : il fait partie du Support.
      */
-    public static function keptOut(Trackable $subject, ?Authenticatable $user): bool
+    public static function isCorrespondent(?Authenticatable $user): bool
     {
-        return self::concernsSupport($subject) && self::isInternal($user);
+        return $user !== null && Agent::for($user) === null && TmaGate::allows($user, TmaGate::CORRESPOND);
     }
 
-    /**
-     * Les acteurs d'ici des internes.
-     *
-     * @return array<int, int>
-     */
-    public static function internalActorIds(): array
+    /** Membre du Support (dans le maître) : le droit de traiter les demandes (`tma.ticket.handle`). */
+    public static function isSupportMember(?Authenticatable $user): bool
     {
-        if (! Tma::isClient()) {
-            return [];
-        }
-
-        $users = Tma::userModel()::query()->lazy()
-            ->filter(fn (Authenticatable $user): bool => self::isInternal($user))
-            ->map(fn (Authenticatable $user): string => (string) $user->getAuthIdentifier())
-            ->values()->all();
-
-        return Actor::query()->where('instance_uid', Tma::instanceUid())->whereIn('user_id', $users)
-            ->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+        return $user !== null && Tma::isMaster() && TmaGate::allows($user, TmaGate::HANDLE);
     }
 
-    /** Correspondant du Support : le droit d'écrire au Support (`tma.ticket.workflow.transmit`). */
-    public static function isCorrespondent(Authenticatable $user): bool
+    /** @return array<string, string> les membres du Support, dans le maître */
+    private static function supportPeople(): array
     {
-        return TmaGate::allows($user, TmaGate::workflowAction('transmit'));
-    }
-
-    /** Peut faire une demande : le droit de créer un ticket. */
-    public static function mayRequest(Authenticatable $user): bool
-    {
-        return Gate::getPolicyFor(Ticket::class) === null || Gate::forUser($user)->allows('create', Ticket::class);
-    }
-
-    /**
-     * Un ticket que l'application traite elle-même (ou une demande encore à créer) : les internes y ont leur place, le
-     * Support non.
-     */
-    private static function isLocal(?Trackable $subject): bool
-    {
-        return $subject === null || ($subject instanceof Ticket && $subject->handling_mode !== HandlingMode::ServiceDesk);
+        return Tma::userModel()::query()->orderBy('name')->lazy()
+            ->filter(fn (Authenticatable $user): bool => self::isSupportMember($user))
+            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
+            ->all();
     }
 
     /** @return array<string, array<string, string>> */
-    private static function forClient(bool $local): array
+    private static function forClient(): array
     {
         $support = [];
 
-        if (! $local && Tma::serviceDeskAvailable()) {
+        if (Tma::serviceDeskAvailable()) {
             if (self::gateway() !== null) {
                 $support[self::SUPPORT] = __(':support (toute l’équipe)', ['support' => Terms::support()]);
             }
@@ -213,36 +175,23 @@ final class Addressables
             }
         }
 
-        [$correspondents, $internals] = [[], []];
+        $correspondents = Tma::userModel()::query()->orderBy('name')->lazy()
+            ->filter(fn (Authenticatable $user): bool => (string) $user->getAuthIdentifier() !== (string) self::gateway()?->getAuthIdentifier()
+                && self::isCorrespondent($user))
+            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
+            ->all();
 
-        foreach (Tma::userModel()::query()->orderBy('name')->lazy() as $user) {
-            if (Agent::for($user) !== null || (string) $user->getAuthIdentifier() === (string) self::gateway()?->getAuthIdentifier()) {
-                continue;
-            }
-
-            if (self::isCorrespondent($user)) {
-                $correspondents['u:'.$user->getAuthIdentifier()] = (string) $user->name;
-            } elseif ($local && self::mayRequest($user)) {
-                $internals['u:'.$user->getAuthIdentifier()] = (string) $user->name;
-            }
-        }
-
-        return [Terms::support() => $support, Terms::correspondents() => $correspondents, Terms::internals() => $internals];
+        return [Terms::support() => $support, Terms::correspondents() => $correspondents];
     }
 
     /** @return array<string, array<string, string>> */
     private static function forMaster(?string $clientInstanceUid): array
     {
-        $support = Tma::userModel()::query()->orderBy('name')->lazy()
-            ->filter(fn (Authenticatable $user): bool => TmaGate::allows($user, TmaGate::workflowAction('take-charge')))
-            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
-            ->all();
-
         $correspondents = collect(self::clientUsers($clientInstanceUid))
             ->mapWithKeys(fn (array $user): array => ['c:'.$user['id'] => $user['name'].($user['email'] ? ' — '.$user['email'] : '')])
             ->all();
 
-        return [Terms::support() => $support, Terms::correspondents($clientInstanceUid) => $correspondents];
+        return [Terms::support() => self::supportPeople(), Terms::correspondents($clientInstanceUid) => $correspondents];
     }
 
     /**

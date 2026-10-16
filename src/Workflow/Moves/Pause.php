@@ -6,7 +6,9 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\Paused;
+use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Support\Help;
+use CharlesStOlive\FilamentTma\Workflow\Concerns\AnswersTheRequest;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
@@ -16,6 +18,7 @@ use Illuminate\Support\Carbon;
 /** Suspendre jusqu'à une date : le ticket reprend tout seul ce jour-là (voir `AutoResume`, `tma:resume-paused`). */
 class Pause extends Move
 {
+    use AnswersTheRequest;
     use WritesMessages;
 
     public function key(): string
@@ -40,7 +43,7 @@ class Pause extends Move
 
     public function from(): array
     {
-        return [InProgress::class];
+        return [Submitted::class, InProgress::class];
     }
 
     public function to(Ticket $ticket): string
@@ -72,6 +75,7 @@ class Pause extends Move
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
+        $this->answering($ticket, $context);
         $ticket->paused_until = Carbon::parse($data['until']);
     }
 }

@@ -5,25 +5,34 @@ namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
-use CharlesStOlive\FilamentTma\States\Ticket\Closed;
+use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
+use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'équipe qui traite la demande la clôt sans attendre le demandeur : pas de réponse, ou pas de confirmation. */
-class Close extends Move
+/**
+ * Forçage (addendum §3.4) : le Support reprend la main quand c'est le tour du demandeur, sans attendre sa réponse ou
+ * sa confirmation. Dans le circuit normal, il ne le peut pas ; seul ce droit l'ouvre (`tma.ticket.force-return`).
+ */
+class ForceReturn extends Move
 {
     use WritesMessages;
 
     public function key(): string
     {
-        return 'close';
+        return 'force-return';
     }
 
     public function label(): string
     {
-        return __('Clore sans réponse');
+        return __('Forcer le retour');
+    }
+
+    public function description(): ?string
+    {
+        return __('Hors du tour : la main revient au Support sans attendre le demandeur.');
     }
 
     public function color(): string
@@ -33,7 +42,7 @@ class Close extends Move
 
     public function icon(): ?string
     {
-        return 'heroicon-m-lock-closed';
+        return 'heroicon-m-arrow-uturn-left';
     }
 
     public function from(): array
@@ -43,12 +52,17 @@ class Close extends Move
 
     public function to(Ticket $ticket): string
     {
-        return Closed::class;
+        return InProgress::class;
     }
 
     public function sides(): array
     {
         return [Side::Handler];
+    }
+
+    public function override(): ?string
+    {
+        return TmaGate::FORCE_RETURN;
     }
 
     public function rules(Ticket $ticket): array
@@ -58,11 +72,17 @@ class Close extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->reasonField(false)];
+        return [$this->reasonField(false, help: ['tma.tickets.forcages', __('Quand forcer le retour ?')])];
+    }
+
+    public function requiresConfirmation(): bool
+    {
+        return true;
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
-        $ticket->closed_at = now();
+        $ticket->waiting_since = null;
+        $ticket->validation_requested_at = null;
     }
 }

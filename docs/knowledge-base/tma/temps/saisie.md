@@ -30,11 +30,11 @@ Le temps est toujours enregistré en minutes ; il s'affiche en heures (ou en jou
 
 La saisie n'a pas de texte à elle : ce qui a été fait se lit dans un message ou une note de la fiche. **Sur** propose :
 
-- **un nouveau message** (le choix par défaut) : écrivez **ce qui a été fait** ; le message s'ajoute à l'historique
-  de la fiche (ticket ou tâche), lu des deux côtés, et le temps porte dessus ;
+- sur une **tâche projet**, **un nouveau message** (le choix par défaut) : écrivez **ce qui a été fait** ; le message
+  s'ajoute à l'historique de la tâche, lu des deux côtés, et le temps porte dessus (sur un ticket, pas de texte : un
+  message y va toujours avec un passage) ;
 - **un message** existant, réponses comprises : le temps passé à y répondre, à faire ce qu'il demande ;
 - **une note** : le temps passé sur ce qu'elle signale.
 
 Le message ou la note affiche alors son temps (« 1 h 30 ») dans l'historique, et la saisie dit sur quoi elle porte.
-Un nouveau message laissé vide : le temps porte sur la fiche entière. Sur un ticket terminé, qui ne prend plus de
-message, on choisit un message ou une note existants, ou la fiche entière.
+Sans message ni note choisis (et, sur une tâche, sans texte), le temps porte sur la fiche entière.

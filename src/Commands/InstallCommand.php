@@ -28,7 +28,7 @@ class InstallCommand extends Command
         {--mode= : master (le Support) ou client}
         {--uid= : L’identifiant à prendre (sinon : celui déjà réglé, ou un nouveau)}
         {--name= : Le nom de l’application}
-        {--short-name= : Client : le nom court du client (EDM donne « Équipe EDM », « Publier chez EDM »)}
+        {--short-name= : Client : le nom court du client (EDM donne « Publier chez EDM », « Correspondants EDM »)}
         {--prefix= : Le début des numéros de tickets (DES donne DES-0042)}
         {--master-url= : Client : l’adresse du Support}
         {--master-token= : Client : le jeton émis par le Support}

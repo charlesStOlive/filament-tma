@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Clôt les tickets où la main est au demandeur (en attente de sa réponse, ou résolus) et où rien ne s'est passé
- * depuis `auto_close.after_days` jours (28 par défaut) ; avertit `warn_days_before` jours avant. Seule l'application
- * qui traite le ticket le fait (le maître pour le Support, l'application source pour le local).
+ * depuis `auto_close.after_days` jours (28 par défaut) ; avertit `warn_days_before` jours avant. Seul le maître le
+ * fait : il fait autorité ; l'application cliente prévient son demandeur quand l'état lui arrive.
  * Planifiée chaque jour par le plugin.
  */
 class CloseStaleTicketsCommand extends Command

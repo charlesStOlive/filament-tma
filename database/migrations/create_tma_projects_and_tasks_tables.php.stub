@@ -5,25 +5,36 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Lot 2 : les tâches projet (CDC §6.4, §8). Créées dans le maître seulement, destinées à une application cliente ;
- * invisibles chez elle tant qu'elles sont en brouillon. `publish_at` programme leur publication.
+ * Les projets et leurs tâches, créés par le maître pour une application cliente (`target_instance_uid`). Côté client,
+ * une tâche publiée est une copie : sa synchronisation et les totaux de temps reçus du maître.
  */
 return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('tma_projects', function (Blueprint $table) {
+            $table->id();
+            $table->ulid('ulid')->unique();
+            $table->string('target_instance_uid', 26)->index();
+            $table->nullableMorphs('client');
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         Schema::create('tma_tasks', function (Blueprint $table) {
             $table->id();
             $table->ulid('ulid')->unique();
             $table->string('number')->unique();
             $table->string('target_instance_uid', 26)->index();
             $table->nullableMorphs('client');
-            $table->string('project')->nullable()->index();
+            $table->foreignId('project_id')->nullable()->constrained('tma_projects')->nullOnDelete();
             $table->string('title');
             $table->longText('description')->nullable();
             $table->string('state')->index();
             $table->date('starts_on')->nullable();
-            $table->date('ends_on')->nullable();
+            $table->date('due_on')->nullable();
             $table->timestamp('publish_at')->nullable()->index();
             $table->timestamp('published_at')->nullable();
             $table->timestamp('done_at')->nullable();
@@ -45,5 +56,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('tma_tasks');
+        Schema::dropIfExists('tma_projects');
     }
 };

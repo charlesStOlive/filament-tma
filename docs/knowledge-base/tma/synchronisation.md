@@ -17,7 +17,7 @@ dit. On réessaie plus tard ; rien ne part en double.
 
 ## Du Support vers l'application cliente
 
-Ce que fait le Support (prise en charge, question, message, temps saisi, clôture…) part vers
+Ce que fait le Support (question, résolu, note, temps saisi, clôture…) part vers
 l'application cliente **par la file d'attente**, en général en quelques secondes. Si elle est indisponible, l'envoi
 est retenté plusieurs fois, de plus en plus espacé ; le travail du Support n'est jamais bloqué.
 

@@ -37,7 +37,7 @@ final class RecipientsFields
         ];
     }
 
-    /** La liste des principaux d'un mouvement (envoi, prise en charge), parmi une partie des personnes possibles. */
+    /** La liste des principaux d'un mouvement (une publication…), parmi une partie des personnes possibles. */
     public static function primaries(string $name, \Closure $options): Select
     {
         return self::field($name, null, $options)->label(__('Destinataires principaux'));

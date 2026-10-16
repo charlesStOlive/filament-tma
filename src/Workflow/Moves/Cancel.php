@@ -4,20 +4,17 @@ namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
 use CharlesStOlive\FilamentTma\States\Ticket\Cancelled;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
-use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
-use CharlesStOlive\FilamentTma\States\Ticket\Paused;
-use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
- * Abandonner la demande. Le demandeur le peut tant que personne ne l'a prise en charge (brouillon, nouvelle) ;
- * l'équipe qui la traite, à tout moment avant la fin. Un motif est demandé, sauf pour un brouillon.
+ * Le demandeur retire sa demande : un brouillon, ou une demande à laquelle le Support n'a pas encore répondu (Nouveau, la
+ * seule exception au tour, addendum §3.1). Un motif est demandé, sauf pour un brouillon. Le Support, lui, refuse une
+ * demande nouvelle ou force la clôture.
  */
 class Cancel extends Move
 {
@@ -30,7 +27,7 @@ class Cancel extends Move
 
     public function label(): string
     {
-        return __('Annuler');
+        return __('Retirer la demande');
     }
 
     public function color(): string
@@ -45,7 +42,7 @@ class Cancel extends Move
 
     public function from(): array
     {
-        return [Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class];
+        return [Draft::class, Submitted::class];
     }
 
     public function to(Ticket $ticket): string
@@ -55,16 +52,7 @@ class Cancel extends Move
 
     public function sides(): array
     {
-        return [Side::Requester, Side::Handler];
-    }
-
-    public function allowsSide(Side $side, Ticket $ticket): bool
-    {
-        return match ($side) {
-            Side::Requester => $ticket->state instanceof Draft || $ticket->state instanceof Submitted,
-            // Un brouillon appartient à celui qui l'écrit.
-            Side::Handler => ! $ticket->state instanceof Draft,
-        };
+        return [Side::Requester];
     }
 
     public function rules(Ticket $ticket): array

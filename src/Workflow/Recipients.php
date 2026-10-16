@@ -10,7 +10,6 @@ use CharlesStOlive\FilamentTma\Models\Recipient;
 use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
-use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Sync\Payload;
@@ -55,8 +54,8 @@ final class Recipients
         $actors = $roles->map(fn (RecipientRole $role, string $key): ?array => ($actor = Addressables::resolve($key, $uid)) ? [$actor, $role] : null)->filter()
             ->keyBy(fn (array $pair): int => (int) $pair[0]->getKey());
 
-        // L'auteur d'ici reste principal ; un interne, jamais sur ce qui touche le Support.
-        if (($creator = $subject->createdBy) !== null && $creator->isLocal() && ! Addressables::keptOut($subject, $creator->user)) {
+        // L'auteur d'ici reste principal.
+        if (($creator = $subject->createdBy) !== null && $creator->isLocal()) {
             $actors->put((int) $creator->getKey(), [$creator, RecipientRole::Primary]);
         }
 
@@ -91,23 +90,16 @@ final class Recipients
     }
 
     /**
-     * Les destinataires d'ici (qui ont un compte), avec leur rôle ; jamais un interne sur ce qui touche le Support.
+     * Les destinataires d'ici (qui ont un compte), avec leur rôle.
      *
      * @return Collection<int, array{user: Authenticatable, actor: Actor, role: RecipientRole}>
      */
     public function local(Trackable $subject): Collection
     {
         return $subject->recipients()->with('actor.user')->get()
-            ->filter(fn (Recipient $r): bool => $r->actor?->isLocal() && $r->actor->user !== null && ! Addressables::isGateway($r->actor)
-                && ! Addressables::keptOut($subject, $r->actor->user))
+            ->filter(fn (Recipient $r): bool => $r->actor?->isLocal() && $r->actor->user !== null && ! Addressables::isGateway($r->actor))
             ->map(fn (Recipient $r): array => ['user' => $r->actor->user, 'actor' => $r->actor, 'role' => $r->role])
             ->values();
-    }
-
-    /** Une demande part au Support : ses internes cessent d'en être destinataires (`Moves\Transmit`). */
-    public function removeInternals(Trackable $subject): void
-    {
-        $subject->recipients()->whereIn('actor_id', Addressables::internalActorIds())->delete();
     }
 
     /** Au moins un destinataire principal parmi ces acteurs (ceux d'une application, d'une équipe…). */
@@ -191,7 +183,7 @@ final class Recipients
 
     /**
      * Maître : qui reçoit ce qu'une application cliente adresse « au Support » — `recipients.support_defaults`
-     * (des adresses), sinon qui peut prendre en charge.
+     * (des adresses), sinon les membres du Support.
      *
      * @return Collection<int, Actor>
      */
@@ -202,7 +194,7 @@ final class Recipients
         $people = $emails !== [] ? $users::query()->whereIn('email', $emails)->get() : collect();
 
         if ($people->isEmpty()) {
-            $people = $users::query()->lazy()->filter(fn (Authenticatable $user): bool => TmaGate::allows($user, TmaGate::workflowAction('take-charge')))->collect();
+            $people = $users::query()->lazy()->filter(fn (Authenticatable $user): bool => Addressables::isSupportMember($user))->collect();
         }
 
         return $people->map(fn (Authenticatable $user): Actor => Actor::forUser($user))->values();

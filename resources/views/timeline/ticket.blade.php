@@ -12,7 +12,7 @@
      * et ses boutons : ajouter une note, modifier son message.
      *
      * Un changement d'état fait en même temps qu'un message s'affiche dans le bloc du message :
-     * - le premier passage hors du brouillon (transmettre, confier, publier), dans le bloc de la demande ;
+     * - le premier passage hors du brouillon (transmettre, publier), dans le bloc de la demande ;
      * - un passage qui a écrit son message (la question, la réponse, « Résolu » et son texte : `meta.transition`) ;
      * - un passage qui a un motif (annuler, clore, mettre en pause) devient un bloc, le motif pour texte.
      * Un message écrit à part, même juste après, reste un bloc à lui.

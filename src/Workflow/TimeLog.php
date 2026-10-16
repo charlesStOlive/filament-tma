@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Workflow;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\AllowanceMeter;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -18,8 +19,8 @@ use Illuminate\Validation\ValidationException;
  * Saisir du temps sur un ticket (maître seulement, addendum §5), avec le droit `tma.ticket.time`. Le temps se
  * saisit aussi sur un ticket terminé : on y reporte souvent une intervention après coup.
  *
- * Une saisie ne dit pas elle-même ce qui a été fait : elle porte sur un message ou une note de la fiche (existant, ou
- * écrit avec elle : `addWithMessage()`), ou sur la fiche entière.
+ * Une saisie ne dit pas elle-même ce qui a été fait : elle porte sur un message ou une note de la fiche, ou sur la
+ * fiche entière ; sur une tâche projet, aussi sur un message écrit avec elle (`addWithMessage()`).
  */
 final class TimeLog
 {
@@ -57,6 +58,11 @@ final class TimeLog
     public function addWithMessage(Trackable $ticket, int $minutes, \DateTimeInterface|string|null $workedOn, string $body, Context $context, bool $billable = true, EntryType $type = EntryType::Comment): TimeEntry
     {
         $this->assertCanAdd($ticket, $minutes, $workedOn, $context, $billable);
+
+        // Sur un ticket, un message va avec un passage : le temps n'y a pas de texte (addendum §3.2).
+        if ($ticket instanceof Ticket) {
+            throw ValidationException::withMessages(['message' => __('Sur un ticket, le temps n’a pas de texte : rattachez-le à un message ou une note de la fiche, ou à la fiche entière.')]);
+        }
 
         if (! app(Timeline::class)->canAdd($ticket, $type, $context)) {
             throw new AuthorizationException($type === EntryType::Note

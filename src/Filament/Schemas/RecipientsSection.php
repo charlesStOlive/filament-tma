@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Schemas;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\RecipientRole;
 use CharlesStOlive\FilamentTma\Models\Recipient;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -47,8 +48,7 @@ final class RecipientsSection
             ->icon('heroicon-m-pencil-square')
             ->link()
             ->size(Size::Small)
-            ->visible(fn (Trackable $record): bool => TmaGate::allows(auth()->user(), TmaGate::COMMENT, $record)
-                && ! Context::current()->forSubject($record)->isAgent())
+            ->visible(fn (Trackable $record): bool => self::mayEdit($record))
             ->modalHeading(__('Destinataires'))
             ->modalDescription(__('Les principaux sont prévenus tout de suite de ce qui arrive ; les secondaires, dans leur bilan. L’auteur reste principal.'))
             ->fillForm(fn (Trackable $record): array => app(Recipients::class)->keys($record))
@@ -65,6 +65,23 @@ final class RecipientsSection
                 $livewire->dispatch('tma-timeline-changed');
                 Notification::make()->success()->title(__('Destinataires enregistrés'))->send();
             });
+    }
+
+    /**
+     * Changer les destinataires : sur un ticket, ceux qui y prennent part (correspondants du Support, membres du
+     * Support) ; sur une tâche, qui peut y écrire. Un membre du Support relié à un client le fait dans le maître.
+     */
+    private static function mayEdit(Trackable $record): bool
+    {
+        $user = auth()->user();
+
+        if ($user === null || Context::current()->forSubject($record)->isAgent()) {
+            return false;
+        }
+
+        return $record instanceof Ticket
+            ? Addressables::isCorrespondent($user) || Addressables::isSupportMember($user)
+            : TmaGate::allows($user, TmaGate::COMMENT, $record);
     }
 
     /** @return array<int, string> */

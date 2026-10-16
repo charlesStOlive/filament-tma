@@ -28,6 +28,7 @@ Route::prefix('api/tma/v1')
             Route::post('master/register', RegisterController::class)->name('register');
             Route::post('tickets', [TicketController::class, 'store'])->name('tickets.store');
             Route::get('tickets/{ulid}', [TicketController::class, 'show'])->name('tickets.show');
+            Route::patch('tickets/{ulid}', [TicketController::class, 'demand'])->name('tickets.demand');
             Route::post('tickets/{ulid}/moves', [TicketController::class, 'move'])->name('tickets.move');
             Route::post('tickets/{ulid}/entries', [TicketController::class, 'entry'])->name('tickets.entry');
             Route::post('tickets/{ulid}/recipients', [TicketController::class, 'recipients'])->name('tickets.recipients');

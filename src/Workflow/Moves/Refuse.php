@@ -10,7 +10,7 @@ use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'équipe qui traite les demandes ne prend pas la demande en charge, et dit pourquoi : elle finit annulée, avec ce motif. */
+/** Le Support ne prend pas une demande nouvelle en charge, et dit pourquoi : elle finit annulée, avec ce motif. */
 class Refuse extends Move
 {
     use WritesMessages;

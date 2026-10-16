@@ -112,7 +112,7 @@ final class NotificationActions
 
     /**
      * Relancer, c'est pour un ticket qui avance et attend quelqu'un d'autre : le demandeur, quand on traite ; qui
-     * l'a pris en charge (ou l'équipe qui doit le prendre), quand on attend.
+     * est son contact au Support (ou le Support, sans contact), quand on attend.
      */
     public static function canRemind(Ticket $ticket, Context $context): bool
     {
@@ -122,7 +122,7 @@ final class NotificationActions
             return false;
         }
 
-        if (! TmaGate::allows($user, TmaGate::REMIND, $ticket) || ! app(Timeline::class)->canAdd($ticket, EntryType::Comment, $context)) {
+        if (! TmaGate::allows($user, TmaGate::REMIND, $ticket) || ! app(Timeline::class)->canAdd($ticket, EntryType::Comment, $context, reminder: true)) {
             return false;
         }
 

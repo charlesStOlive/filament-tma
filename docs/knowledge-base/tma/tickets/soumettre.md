@@ -1,35 +1,29 @@
 ---
-title: Confier à l'équipe ou transmettre au Support
+title: Transmettre au Support
 icon: heroicon-o-paper-airplane
 order: 20
 ---
 
-# Confier à l'équipe ou transmettre au Support
+# Transmettre au Support
 
-Un brouillon part d'une seule façon, selon votre droit : un **correspondant du Support** transmet ses demandes au
-Support ; un **interne** les confie à l'équipe EDM, qui les traite. Voir [Comprendre le module](#modal-tma.comprendre).
+Un brouillon part au Support par **Transmettre au Support**. Seul son auteur le transmet, et il faut être
+**correspondant du Support** (voir [Les droits](#modal-tma.droits)). Le bouton n'existe que si l'application est reliée
+au Support.
 
-## Confier à l'équipe EDM
+La demande part au **Support**, qui la traitera et fera autorité : elle est **Nouveau** chez lui. Voir
+[Du client au Support](#modal-tma.comprendre.traitement).
 
-La demande est confiée à l'**équipe de votre application** (« EDM » est le nom court du client, voir
-[Les mots du module](#modal-tma.comprendre.vocabulaire)). Il lui faut **au moins un destinataire principal dans
-l'équipe**, prévenu tout de suite :
+## Le contact au Support
 
-- **À confier à** : cette personne est désignée, et devient principale ;
-- sinon, **Destinataires principaux dans l'équipe** : une ou plusieurs personnes, ou **Tout le monde**. La demande
-  attend en **Nouveau** : le premier qui la **prend en charge** s'en occupe.
+En transmettant, vous choisissez votre **contact au Support** parmi les membres du Support reliés à votre application :
+c'est lui qui suit la demande et qui la reçoit. S'il n'y en a qu'un, il est choisi d'office et la fenêtre ne demande
+rien. Sans membre relié, le Support choisit lui-même. Il n'y a pas de « prise en charge » : le contact répond tout de
+suite.
 
-En la prenant en charge, on confirme ou complète les principaux de l'équipe ; qui la prend l'est d'office. Voir
-[Rappels et notifications](#modal-tma.notifications).
+Qui transmet, le contact et **le Support** deviennent destinataires principaux : le Support est nommé par le compte passerelle de
+l'application (« Support (toute l'équipe) »), et décide lui-même qui le reçoit. Ajoutez un collègue comme
+destinataire principal s'il doit pouvoir **prendre la main** en votre absence (voir
+[Prendre la main](#modal-tma.tickets.question-reponse)).
 
-## Transmettre au Support
-
-La demande part au **Support**, qui la traitera et fera autorité. Voir
-[L'équipe du client ou le Support](#modal-tma.comprendre.traitement).
-
-Ce bouton n'existe que si l'application est reliée au Support, et pour les correspondants du Support (le droit
-« Correspondant du Support »). Ils s'en servent pour leurs propres demandes, et, dans l'équipe, pour transmettre
-celles qu'on lui a confiées.
-
-Qui transmet et **le Support** deviennent destinataires principaux : le Support est nommé par le compte passerelle de
-l'application (« Support (toute l'équipe) »), et décide lui-même qui le reçoit.
+Tant que le Support n'a pas répondu, vous pouvez encore **retirer** votre demande (voir
+[Retirer, refuser](#modal-tma.tickets.annuler)), et tant qu'aucun message ne l'a suivie, la **modifier**.

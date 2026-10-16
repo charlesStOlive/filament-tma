@@ -68,7 +68,7 @@ Les tâches publiées pour l'application apparaissent dans **Support › Tâches
 participe par l'[historique](#modal-tma.chronologie) : messages (dans **Nouveau message**, sous l'historique), notes,
 images, réponses. Une tâche **terminée** se commente encore ; une tâche **annulée** n'accepte plus que des notes. On
 ne crée pas de tâche et on ne change pas son état, sauf un membre du Support, qui y travaille au nom du Support
-(Terminer, Annuler, Rouvrir). Seuls les **correspondants du Support** y écrivent : un interne la lit, sans plus.
+(Terminer, Annuler, Rouvrir). Y écrire demande les droits des tâches (`tma.task.comment`, `tma.task.note`).
 
 ## Le volet de la tâche
 

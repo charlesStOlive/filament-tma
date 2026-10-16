@@ -10,17 +10,17 @@ use Spatie\ModelStates\State;
 use Spatie\ModelStates\StateConfig;
 
 /**
- * Où en est un ticket (`Ticket::$state`). Chaque état dit à qui est la main (`inHandsOf()`) :
+ * Où en est un ticket (`Ticket::$state`). Chaque état dit à qui est le tour (`inHandsOf()`, addendum §3.1) :
  *
- *     draft ──────────────> submitted ──> in_progress ──> pending_validation ──> closed
- *                               │            │  ▲  │              │
- *                               │            │  │  └─> paused ────┘ (reprise)
- *                               │            ▼  │
- *                               │      awaiting_requester ─────────────────────> closed
- *                               └──────────────────────────────────────────────> cancelled
+ *     draft ── transmettre, publier ──> submitted (le contact au Support est choisi à la transmission)
+ *     submitted, in_progress ── demander des précisions ──> awaiting_requester ── répondre ──> in_progress
+ *     submitted, in_progress ── marquer comme résolu ──> pending_validation ── confirmer ──> closed, renvoyer ──> in_progress
+ *     submitted, in_progress ── mettre en pause ──> paused ── reprendre ──> in_progress
+ *     draft, submitted ── retirer, refuser ──> cancelled
+ *     forçages : tout état ouvert après draft ──> closed ; awaiting_requester, pending_validation ──> in_progress
  *
- * Les passages eux-mêmes (« Prendre en charge », « Répondre »…) sont les mouvements de `Workflow\TicketWorkflow` :
- * plusieurs mouvements peuvent relier les mêmes états (« Répondre » et « Reprendre » mènent tous deux de
+ * Les passages eux-mêmes (« Demander des précisions », « Répondre »…) sont les mouvements de `Workflow\TicketWorkflow` :
+ * plusieurs mouvements peuvent relier les mêmes états (« Répondre » et « Forcer le retour » mènent tous deux de
  * l'attente à « En cours »), ce que la configuration de spatie, une classe par couple d'états, ne sait pas dire.
  * Elle ne fait donc que borner les couples permis.
  */
@@ -56,19 +56,18 @@ abstract class TicketState extends State implements HasFilamentState, HasFilamen
 
     public static function config(): StateConfig
     {
-        $open = [Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class];
-
         return parent::config()
             ->default(Draft::class)
-            ->registerState([...$open, Closed::class, Cancelled::class])
+            ->registerState([Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class, Closed::class, Cancelled::class])
+            // Transmettre, publier ; retirer sa demande, la refuser.
             ->allowTransition(Draft::class, Submitted::class)
-            // Un ticket de l'équipe locale transmis au Support repart en « Nouveau ».
-            ->allowTransition([InProgress::class, AwaitingRequester::class], Submitted::class)
-            ->allowTransition([Submitted::class, AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
-            ->allowTransition(InProgress::class, AwaitingRequester::class)
-            ->allowTransition(InProgress::class, Paused::class)
-            ->allowTransition(InProgress::class, PendingValidation::class)
-            ->allowTransition([AwaitingRequester::class, PendingValidation::class], Closed::class)
-            ->allowTransition($open, Cancelled::class);
+            ->allowTransition([Draft::class, Submitted::class], Cancelled::class)
+            ->allowTransition([AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
+            // Le Support répond dès qu'une demande arrive : plus de « prise en charge ».
+            ->allowTransition([Submitted::class, InProgress::class], AwaitingRequester::class)
+            ->allowTransition([Submitted::class, InProgress::class], Paused::class)
+            ->allowTransition([Submitted::class, InProgress::class], PendingValidation::class)
+            // Confirmer, la clôture automatique, et « Forcer la clôture » de tout état ouvert.
+            ->allowTransition([Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class], Closed::class);
     }
 }

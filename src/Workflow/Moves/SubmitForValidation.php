@@ -6,6 +6,8 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
+use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
+use CharlesStOlive\FilamentTma\Workflow\Concerns\AnswersTheRequest;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
@@ -13,6 +15,7 @@ use CharlesStOlive\FilamentTma\Workflow\Move;
 /** Le travail est fait : le ticket est résolu, le demandeur confirme ou renvoie la demande. */
 class SubmitForValidation extends Move
 {
+    use AnswersTheRequest;
     use WritesMessages;
 
     public function key(): string
@@ -42,7 +45,7 @@ class SubmitForValidation extends Move
 
     public function from(): array
     {
-        return [InProgress::class];
+        return [Submitted::class, InProgress::class];
     }
 
     public function to(Ticket $ticket): string
@@ -67,6 +70,7 @@ class SubmitForValidation extends Move
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
+        $this->answering($ticket, $context);
         $ticket->validation_requested_at = now();
         $this->writeComment($ticket, $data['message'] ?? null, $context, files: $data['files'] ?? []);
     }

@@ -11,7 +11,7 @@ l'autre application :
 
 | Statut | Ce qu'il veut dire |
 | --- | --- |
-| Non partagé | le ticket n'est pas partagé : l'équipe du client le traite |
+| Non partagé | le ticket n'est pas partagé : c'est encore un brouillon |
 | En attente de synchronisation | un envoi est en cours, ou va être retenté |
 | Synchronisé | l'autre application a la dernière version |
 | Synchronisation en erreur | l'envoi a échoué après plusieurs essais |

@@ -8,7 +8,6 @@ use CharlesStOlive\FilamentTma\Enums\NoticeMode;
 use CharlesStOlive\FilamentTma\Enums\RecipientRole;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Actor;
-use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
@@ -39,9 +38,6 @@ use Illuminate\Support\Str;
  * - une relance (un message marqué `meta.reminder`) va à qui a la main, toujours tout de suite ;
  * - le rappel de ce qui ne bouge plus va à qui a la main, dans son bilan ;
  * - la clôture automatique va au demandeur, toujours tout de suite.
- *
- * Un interne n'est jamais prévenu de ce qui touche le Support (`Addressables::keptOut()`) : sur sa demande transmise,
- * le côté demandeur, ce sont les correspondants principaux, qui répondent pour lui (`requesterSide()`).
  */
 final class Notifier
 {
@@ -204,7 +200,7 @@ final class Notifier
         $period = (int) config('filament-tma.notifications.stale.after_days', 7);
         $line = match (true) {
             $subject instanceof ProjectTask => __('Rien n’a bougé sur cette tâche depuis :days jours.', ['days' => $days]),
-            $subject instanceof Ticket && $subject->state instanceof Submitted && $subject->assignee_actor_id === null => __('Personne ne l’a pris en charge depuis :days jours.', ['days' => $days]),
+            $subject instanceof Ticket && $subject->state instanceof Submitted => __('Cette demande attend la première réponse du Support depuis :days jours.', ['days' => $days]),
             default => __('Ce ticket attend votre retour depuis :days jours.', ['days' => $days]),
         };
         $sent = 0;
@@ -250,7 +246,7 @@ final class Notifier
             Side::Requester => self::requesterSide($subject),
             Side::Handler => match (true) {
                 $subject->assignee !== null => self::keyed(collect([self::localUser($subject->assignee)])),
-                $subject->state instanceof Submitted && $subject->isHandledHere() => self::mayTakeCharge($subject),
+                $subject->state instanceof Submitted && $subject->isHandledHere() => self::mayTakeCharge(),
                 default => collect(),
             },
             default => collect(),
@@ -258,22 +254,13 @@ final class Notifier
     }
 
     /**
-     * Le côté demandeur d'un ticket, ici : le demandeur ; sur la demande d'un interne transmise au Support, les
-     * correspondants principaux, qui répondent pour lui.
+     * Le côté demandeur d'un ticket, ici : le demandeur (celui qui a pris la main, s'il y en a un).
      *
      * @return Collection<string, Authenticatable>
      */
     public static function requesterSide(Ticket $ticket): Collection
     {
-        $requester = self::localUser($ticket->requester);
-
-        if ($requester === null || ! Addressables::keptOut($ticket, $requester)) {
-            return self::keyed(collect([$requester]));
-        }
-
-        return self::keyed(app(Recipients::class)->local($ticket)
-            ->filter(fn (array $recipient): bool => $recipient['role'] === RecipientRole::Primary && Addressables::isCorrespondent($recipient['user']))
-            ->map(fn (array $recipient): Authenticatable => $recipient['user']));
+        return self::keyed(collect([self::localUser($ticket->requester)]));
     }
 
     private static function taskTransition(ProjectTask $task, StateTransition $transition): void
@@ -365,15 +352,16 @@ final class Notifier
         return match (true) {
             $transition->move === 'request-answer' => $holds ? __(':who attend votre réponse.', $replace) : __(':who a demandé des précisions.', $replace),
             $transition->move === 'submit-for-validation' => $holds ? __(':who a résolu votre demande : confirmez pour la clore, ou renvoyez-la.', $replace) : __(':who a marqué la demande comme résolue.', $replace),
-            in_array($transition->move, ['submit', 'transmit'], true) => $holds ? __(':who vous confie cette demande.', $replace) : __(':who a envoyé la demande à :team.', [...$replace, 'team' => $ticket->handledBy() ?? Terms::support()]),
-            $transition->move === 'take-charge' => __(':who a pris la demande en charge.', $replace),
+            $transition->move === 'transmit' => $holds ? __(':who vous a transmis une demande.', $replace) : __(':who a transmis la demande au Support.', $replace),
             $transition->move === 'answer' => __(':who a répondu.', $replace),
             $transition->move === 'reopen' => $holds ? __(':who vous renvoie la demande : le résultat ne convient pas encore.', $replace) : __(':who a renvoyé la demande.', $replace),
             $transition->move === 'pause' => __(':who a mis la demande en pause.', $replace),
             in_array($transition->move, ['resume', 'auto-resume'], true) => __('La demande reprend.'),
             $transition->move === 'validate' => __(':who a confirmé la solution : le ticket est clos.', $replace),
-            $transition->move === 'close' => __(':who a clos le ticket.', $replace),
-            $transition->move === 'cancel' => __(':who a annulé la demande.', $replace),
+            $transition->move === 'force-close' => __(':who a forcé la clôture du ticket.', $replace),
+            $transition->move === 'force-return' => __(':who a repris la main sans attendre la réponse.', $replace),
+            $transition->move === 'take-over' => $holds ? __('Vous avez pris la main : c’est vous que le Support attend.') : __(':who a pris la main : le Support attend désormais sa réponse.', $replace),
+            $transition->move === 'cancel' => __(':who a retiré la demande.', $replace),
             $transition->move === 'refuse' => __(':who a refusé la demande.', $replace),
             in_array($transition->move, ['publish', 'auto-publish'], true) => __(':support a ouvert ce ticket pour vous.', ['support' => Terms::support()]),
             default => __(':who : « :move ».', [...$replace, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($transition->move)->labelFor($ticket), $transition->move, false)]),
@@ -381,16 +369,15 @@ final class Notifier
     }
 
     /**
-     * Qui peut prendre un ticket soumis à cette application. Dans une application cliente, les membres du Support
-     * n'en sont pas : le maître les prévient.
+     * Qui peut prendre un ticket nouveau : les membres du Support, dans le maître (une application cliente ne traite
+     * rien ; le maître prévient les siens).
      *
      * @return Collection<string, Authenticatable>
      */
-    private static function mayTakeCharge(Ticket $ticket): Collection
+    private static function mayTakeCharge(): Collection
     {
         return self::keyed(Tma::userModel()::query()->lazy()
-            ->filter(fn (Authenticatable $user): bool => (Tma::isMaster() || Agent::for($user) === null)
-                && TmaGate::allows($user, TmaGate::workflowAction('take-charge'), $ticket))
+            ->filter(fn (Authenticatable $user): bool => Addressables::isSupportMember($user))
             ->collect());
     }
 

@@ -6,7 +6,7 @@
      * quand, son texte et ses fichiers. Une tâche s'y lit comme le premier message : son auteur, l'heure de sa
      * publication (prévue, tant qu'elle est en brouillon), sa description.
      *
-     * Le premier passage hors du brouillon (`$opening` : transmettre, confier, publier) s'affiche avec elle.
+     * Le premier passage hors du brouillon (`$opening` : transmettre, publier) s'affiche avec elle.
      *
      * @var \CharlesStOlive\FilamentTma\Contracts\Trackable $subject
      * @var \CharlesStOlive\FilamentTma\Models\StateTransition|null $opening

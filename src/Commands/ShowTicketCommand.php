@@ -32,8 +32,8 @@ class ShowTicketCommand extends Command
                     'time' => Duration::format((int) $t['time_minutes']),
                 ]));
                 $this->line($t['kind'] === 'task'
-                    ? __('Projet : :p · pris en charge par : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
-                    : __('Demandeur : :r · pris en charge par : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
+                    ? __('Projet : :p · suivie par : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
+                    : __('Demandeur : :r · contact au Support : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
 
                 if (filled($t['url'] ?? null)) {
                     $this->line($t['url']);

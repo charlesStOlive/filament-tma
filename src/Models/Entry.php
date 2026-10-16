@@ -164,9 +164,9 @@ class Entry extends Model implements HasMedia, HasRichContent
     }
 
     /**
-     * Un message reste modifiable tant que son ticket n'est pas terminé et que personne d'autre n'a écrit de message
-     * après lui, même si son auteur a perdu la main entre-temps. Les notes ne comptent pas : elles commentent, elles
-     * ne répondent pas. Une note, elle, reste toujours modifiable.
+     * Un message reste modifiable tant que son ticket n'est pas terminé et qu'il est le dernier message (addendum
+     * §3.2) : dès qu'un autre message le suit, plus personne ne le touche, que ce soit son tour ou non. Les notes ne
+     * comptent pas : elles commentent, elles ne répondent pas. Une note, elle, reste toujours modifiable.
      */
     public function isStillEditable(): bool
     {
@@ -183,8 +183,8 @@ class Entry extends Model implements HasMedia, HasRichContent
         return ! $subject->entries()
             ->messages()
             ->whereKeyNot($this->getKey())
-            ->where('created_at', '>=', $this->created_at)
-            ->where('author_actor_id', '!=', $this->author_actor_id)
+            ->where(fn (Builder $q): Builder => $q->where('created_at', '>', $this->created_at)
+                ->orWhere(fn (Builder $q): Builder => $q->where('created_at', $this->created_at)->where('id', '>', $this->getKey())))
             ->exists();
     }
 

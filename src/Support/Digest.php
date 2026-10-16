@@ -36,14 +36,14 @@ final class Digest
             'url' => rescue(fn () => $item instanceof Ticket ? TicketUrl::view($item) : null, null, false),
         ];
 
-        // Ses demandes qui l'attendent ; celles transmises d'un interne attendent les correspondants qui répondent pour lui.
+        // Ses demandes quand c'est son tour.
         $answer = $actor === null ? collect() : Ticket::query()->awaiting($user)
             ->whereIn('state', ['awaiting_requester', 'pending_validation'])
             ->get()
             ->map(fn (Ticket $t) => $row($t, $t->waiting_since ?? $t->validation_requested_at ?? $t->last_activity_at));
 
         $take = Ticket::query()->where('state', 'submitted')->whereNull('assignee_actor_id')->get()
-            ->filter(fn (Ticket $t): bool => $t->isHandledHere() && TmaGate::allows($user, TmaGate::workflowAction('take-charge'), $t))
+            ->filter(fn (Ticket $t): bool => $t->isHandledHere() && Addressables::isSupportMember($user))
             ->map(fn (Ticket $t) => $row($t, $t->submitted_at));
 
         $mine = $actor === null ? collect() : Ticket::query()

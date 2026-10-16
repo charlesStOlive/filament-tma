@@ -16,7 +16,7 @@ use Throwable;
  *
  *     client : php artisan tma:demo --wipe --force     (vide l'application cliente)
  *     maître : php artisan tma:demo --fresh --force    (vide le maître ; projets, tâches, tickets préparés)
- *     client : php artisan tma:demo --force            (tickets de l'équipe, demandes au Support, échanges sur les tâches)
+ *     client : php artisan tma:demo --force            (demandes au Support, échanges sur les tâches)
  *
  * Jamais en production sans `--force`.
  */

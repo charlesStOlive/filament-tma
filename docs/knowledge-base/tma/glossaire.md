@@ -11,41 +11,42 @@ order: 130
 **Historique** — Sur la fiche d'un ticket ou d'une tâche : la demande, puis les messages et les changements d'état,
 dans l'ordre. Voir [L'historique](#modal-tma.chronologie).
 
-**Demandeur** — La personne qui a ouvert la demande.
+**Demandeur** — La personne du client qu'on attend sur une demande : celle qui l'a ouverte, ou celle qui a pris la
+main.
 
-**En attente de** — La partie qui doit agir à cette étape : le demandeur, le Support ou l'équipe du client. L'autre
-ne peut qu'ajouter des messages et des fichiers. Voir [Qui doit agir ?](#modal-tma.comprendre.la-main)
+**En attente de** — La partie dont c'est le tour : le demandeur ou le Support. Elle seule agit ; l'autre écrit des
+notes. Voir [Qui doit agir ?](#modal-tma.comprendre.la-main)
 
 **Correspondant du Support** — Une personne d'une application cliente qui a le droit d'écrire au Support
-(« Correspondant du Support », `tma.ticket.workflow.transmit`) : elle lui transmet ses demandes ; le Support peut la
-nommer demandeur ou destinataire. Les autres sont des **internes**.
+(`tma.ticket.correspond`) : elle lui transmet ses demandes ; le Support peut la nommer demandeur ou destinataire.
 
-**Équipe du client** — Les personnes d'une application cliente qui traitent les demandes en son sein (le droit
-« Prendre en charge »). Elle porte le nom court du client : « Équipe EDM ».
-
-**Interne** — Une personne d'une application cliente sans le droit d'écrire au Support : elle confie ses demandes à
-l'équipe EDM et n'échange qu'avec les personnes de son application ; le Support ne la voit pas.
+**Forçage** — Une action hors du tour, avec son propre droit : « Forcer la clôture », « Forcer le retour ». Voir
+[Les forçages](#modal-tma.tickets.forcages).
 
 **Forfait** — Un volume de maintenance alloué à un client pour une période. Voir [Les forfaits](#modal-tma.forfaits).
 
 **Intervenant** — Celui qui a fait une intervention précise : une saisie de temps, par exemple.
 
-**Membre du Support** — Une personne du Support qui travaille aussi depuis l'application d'un client, au nom du
-Support. Voir [Les membres du Support](#modal-tma.agents).
+**Membre du Support** — Une personne du Support (`tma.ticket.handle`) ; reliée à un client, elle travaille aussi depuis
+son application, au nom du Support. Voir [Les membres du Support](#modal-tma.agents).
 
-**Message** — Une entrée de l'historique que tout le monde lit, demandeur compris. Son auteur le modifie tant que
-personne d'autre n'a écrit après lui.
+**Message** — Ce qu'écrit un passage (une question, une réponse, « résolu »…), que tout le monde lit, demandeur
+compris : sur un ticket, il n'y a pas de message à part. Son auteur le modifie tant qu'il est le dernier message.
 
-**Nom court** — Le nom court d'un client (« EDM »), qui forme « Équipe EDM » et « Publier chez EDM ». Voir
+**Nom court** — Le nom court d'un client (« EDM »), qui forme « Publier chez EDM » et « Correspondants EDM ». Voir
 [Les mots du module](#modal-tma.comprendre.vocabulaire).
+
+**Prendre la main** — Un autre destinataire principal, dans l'application du demandeur, devient le demandeur quand
+c'est son tour. Voir [Prendre la main](#modal-tma.tickets.question-reponse).
 
 **Note** — Un commentaire posé à côté de l'échange, sur un message ou sur le ticket entier, numéroté (n° 1, n° 2…)
 et lu de tous. Voir [Les notes](#modal-tma.chronologie.notes).
 
-**Passage** — Ce qui fait changer l'état d'un ticket ou d'une tâche : « Prendre en charge », « Marquer comme
-résolu »…
+**Passage** — Ce qui fait changer l'état d'un ticket ou d'une tâche : « Demander des précisions », « Marquer comme
+résolu »… Sur un ticket, un message va toujours avec un passage.
 
-**Pris en charge par** — La personne qui s'occupe de la demande.
+**Contact au Support** — Le membre du Support qui suit une demande, choisi par le demandeur en la transmettant (d'office
+s'il n'y en a qu'un).
 
 **Seuil** — Un pourcentage du forfait (80, 90, 100, 110 %) dont le franchissement est signalé.
 

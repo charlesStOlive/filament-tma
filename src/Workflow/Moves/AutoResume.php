@@ -30,6 +30,6 @@ class AutoResume extends Resume
 
     public function isAvailable(Ticket $ticket): bool
     {
-        return $ticket->isHandledHere() && $ticket->paused_until !== null && $ticket->paused_until->isPast();
+        return $ticket->authorityIsHere() && $ticket->paused_until !== null && $ticket->paused_until->isPast();
     }
 }

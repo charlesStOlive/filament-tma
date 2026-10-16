@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets;
 
 use CharlesStOlive\FilamentStateFusionEnhanced\Tables\Filters\StateFusionSelectFilter;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
@@ -22,7 +21,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
-use CharlesStOlive\FilamentTma\Workflow\Move;
+use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
@@ -41,13 +40,13 @@ use UnitEnum;
  *
  * Droits, au format de charlesstolive/filament-permission-manager (`permissions:sync` les crée), sans en dépendre :
  * - la liste : `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` (policy de repli du gestionnaire) ;
- * - `$specificPermissions` : `comment`, `note` (écrire des notes et les archiver ; tout le monde les lit), `time`, `sync`,
- *   `remind` (relancer qui a la main), `notify` (envoyer maintenant les notifications groupées en attente) ;
- * - la famille `workflow` : un droit par mouvement, `tma.ticket.workflow.take-charge`… (`TmaGate`). Celui de
- *   « Transmettre au Support » fait d'une personne un correspondant du Support (`Support\Addressables`).
+ * - qui est qui : `correspond` (correspondant du Support, dans une application cliente : faire une demande, la
+ *   transmettre, en être le demandeur) et `handle` (membre du Support, dans le maître : traiter les demandes) ;
+ * - à côté du workflow : `note`, `time`, `sync`, `remind`, `notify` ; les forçages `force-close` et `force-return`.
  *
- * Qui a la main compte aussi, et ne dépend d'aucun droit : on ne modifie un ticket qu'en brouillon ou quand on en
- * est l'équipe qui le traite et qu'il est à nous (`Ticket::fieldsEditableHere()`).
+ * Les passages normaux ne sont pas des droits : ils suivent le tour (`Workflow\TicketWorkflow`, addendum §3). De même,
+ * on ne modifie la demande qu'en en étant l'auteur, tant qu'aucun message ne l'a suivie, et le Support ne retouche le
+ * titre et la priorité qu'à son tour.
  */
 class TicketResource extends Resource implements HasKnowledgeBase
 {
@@ -63,35 +62,23 @@ class TicketResource extends Resource implements HasKnowledgeBase
     protected static ?string $permissionPrefix = 'tma.ticket';
 
     /** @var array<int, string> */
-    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC, TmaGate::REMIND, TmaGate::NOTIFY];
-
-    /** @var array<string, string> */
-    protected static array $permissionFamilies = [TmaGate::WORKFLOW_FAMILY => 'Passages du ticket'];
+    protected static array $specificPermissions = [
+        TmaGate::CORRESPOND, TmaGate::HANDLE, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC, TmaGate::REMIND, TmaGate::NOTIFY,
+        TmaGate::FORCE_CLOSE, TmaGate::FORCE_RETURN,
+    ];
 
     /** @var array<string, string> */
     protected static array $permissionLabels = [
-        TmaGate::COMMENT => 'Commenter et répondre',
+        TmaGate::CORRESPOND => 'Correspondant du Support : faire une demande et la transmettre (client)',
+        TmaGate::HANDLE => 'Membre du Support : traiter les demandes (maître)',
+        TmaGate::FORCE_CLOSE => 'Forçage : forcer la clôture d’un ticket',
+        TmaGate::FORCE_RETURN => 'Forçage : reprendre la main sans attendre le demandeur (maître)',
         TmaGate::NOTE => 'Écrire des notes et les archiver',
         TmaGate::TIME => 'Saisir et modifier du temps (maître)',
         TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
         TmaGate::REMIND => 'Relancer qui a la main',
         TmaGate::NOTIFY => 'Envoyer maintenant les notifications groupées',
     ];
-
-    /**
-     * Un droit par mouvement du workflow (ceux du planificateur exclus).
-     *
-     * @return array<string, string>
-     */
-    public static function permissionActions(): array
-    {
-        return collect(app(TicketWorkflow::class)->userMoves())
-            ->mapWithKeys(fn (Move $move): array => [TmaGate::workflowAction($move->key()) => $move->key() === 'transmit'
-                // Le droit qui fait d'une personne un correspondant du Support, adressable des deux côtés.
-                ? __('Correspondant du Support : écrire et transmettre au Support')
-                : $move->label()])
-            ->all();
-    }
 
     public static function getModelLabel(): string
     {
@@ -113,17 +100,32 @@ class TicketResource extends Resource implements HasKnowledgeBase
         return config('filament-tma.navigation.sort');
     }
 
+    public static function canCreate(): bool
+    {
+        return auth()->user() !== null && app(TicketWorkflow::class)->mayCreate(Context::current()) && parent::canCreate();
+    }
+
+    /** Son auteur, tant qu'aucun message n'a suivi la demande ; le Support, à son tour (titre et priorité). */
     public static function canEdit(Model $record): bool
     {
         /** @var Ticket $record */
-        return $record->fieldsEditableHere() && parent::canEdit($record);
+        if (auth()->user() === null) {
+            return false;
+        }
+
+        $workflow = app(TicketWorkflow::class);
+
+        return ($workflow->mayEditDemand($record, Context::current()) || $workflow->mayQualify($record, Context::current()))
+            && parent::canEdit($record);
     }
 
+    /** Un brouillon, par son auteur. */
     public static function canDelete(Model $record): bool
     {
         /** @var Ticket $record */
         return $record->state instanceof Draft
-            && $record->fieldsEditableHere()
+            && auth()->user() !== null
+            && app(TicketWorkflow::class)->mayEditDemand($record, Context::current())
             && parent::canDelete($record);
     }
 
@@ -160,11 +162,9 @@ class TicketResource extends Resource implements HasKnowledgeBase
                         $record->sideInCharge() === Side::Handler => 'info',
                         default => 'gray',
                     }),
-                TextColumn::make('handling_mode')->label(__('Traité par'))->badge()->toggleable()
-                    ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié')),
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
                 TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable(),
-                TextColumn::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—')->toggleable(),
+                TextColumn::make('assignee.name')->label(__('Contact au Support'))->placeholder('—')->toggleable(),
                 TextColumn::make('sync_status')->label(__('Synchro'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -183,7 +183,6 @@ class TicketResource extends Resource implements HasKnowledgeBase
                         ->select('id'))),
                 StateFusionSelectFilter::make('state')->label(__('État'))->multiple()
                     ->default(TicketState::active()),
-                SelectFilter::make('handling_mode')->label(__('Traité par'))->options(HandlingMode::class),
                 SelectFilter::make('priority')->label(__('Priorité'))->options(Priority::class)->multiple(),
                 SelectFilter::make('source_instance_uid')->label(__('Application'))
                     ->visible(fn (): bool => Tma::isMaster())

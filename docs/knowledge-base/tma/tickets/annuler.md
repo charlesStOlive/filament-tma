@@ -1,17 +1,18 @@
 ---
-title: Annuler, refuser, clore sans réponse
+title: Retirer, refuser
 icon: heroicon-o-x-circle
 order: 60
 ---
 
-# Annuler, refuser, clore sans réponse
+# Retirer, refuser
 
 | Passage | Par | Quand | Résultat | Motif |
 | --- | --- | --- | --- | --- |
-| **Annuler** | le demandeur | tant que personne n'a pris la demande (brouillon, nouveau) | Annulé | obligatoire, sauf pour un brouillon |
-| **Annuler** | l'équipe qui traite | à tout moment avant la fin | Annulé | obligatoire |
-| **Refuser** | l'équipe qui traite | avant la prise en charge | Annulé | obligatoire |
-| **Clore sans réponse** | l'équipe qui traite | en attente du demandeur, ou résolu | Clos | facultatif |
+| **Retirer la demande** | le demandeur | en brouillon, ou **Nouveau** (le Support n'a pas encore répondu) | Annulé | obligatoire, sauf pour un brouillon |
+| **Refuser** | le Support | **Nouveau** | Annulé | obligatoire |
+
+Une fois que le Support a répondu, plus personne ne l'annule dans le circuit normal ; le Support peut seulement
+**forcer la clôture**, avec son droit (voir [Les forçages](#modal-tma.tickets.forcages)).
 
 Le **motif** reste dans l'historique du ticket, avec son auteur et sa date : écrivez-le pour quelqu'un qui le lira
 dans six mois.

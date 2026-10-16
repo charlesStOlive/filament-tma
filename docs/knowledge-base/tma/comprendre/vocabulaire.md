@@ -12,22 +12,20 @@ Le module emploie les mots des outils de support les plus courants. Quelques-uns
 
 | Mot | Ce qu'il désigne |
 | --- | --- |
-| **Demandeur** | la personne qui a ouvert la demande |
+| **Demandeur** | la personne du client qu'on attend sur une demande : celle qui l'a ouverte, ou celle qui a pris la main |
 | **Support** | l'équipe qui fait la maintenance, et son application (Filbreeze) |
 | **Correspondant du Support** | une personne du client qui a le droit d'écrire au Support : elle lui transmet ses demandes, et le Support peut la nommer demandeur ou destinataire |
-| **Interne** | une personne du client sans ce droit : elle confie ses demandes à l'équipe EDM et n'échange qu'avec les personnes de son application |
-| **Équipe EDM** | les personnes du client (ici, EDM) qui traitent les demandes au sein de l'application (le droit **Prendre en charge**) |
-| **Pris en charge par** | la personne qui s'occupe de la demande |
+| **Contact au Support** | le membre du Support qui suit la demande, choisi par le demandeur en la transmettant (d'office s'il n'y en a qu'un) |
 | **Intervenant** | celui qui a fait une saisie de temps, une intervention précise |
-| **Membre du Support** | une personne du Support qui travaille aussi depuis l'application d'un client (voir [Les membres du Support](#modal-tma.agents)) |
+| **Membre du Support** | une personne du Support (le droit **Membre du Support**) ; reliée à un client, elle travaille aussi depuis son application (voir [Les membres du Support](#modal-tma.agents)) |
+| **Forçage** | une action hors du tour, avec son propre droit : **Forcer la clôture**, **Forcer le retour** |
 
 ## Le nom court du client
 
 Chaque application cliente a un **nom court** : « EDM » pour Enfants du Mékong. Il forme :
 
-- **Équipe EDM** : dans **Traité par** et **En attente de** ;
-- **Confier à l'équipe EDM** : le passage par lequel un interne confie un brouillon à l'équipe qui traite ;
-- **Publier chez EDM** : le passage par lequel le Support ouvre un ticket ou une tâche au client.
+- **Publier chez EDM** : le passage par lequel le Support ouvre un ticket ou une tâche au client ;
+- **Correspondants EDM** : vus du Support, les personnes du client qu'il peut nommer.
 
 Dans l'historique, il signale aussi d'où vient une personne : « EDM » à côté d'un nom, vu du Support ; « Support »,
 vu de l'application du client.
@@ -36,20 +34,20 @@ Le nom court se règle chez le Support, dans **Applications clientes › la fich
 client avec la commande de **Configuration de l'application** (`--short-name`). Pour le changer ensuite, modifiez
 la fiche, puis, dans l'application cliente, la ligne `TMA_INSTANCE_SHORT_NAME` de son `.env`.
 
-Sans nom court, le module dit « Équipe locale » et « Publier chez le client ».
+Sans nom court, le module dit « Publier chez le client » et « Correspondants du client ».
 
 ## Les états d'un ticket
 
 | État | En attente de | Ce qui se passe |
 | --- | --- | --- |
 | Brouillon | son auteur | en préparation, invisible des autres |
-| Nouveau | l'équipe qui traite | attend d'être pris en charge |
-| En cours | l'équipe qui traite | la demande est traitée |
+| Nouveau | le Support | transmis : attend la première réponse du Support |
+| En cours | le Support | la demande est traitée |
 | En attente du demandeur | le demandeur | des précisions lui ont été demandées |
-| En pause | l'équipe qui traite | suspendu jusqu'à une date, puis repris tout seul |
+| En pause | le Support | suspendu jusqu'à une date, puis repris tout seul |
 | Résolu | le demandeur | le travail est fait : il confirme, ou renvoie la demande |
 | Clos | — | terminé ; c'est l'état qui permet la facturation complète |
-| Annulé | — | abandonné ou refusé, avec son motif |
+| Annulé | — | retiré par son demandeur ou refusé par le Support, avec son motif |
 
 ## Changer un mot
 

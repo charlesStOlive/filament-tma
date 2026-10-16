@@ -48,7 +48,6 @@ final class TicketView
             'state_label' => $ticket->state->getLabel(),
             'in_hands_of' => $ticket->sideInCharge()?->value,
             'waiting_on' => $ticket->waitingOn(),
-            'handling_mode' => $ticket->handling_mode->value,
             'application' => $ticket->sourceInstance?->name,
             'priority' => $ticket->priority->value,
             'requester' => $ticket->requester?->name,

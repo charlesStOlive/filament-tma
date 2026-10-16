@@ -5,14 +5,33 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Lot 2 : les forfaits de TMA (CDC §11). Un volume par période (mois ou trimestre), pour un client (partagé entre
- * ses applications, `instance_uid` vide) ou pour une application. `tma_allowance_alerts` retient chaque seuil
- * franchi, une fois par période. Côté client, `tma_allowance_statuses` garde l'état envoyé par le maître.
+ * Le temps passé (dans le maître seulement) et les forfaits. Une saisie porte sur un message ou une note de la fiche
+ * (`entry_id`), ou sur la fiche entière ; son lien de facturation la verrouille. Côté client, les forfaits ne sont
+ * qu'un état reçu du maître (`tma_allowance_statuses`).
  */
 return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('tma_time_entries', function (Blueprint $table) {
+            $table->id();
+            $table->ulid('ulid')->unique();
+            $table->morphs('subject');
+            $table->foreignId('entry_id')->nullable()->constrained('tma_entries')->nullOnDelete();
+            $table->foreignId('actor_id')->constrained('tma_actors');
+            $table->date('worked_on');
+            $table->unsignedInteger('minutes');
+            $table->boolean('billable')->default(true);
+            $table->string('origin')->default('ui');
+            $table->nullableMorphs('invoice');
+            $table->timestamp('invoiced_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['subject_type', 'subject_id', 'worked_on']);
+            $table->index('worked_on');
+        });
+
         Schema::create('tma_allowances', function (Blueprint $table) {
             $table->id();
             $table->ulid('ulid')->unique();
@@ -50,5 +69,6 @@ return new class extends Migration
         Schema::dropIfExists('tma_allowance_statuses');
         Schema::dropIfExists('tma_allowance_alerts');
         Schema::dropIfExists('tma_allowances');
+        Schema::dropIfExists('tma_time_entries');
     }
 };

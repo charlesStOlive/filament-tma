@@ -66,7 +66,7 @@ final class Mirror
         $ticket->forceFill([
             ...Arr::only($payload, [
                 'number', 'source_instance_uid', 'created_on_instance_uid', 'title', 'description', 'priority',
-                'state', 'handling_mode',
+                'state',
             ]),
             ...self::dates($payload, [
                 'submitted_at', 'taken_at', 'waiting_since', 'paused_until', 'validation_requested_at', 'closed_at',
@@ -212,11 +212,7 @@ final class Mirror
         }
 
         if (array_key_exists('file_uuids', $payload)) {
-            $kept = (array) $payload['file_uuids'];
-            Uploads::remove($entry, $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)
-                ->map(fn ($media): string => Uploads::uuidOf($media))
-                ->reject(fn (string $uuid): bool => in_array($uuid, $kept, true))
-                ->values()->all());
+            self::keepFiles($entry, (array) $payload['file_uuids']);
         }
 
         return $entry;
@@ -392,6 +388,19 @@ final class Mirror
                 ->withCustomProperties(['remote_uuid' => $file['uuid'] ?? null])
                 ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
         }
+    }
+
+    /**
+     * Retire les fichiers qui ne sont plus dans la liste reçue (par identifiant : `Uploads::uuidOf()`).
+     *
+     * @param  array<int, string>  $uuids
+     */
+    public static function keepFiles(HasMedia $model, array $uuids): void
+    {
+        Uploads::remove($model, $model->getMedia(Entry::ATTACHMENTS_COLLECTION)
+            ->map(fn ($media): string => Uploads::uuidOf($media))
+            ->reject(fn (string $uuid): bool => in_array($uuid, $uuids, true))
+            ->values()->all());
     }
 
     /** @return array<string, Carbon|null> */

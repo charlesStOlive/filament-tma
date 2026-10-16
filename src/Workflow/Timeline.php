@@ -7,7 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\EntryChanged;
 use CharlesStOlive\FilamentTma\Models\Entry;
-use CharlesStOlive\FilamentTma\Support\Addressables;
+use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -22,6 +22,10 @@ use Illuminate\Validation\ValidationException;
  * Écrire dans la chronologie d'un ticket ou d'une tâche projet : un message, une réponse, une note ; modifier son
  * message ou sa note, archiver une note, supprimer la sienne. Les droits sont contrôlés ici, quelle que soit
  * l'origine. Rien ici ne change l'état du ticket (CDC §9.4).
+ *
+ * Sur un ticket, un message va toujours avec un passage (addendum §3.2) : la question, la réponse, « résolu »… que
+ * les mouvements écrivent eux-mêmes. À part, on écrit une note, ou on relance (`remind`). Sur une tâche projet, le
+ * droit `comment` suffit.
  *
  * Tout ce qu'on écrit est lu des deux côtés : sur un ticket du Support, une application cliente l'envoie au maître
  * au moment où on l'écrit, et un membre du Support qui travaille chez le client écrit directement dans le maître.
@@ -48,8 +52,11 @@ final class Timeline
         }
     }
 
-    /** Peut-on écrire ce type d'entrée sur ce ticket ? */
-    public function canAdd(Trackable $ticket, EntryType $type, Context $context): bool
+    /**
+     * Peut-on écrire ce type d'entrée sur ce ticket ? `$reminder` : un message de relance, à qui a le tour (droit
+     * `remind`), la seule écriture hors tour dans le fil des messages.
+     */
+    public function canAdd(Trackable $ticket, EntryType $type, Context $context, bool $reminder = false): bool
     {
         if ($context->isSystem()) {
             return true;
@@ -59,21 +66,25 @@ final class Timeline
             return false;
         }
 
-        // Un membre du Support écrit dans le maître, qui contrôle ses droits de là-bas.
-        if ($context->forSubject($ticket)->isAgent()) {
-            return $type === EntryType::Note || $ticket->acceptsMessages();
+        // Un membre du Support écrit dans le maître, qui contrôle ses droits de là-bas ; l'autre application a déjà
+        // contrôlé ceux de son utilisateur.
+        $agent = $context->forSubject($ticket)->isAgent() || ($context->isApi() && $context->user === null);
+
+        if ($type === EntryType::Note) {
+            return $agent || TmaGate::allows($context->user, TmaGate::NOTE, $ticket);
         }
 
-        // Un interne n'écrit rien sur ce qui touche le Support (ticket transmis, tâche) : un correspondant le fait.
-        if (Addressables::keptOut($ticket, $context->user)) {
+        if (! $ticket->acceptsMessages()) {
             return false;
         }
 
-        return match ($type) {
-            // L'échange s'arrête avec le ticket (pas avec une tâche terminée) ; les notes restent possibles.
-            EntryType::Comment => $ticket->acceptsMessages() && TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
-            EntryType::Note => TmaGate::allows($context->user, TmaGate::NOTE, $ticket),
-        };
+        // Sur un ticket, un message à part n'est qu'une relance ; les autres vont avec leur passage.
+        if ($ticket instanceof Ticket) {
+            return $reminder && ! $ticket->state->isFinal() && $ticket->isShared()
+                && ($agent || TmaGate::allows($context->user, TmaGate::REMIND, $ticket));
+        }
+
+        return $agent || TmaGate::allows($context->user, TmaGate::COMMENT, $ticket);
     }
 
     /** Les notes existent dans cette application (`filament-tma.notes.enabled`). */
@@ -83,14 +94,14 @@ final class Timeline
     }
 
     /**
-     * Modifier un message ou une note : son auteur seul. Un message, tant que personne d'autre n'a écrit de message
-     * après lui (`Entry::isStillEditable()`), même si son auteur a perdu la main.
+     * Modifier un message ou une note : son auteur seul. Un message, s'il est encore le dernier message
+     * (`Entry::isStillEditable()`), que ce soit son tour ou non.
      */
     public function canEdit(Entry $entry, Context $context): bool
     {
         $subject = $entry->subject;
 
-        if (! $subject instanceof Trackable || $entry->trashed() || ($entry->isNote() && ! self::notesEnabled()) || Addressables::keptOut($subject, $context->user)) {
+        if (! $subject instanceof Trackable || $entry->trashed() || ($entry->isNote() && ! self::notesEnabled())) {
             return false;
         }
 
@@ -126,8 +137,10 @@ final class Timeline
             $this->assertParent($ticket, $type, $parent);
         }
 
-        if (! $this->canAdd($ticket, $type, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas ajouter cette entrée à ce ticket.'));
+        if (! $this->canAdd($ticket, $type, $context, ! empty($meta['reminder']))) {
+            throw new AuthorizationException($type === EntryType::Comment && $ticket instanceof Ticket
+                ? __('Sur un ticket, un message va toujours avec un passage (répondre, demander des précisions…) : écrivez plutôt une note.')
+                : __('Vous ne pouvez pas ajouter cette entrée à ce ticket.'));
         }
 
         $this->assertNotBlank($type, $body, count($uploads));

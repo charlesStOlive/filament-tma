@@ -3,10 +3,11 @@
 namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Master;
 
 use CharlesStOlive\FilamentTma\Enums\EntryType;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\RecipientsChanged;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
+use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
@@ -21,6 +22,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * L'API du maître pour une application cliente (docs/API.md). L'application appelante vient du jeton
@@ -53,10 +55,9 @@ class TicketController
         abort_if($existing !== null && $existing->source_instance_uid !== $instance->uid, 403);
 
         $ticket = DB::transaction(function () use ($request, $instance, $existing): Ticket {
-            $alreadyTransmitted = $existing !== null && $existing->handling_mode === HandlingMode::ServiceDesk;
+            $alreadyTransmitted = $existing !== null;
 
             $ticket = Mirror::ticket($request->input('ticket'), [
-                'handling_mode' => HandlingMode::ServiceDesk,
                 'state' => $alreadyTransmitted ? $existing->state::getMorphClass() : 'submitted',
                 'client_type' => $instance->client_type,
                 'client_id' => $instance->client_id,
@@ -74,6 +75,11 @@ class TicketController
             // Ses destinataires à elle, et le Support (nos destinataires par défaut) : toujours un principal chez nous.
             app(Recipients::class)->fromClient($ticket, $instance->uid, $request->input('recipients', []));
 
+            // Sans contact choisi chez le client, le seul membre du Support par défaut le devient (addendum §3.1).
+            if ($ticket->assignee_actor_id === null && ($defaults = app(Recipients::class)->supportDefaults())->count() === 1) {
+                $ticket->forceFill(['assignee_actor_id' => $defaults->first()->getKey()])->save();
+            }
+
             return $ticket;
         });
 
@@ -90,6 +96,47 @@ class TicketController
     public function show(Request $request, string $ulid): JsonResponse
     {
         return response()->json(Payload::snapshot($this->ticket($request, $ulid)));
+    }
+
+    /**
+     * `PATCH tickets/{ulid}` : l'auteur de la demande la modifie (titre, description, priorité, pièces jointes), tant
+     * qu'aucun message ne l'a suivie (addendum §3.2).
+     */
+    public function demand(Request $request, string $ulid, TicketWorkflow $workflow): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+        $ticket = $this->ticket($request, $ulid);
+
+        $request->validate([
+            'ticket' => ['required', 'array'],
+            'ticket.title' => ['required', 'string', 'max:255'],
+            'ticket.description' => ['nullable', 'string'],
+            'ticket.priority' => ['required', Rule::enum(Priority::class)],
+            'files' => ['array'],
+            'file_uuids' => ['array'],
+            'actor' => ['required', 'array'],
+            'actor.instance_uid' => ['required', 'in:'.$instance->uid],
+            'actor.id' => ['required'],
+        ]);
+
+        abort_unless($workflow->mayEditDemand($ticket, $this->context($request, $instance)), 403,
+            __('Un message a suivi la demande : elle ne se modifie plus.'));
+
+        DB::transaction(function () use ($ticket, $request): void {
+            $ticket->forceFill([
+                'title' => $request->input('ticket.title'),
+                'description' => $request->input('ticket.description'),
+                'priority' => $request->input('ticket.priority'),
+            ])->save();
+
+            Mirror::files($ticket, $request->input('files', []));
+            Mirror::keepFiles($ticket, (array) $request->input('file_uuids', []));
+            $ticket->touchActivity();
+        });
+
+        event(new TicketUpdated($ticket->refresh()));
+
+        return response()->json(Payload::snapshot($ticket->refresh()));
     }
 
     /** `POST tickets/{ulid}/moves` : un mouvement du demandeur, fait ici (le maître fait autorité). */
@@ -143,6 +190,9 @@ class TicketController
         ]);
 
         abort_if($isNew && ! $ticket->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('Ce ticket est terminé.'));
+        // Le demandeur parle en répondant (un passage) ; à part, il n'écrit qu'une note ou une relance (addendum §3.2).
+        abort_if($isNew && $payload['type'] === EntryType::Comment->value && empty($request->input('meta.reminder')), 403,
+            __('Sur un ticket, un message va toujours avec un passage (répondre, demander des précisions…) : écrivez plutôt une note.'));
 
         $entry = DB::transaction(fn () => Mirror::entryFrom($instance->uid, $ticket, $request->all()));
 
@@ -179,7 +229,7 @@ class TicketController
         return Ticket::query()
             ->where('ulid', $ulid)
             ->where('source_instance_uid', AuthenticateInstance::instance($request)->uid)
-            ->where('handling_mode', HandlingMode::ServiceDesk->value)
+            ->where('state', '!=', 'draft')
             ->firstOrFail();
     }
 

@@ -32,8 +32,8 @@ départ » (`docs/knowledge-base/tma/demarrer.md`).
    **Saisir le jeton à la main**). **Tester** vérifie la connexion à tout moment.
 5. **Filbreeze** : un worker de file doit tourner (`php artisan queue:work`) : les envois vers les clients passent
    par la file.
-6. **Desapp** : donner `tma.ticket.workflow.transmit` aux rôles qui peuvent transmettre au centre de service. Les
-   autres utilisateurs n'ont que le traitement local et n'apparaissent pas chez le maître.
+6. **Desapp** : donner `tma.ticket.correspond` aux rôles des correspondants du Support (eux seuls font des demandes et
+   apparaissent chez le maître) ; **Filbreeze** : `tma.ticket.handle` aux membres du Support.
 
 En développement, les deux Sail doivent se joindre : un réseau Docker commun (comme `shared-db`), et les URL des
 conteneurs dans l'adresse du centre de service et dans celle de l'application cliente.
@@ -92,7 +92,7 @@ Une personne, dans l'application où elle existe.
   "title": "Export des parrains", "description": "<p>…</p>",
   "priority": "low|normal|high|urgent",
   "state": "draft|submitted|in_progress|awaiting_requester|paused|pending_validation|closed|cancelled",
-  "handling_mode": "local|service_desk", "task_ulid": null,
+  "task_ulid": null,
   "requester": { "…acteur" }, "assignee": { "…acteur" } , "created_by": { "…acteur" },
   "submitted_at": "…", "taken_at": "…", "waiting_since": "…", "paused_until": "…",
   "validation_requested_at": "…", "closed_at": "…", "cancelled_at": "…",
@@ -141,7 +141,7 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 
 ```json
 {
-  "ulid": "01k…", "move": "take-charge", "from_state": "submitted", "to_state": "in_progress",
+  "ulid": "01k…", "move": "request-answer", "from_state": "submitted", "to_state": "awaiting_requester",
   "actor": { "…acteur" }, "origin_instance_uid": "01K…", "origin": "ui", "reason": null, "created_at": "…"
 }
 ```
@@ -250,26 +250,35 @@ prévenues. Réponse : l'état complet, à recopier.
 
 L'état complet d'un ticket de l'application appelante.
 
+### `PATCH tickets/{ulid}` — la demande modifiée par son auteur
+
+`{ ticket: { title, description, priority }, files, file_uuids, actor }`. L'auteur de la demande (`actor`, qui doit
+être celui qui l'a créée) la modifie tant qu'aucun message ne l'a suivie (addendum §3.2) ; sinon 403. `files` : les
+pièces jointes de la demande (`Payload::files()`), `file_uuids` : celles qui restent (les autres sont retirées).
+Réponse : l'état complet (`Payload::snapshot()`).
+
 ### `POST tickets/{ulid}/moves` — un mouvement du demandeur
 
 ```json
 { "move": "answer", "data": { "answer": "<p>…</p>" }, "actor": { "…acteur" }, "transition_ulid": "01k…" }
 ```
 
-Mouvements du demandeur : `answer`, `validate`, `reopen`, `cancel` (avant prise en charge). Les données suivent
-les règles du mouvement (voir `Workflow\Moves`). Un mouvement de l'intervenant répond 403. Réponse : l'état
+Mouvements du demandeur : `answer`, `validate`, `reopen`, `cancel` (tant que le ticket est Nouveau), `take-over`. Les données suivent
+les règles du mouvement (voir `Workflow\Moves`) et le tour : seul le demandeur (`actor`) fait un passage du
+demandeur ; « Prendre la main » (`take-over`), un autre destinataire principal ; un mouvement du Support répond 403. Réponse : l'état
 complet, à recopier.
 
 ### `POST tickets/{ulid}/entries` — un message, une réponse, une note ; ou leur changement
 
 Corps : une entrée (avec `files`). Réponse : `201` et l'entrée enregistrée (`entry`, avec son `number`), ou `200`
-si elle était déjà reçue. Sur un ticket terminé, une nouvelle entrée n'est acceptée que si c'est une note (422
-sinon).
+si elle était déjà reçue. Une nouvelle entrée de l'application cliente est une note, ou un message marqué relance
+(`meta.reminder`) : le demandeur parle en répondant, par un passage (403 sinon). Sur un ticket terminé, seule une note
+est acceptée (422 sinon).
 
 Renvoyée avec le même `ulid`, une entrée **change** :
 
 - une entrée de l'application appelante prend le nouveau texte, `edited_at`, `archived_at`, `deleted_at` et ses
-  fichiers. Un message dont un autre auteur a écrit après lui ne change plus (422) ;
+  fichiers. Un message qui n'est plus le dernier message du ticket ne change plus (422) ;
 - sur une entrée du maître, seul `archived_at` d'une note est pris (archiver ou ressortir une note du Support).
 
 L'auteur et l'origine d'une entrée ne changent jamais.
@@ -313,10 +322,9 @@ Réponses : `{ "data": … }` ; 404 pour un ticket introuvable.
 
 ### `GET users`
 
-Les utilisateurs qui peuvent faire une demande (`tma.ticket.create`) : demandeurs possibles d'un ticket préparé par le
-maître, et destinataires possibles. `service_desk` : de l'équipe en lien avec le Support
-(`tma.ticket.workflow.transmit`), sinon demandeur. `?include_local_only=1` ajoute ceux qui voient les tickets sans
-pouvoir en faire. Jamais les membres du Support ni le compte du maître.
+Les correspondants du Support de l'application (`tma.ticket.correspond`) : demandeurs possibles d'un ticket préparé
+par le maître, et destinataires possibles. `service_desk` est toujours vrai (gardé pour les versions d'avant). Jamais
+les membres du Support ni le compte du maître.
 
 ```json
 { "data": [ { "id": "7", "name": "Ada Lovelace", "email": "ada@exemple.fr", "service_desk": true } ] }

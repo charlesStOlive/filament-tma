@@ -4,13 +4,15 @@ namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\Paused;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'équipe qui traite la demande reprend la main : après une pause, ou sans attendre la réponse du demandeur. */
+/**
+ * Le Support reprend un ticket qu'il avait mis en pause. Reprendre la main quand c'est le tour du demandeur est un
+ * forçage (`ForceReturn`).
+ */
 class Resume extends Move
 {
     public function key(): string
@@ -30,7 +32,7 @@ class Resume extends Move
 
     public function from(): array
     {
-        return [Paused::class, AwaitingRequester::class];
+        return [Paused::class];
     }
 
     public function to(Ticket $ticket): string
@@ -46,6 +48,5 @@ class Resume extends Move
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
         $ticket->paused_until = null;
-        $ticket->waiting_since = null;
     }
 }

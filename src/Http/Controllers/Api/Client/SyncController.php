@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Client;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Events\TaskReceived;
 use CharlesStOlive\FilamentTma\Events\TicketSynced;
 use CharlesStOlive\FilamentTma\Models\Entry;
@@ -37,7 +36,6 @@ class SyncController
             'ticket' => ['required', 'array'],
             'ticket.ulid' => ['required', 'string', 'size:26'],
             'ticket.source_instance_uid' => ['required', 'in:'.Tma::instanceUid()],
-            'ticket.handling_mode' => ['required', 'in:'.HandlingMode::ServiceDesk->value],
             'entries' => ['array'],
             'transitions' => ['array'],
         ]);
@@ -108,8 +106,7 @@ class SyncController
     }
 
     /**
-     * L'avertissement de clôture automatique décidé par le maître, dit au demandeur à sa première réception (ou, pour
-     * la demande d'un interne, aux correspondants qui répondent pour lui).
+     * L'avertissement de clôture automatique décidé par le maître, dit au demandeur à sa première réception.
      */
     private function warnRequester(Ticket $ticket, ?\DateTimeInterface $warnedBefore): void
     {

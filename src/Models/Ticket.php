@@ -3,16 +3,13 @@
 namespace CharlesStOlive\FilamentTma\Models;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
-use CharlesStOlive\FilamentTma\Enums\RecipientRole;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
 use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
-use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -36,7 +33,8 @@ use Spatie\ModelStates\HasStates;
  * seul client (`client`). Son identité globale est `ulid`, la même dans toutes les applications qui le partagent ;
  * `number` est lisible (DES-0042) et unique dans son application source.
  *
- * Trois dimensions séparées (CDC §7.1) : l'état métier (`state`), le mode de traitement (`handling_mode`) et
+ * Un ticket va toujours d'une application cliente au Support (addendum §2) : en brouillon, il reste dans l'application
+ * où il est écrit ; ensuite, le maître fait autorité. Deux dimensions séparées (CDC §7.1) : l'état métier (`state`) et
  * l'état de synchronisation (`sync_status`).
  *
  * @property string $ulid
@@ -46,7 +44,6 @@ use Spatie\ModelStates\HasStates;
  * @property string|null $description
  * @property Priority $priority
  * @property TicketState $state
- * @property HandlingMode $handling_mode
  * @property SyncStatus $sync_status
  */
 class Ticket extends Model implements HasMedia, HasRichContent, Trackable
@@ -64,7 +61,6 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
 
     protected $attributes = [
         'priority' => 'normal',
-        'handling_mode' => 'local',
         'sync_status' => 'local',
     ];
 
@@ -73,7 +69,6 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return [
             'state' => TicketState::class,
             'priority' => Priority::class,
-            'handling_mode' => HandlingMode::class,
             'sync_status' => SyncStatus::class,
             'publish_at' => 'datetime',
             'submitted_at' => 'datetime',
@@ -182,36 +177,20 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     }
 
     /**
-     * Ce qui attend une personne : ses brouillons, ses demandes qui attendent sa réponse ou sa confirmation, ce qui
-     * lui est confié (Nouveau, En cours), et les nouvelles demandes de son équipe que personne n'a prises, si elle
-     * peut les prendre. Dans une application cliente, un membre du Support (`Agent`) est aussi lui-même côté maître
-     * et prend les demandes du Support.
+     * Ce qui attend une personne : ses brouillons ; ses demandes quand c'est son tour (une réponse, une confirmation) ;
+     * côté Support, celles dont elle est le contact et les demandes nouvelles sans contact. Dans une application
+     * cliente, un membre du Support (`Agent`) est lui-même côté maître et prend les demandes du Support.
      */
     public function scopeAwaiting(Builder $query, Authenticatable $user): Builder
     {
-        $agent = Agent::for($user);
         $me = Actor::idsFor($user);
-
-        $mayTake = TmaGate::allows($user, TmaGate::workflowAction('take-charge'));
-        $takes = array_keys(array_filter(Tma::isMaster()
-            ? [HandlingMode::ServiceDesk->value => $mayTake]
-            : [HandlingMode::Local->value => $mayTake, HandlingMode::ServiceDesk->value => $agent !== null]));
-
-        // Le côté demandeur : sa propre demande ; un interne, seulement celles traitées ici ; un correspondant, aussi la
-        // demande transmise d'un interne dont il est destinataire principal (il répond pour lui).
-        $internal = Addressables::isInternal($user);
+        $support = Tma::isMaster() ? TmaGate::allows($user, TmaGate::HANDLE) : Agent::for($user) !== null;
 
         return $query->where(fn (Builder $q): Builder => $q
             ->where(fn (Builder $q): Builder => $q->where('state', 'draft')->whereIn('created_by_actor_id', $me))
-            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['awaiting_requester', 'pending_validation'])->whereIn('requester_actor_id', $me)
-                ->when($internal, fn (Builder $q): Builder => $q->where('handling_mode', '!=', HandlingMode::ServiceDesk->value)))
-            ->when(Tma::isClient() && ! $internal && $agent === null, fn (Builder $q): Builder => $q->orWhere(fn (Builder $q): Builder => $q
-                ->whereIn('state', ['awaiting_requester', 'pending_validation'])
-                ->where('handling_mode', HandlingMode::ServiceDesk->value)
-                ->whereIn('requester_actor_id', Addressables::internalActorIds())
-                ->whereHas('recipients', fn (Builder $r): Builder => $r->where('role', RecipientRole::Primary->value)->whereIn('actor_id', $me))))
+            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['awaiting_requester', 'pending_validation'])->whereIn('requester_actor_id', $me))
             ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['submitted', 'in_progress'])->whereIn('assignee_actor_id', $me))
-            ->orWhere(fn (Builder $q): Builder => $q->where('state', 'submitted')->whereNull('assignee_actor_id')->whereIn('handling_mode', $takes)));
+            ->when($support, fn (Builder $q): Builder => $q->orWhere(fn (Builder $q): Builder => $q->where('state', 'submitted')->whereNull('assignee_actor_id'))));
     }
 
     /** La partie qui doit agir. Un brouillon est à la partie qui l'a créé. */
@@ -224,22 +203,19 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return $this->state->inHandsOf();
     }
 
-    /**
-     * Qui doit agir, en clair : « Demandeur », le Support, ou l'équipe locale du client (« Équipe EDM ») ; null pour
-     * un ticket terminé.
-     */
+    /** Qui doit agir, en clair : « Demandeur » ou le Support ; null pour un ticket terminé. */
     public function waitingOn(): ?string
     {
         return match ($this->sideInCharge()) {
             Side::Requester => __('Demandeur'),
-            Side::Handler => $this->handledBy(),
+            Side::Handler => Terms::support(),
             null => null,
         };
     }
 
     /**
      * Qui doit agir, pour une personne donnée : « Vous » si c'est elle le demandeur attendu, le demandeur par son nom
-     * sinon, ou l'équipe qui traite.
+     * sinon, ou le Support.
      */
     public function waitingOnFor(?Authenticatable $user): ?string
     {
@@ -251,74 +227,23 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     }
 
     /**
-     * Qui traite la demande, en clair : l'équipe locale du client (« Équipe EDM »), ou le Support. Null pour un
-     * brouillon du client, qui n'est encore confié à personne.
-     */
-    public function handledBy(): ?string
-    {
-        if ($this->state instanceof Draft && $this->handling_mode === HandlingMode::Local) {
-            return null;
-        }
-
-        return $this->handling_mode === HandlingMode::Local ? Terms::team($this->source_instance_uid) : Terms::support();
-    }
-
-    /**
-     * Les parties que représente une application donnée. L'application source est le demandeur ; en traitement
-     * local elle traite aussi la demande ; au Support, c'est le maître (`Workflow\Context::$instanceUid`).
+     * Les parties que représente une application donnée : l'application source est le demandeur, le maître est le
+     * Support (`Workflow\Context::$instanceUid`).
      *
      * @return array<int, Side>
      */
     public function sidesOf(string $instanceUid, bool $isMaster): array
     {
-        $sides = [];
-        $isSource = $instanceUid === $this->source_instance_uid;
-
-        if ($isSource) {
-            $sides[] = Side::Requester;
-        }
-
-        if ($this->handling_mode === HandlingMode::Local ? $isSource : $isMaster) {
-            $sides[] = Side::Handler;
-        }
-
-        return $sides;
+        return array_values(array_filter([
+            $instanceUid === $this->source_instance_uid ? Side::Requester : null,
+            $isMaster ? Side::Handler : null,
+        ]));
     }
 
-    /** L'application qui fait autorité sur ce ticket est celle-ci : l'application source en local, le maître sinon. */
+    /** L'application qui fait autorité est celle-ci : celle où le brouillon s'écrit, puis le maître. */
     public function authorityIsHere(): bool
     {
-        return $this->handling_mode === HandlingMode::Local ? Tma::isHere($this->source_instance_uid) : Tma::isMaster();
-    }
-
-    /** Cette application a la main : elle peut modifier les champs du ticket. Sinon, on ne fait plus qu'ajouter. */
-    public function hasHandHere(): bool
-    {
-        $side = $this->sideInCharge();
-
-        if ($side === null) {
-            return false;
-        }
-
-        if ($this->state instanceof Draft) {
-            return Tma::isHere($this->created_on_instance_uid);
-        }
-
-        return in_array($side, $this->sidesHere(), true);
-    }
-
-    /** Les champs (titre, description, priorité…) ne se modifient qu'en brouillon, ou par l'équipe qui traite la demande, quand elle a la main. */
-    public function fieldsEditableHere(): bool
-    {
-        if ($this->state->isFinal()) {
-            return false;
-        }
-
-        if ($this->state instanceof Draft) {
-            return Tma::isHere($this->created_on_instance_uid);
-        }
-
-        return $this->isHandledHere() && $this->sideInCharge() === Side::Handler;
+        return $this->state instanceof Draft ? Tma::isHere($this->created_on_instance_uid) : Tma::isMaster();
     }
 
     protected function hasAutoCloseWarning(): bool
@@ -336,9 +261,9 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return $this->source_instance_uid;
     }
 
-    /** Traité par le Support, et publié : un brouillon préparé par le maître reste chez lui. */
+    /** Transmis, ou publié : un brouillon reste dans l'application où il s'écrit. */
     public function isShared(): bool
     {
-        return $this->handling_mode === HandlingMode::ServiceDesk && ! $this->state instanceof Draft;
+        return ! $this->state instanceof Draft;
     }
 }

@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Arr;
 
 /**
  * Une application cliente appelle le maître. Ces appels sont synchrones : s'ils échouent, l'opération est annulée
@@ -71,6 +72,24 @@ final class MasterClient
     {
         return Http::call(__('Support'), fn () => $this->http()->post($this->url(($subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$subject->ulid}/recipients"), [
             'recipients' => $recipients,
+            'actor' => Payload::actor($context->actor),
+        ]))->json();
+    }
+
+    /**
+     * Envoie la demande modifiée par son auteur (titre, description, priorité, pièces jointes) : le maître la prend
+     * tant qu'aucun message ne l'a suivie.
+     *
+     * @return array<string, mixed> l'état du ticket chez le maître
+     */
+    public function updateDemand(Ticket $ticket, Context $context): array
+    {
+        $files = Payload::files($ticket);
+
+        return Http::call(__('Support'), fn () => $this->http()->patch($this->url("tickets/{$ticket->ulid}"), [
+            'ticket' => Arr::only(Payload::ticket($ticket), ['title', 'description', 'priority']),
+            'files' => $files,
+            'file_uuids' => array_column($files, 'uuid'),
             'actor' => Payload::actor($context->actor),
         ]))->json();
     }

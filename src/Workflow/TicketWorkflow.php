@@ -2,15 +2,14 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow;
 
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Models\Actor;
-use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -24,9 +23,14 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
- * Le workflow des tickets : la liste des mouvements, le contrôle de chacun (état, partie, droit) et son exécution.
- * Toute origine passe par ici — interface, API, commande, planificateur — pour que la règle soit la même partout
- * (CDC §13 : le masquage d'un bouton n'est jamais le seul contrôle).
+ * Le workflow des tickets : la liste des mouvements, le contrôle de chacun et son exécution. Toute origine passe par
+ * ici — interface, API, commande, planificateur — pour que la règle soit la même partout (CDC §13 : le masquage d'un
+ * bouton n'est jamais le seul contrôle).
+ *
+ * La règle (addendum §3) : chaque état dit à qui est le tour ; dans le circuit normal, seule cette partie agit, et du
+ * côté du demandeur, seulement le demandeur lui-même (`Move::allowsRequester()`). Les passages normaux ne sont pas des
+ * droits : les droits disent qui est qui (correspondant du Support, membre du Support) et ouvrent les forçages
+ * (`Move::override()`).
  *
  * Une application peut ajouter ou remplacer un mouvement : `app(TicketWorkflow::class)->register(new MonMouvement)`.
  */
@@ -38,22 +42,22 @@ class TicketWorkflow
     public function __construct()
     {
         foreach ([
-            new Moves\Submit,
             new Moves\Transmit,
-            new Moves\TakeCharge,
+            new Moves\Publish,
             new Moves\RequestAnswer,
-            new Moves\Answer,
+            new Moves\SubmitForValidation,
             new Moves\Pause,
             new Moves\Resume,
-            new Moves\SubmitForValidation,
+            new Moves\Refuse,
+            new Moves\Answer,
             new Moves\Validate,
             new Moves\Reopen,
-            new Moves\Close,
-            new Moves\Refuse,
+            new Moves\TakeOver,
             new Moves\Cancel,
+            new Moves\ForceReturn,
+            new Moves\ForceClose,
             new Moves\AutoClose,
             new Moves\AutoResume,
-            new Moves\Publish,
             new Moves\AutoPublish,
         ] as $move) {
             $this->register($move);
@@ -73,7 +77,7 @@ class TicketWorkflow
         return $this->moves;
     }
 
-    /** Les mouvements qu'un utilisateur peut faire (ceux du système exclus) : leurs permissions. */
+    /** Les mouvements qu'une personne peut faire (ceux du système exclus). */
     public function userMoves(): array
     {
         return array_filter($this->moves, fn (Move $move): bool => $move->sides() !== []);
@@ -91,7 +95,10 @@ class TicketWorkflow
             return false;
         }
 
-        return $ticket->state->canTransitionTo($move->to($ticket)) && $move->isAvailable($ticket);
+        $to = $move->to($ticket);
+
+        // « Prendre la main » ne change pas l'état.
+        return ($to === $ticket->state::class || $ticket->state->canTransitionTo($to)) && $move->isAvailable($ticket);
     }
 
     public function allows(Ticket $ticket, string|Move $move, Context $context): bool
@@ -99,18 +106,7 @@ class TicketWorkflow
         $move = is_string($move) ? $this->move($move) : $move;
         $context = $context->forSubject($ticket);
 
-        // Un membre du Support ne transmet pas une demande au Support : il en fait partie.
-        if ($move->key() === 'transmit' && Agent::for($context->user) !== null) {
-            return false;
-        }
-
         if (! $this->isPossible($ticket, $move)) {
-            return false;
-        }
-
-        // Un correspondant du Support (le droit d'écrire au Support) lui transmet ses demandes : il ne les confie pas à
-        // l'équipe de son application. Les internes, eux, ne font que confier.
-        if ($move->key() === 'submit' && $this->allows($ticket, 'transmit', $context)) {
             return false;
         }
 
@@ -118,22 +114,22 @@ class TicketWorkflow
             return $move->sides() === [];
         }
 
-        if ($this->sideFor($ticket, $move, $context) === null) {
+        $side = $this->sideFor($ticket, $move, $context);
+
+        if ($side === null) {
             return false;
         }
 
-        // L'autre application a déjà contrôlé le droit de son utilisateur ; ici, seule compte la partie qu'elle
-        // représente pour ce ticket. Un agent agit avec ses droits du maître, que le maître contrôle.
-        if ($context->isAgent()) {
-            return true;
+        // Un forçage ne dépend que de son droit. L'autre application a déjà contrôlé celui de son utilisateur ; un
+        // membre du Support agit avec ses droits du maître, que le maître contrôle.
+        if (($override = $move->override()) !== null) {
+            return $context->isAgent() || ($context->isApi() && $context->user === null) || TmaGate::allows($context->user, $override, $ticket);
         }
 
-        // Un interne ne fait aucun passage sur une demande transmise au Support : un correspondant agit pour lui.
-        if (Addressables::keptOut($ticket, $context->user)) {
-            return false;
-        }
-
-        return ($context->isApi() && $context->user === null) || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
+        return match ($side) {
+            Side::Requester => $this->speaksAsRequester($ticket, $move, $context),
+            Side::Handler => $this->isSupport($ticket, $context),
+        };
     }
 
     /** Les mouvements que ce contexte peut faire maintenant sur ce ticket. */
@@ -154,6 +150,62 @@ class TicketWorkflow
         }
 
         return null;
+    }
+
+    /**
+     * Côté demandeur : la personne qui parle est celle que le passage attend (le demandeur, ou un destinataire
+     * principal qui prend la main). Dans l'application cliente, il faut aussi être correspondant du Support ; un
+     * membre du Support ne l'est jamais.
+     */
+    private function speaksAsRequester(Ticket $ticket, Move $move, Context $context): bool
+    {
+        if ($context->isAgent() || $context->actor === null) {
+            return false;
+        }
+
+        if (! $context->isApi() && ! Addressables::isCorrespondent($context->user)) {
+            return false;
+        }
+
+        return $move->allowsRequester($ticket, $context->actor);
+    }
+
+    /** Côté Support : un membre du Support (`tma.ticket.handle`), ou un membre relié qui agit depuis un client. */
+    private function isSupport(Ticket $ticket, Context $context): bool
+    {
+        return $context->isAgent() || ($context->user !== null && TmaGate::allows($context->user, TmaGate::HANDLE, $ticket));
+    }
+
+    /**
+     * Modifier la demande (titre, description, priorité, pièces jointes) : son auteur, en brouillon, puis tant qu'aucun
+     * message ne l'a suivie — elle compte comme le premier message (addendum §3.2).
+     */
+    public function mayEditDemand(Ticket $ticket, Context $context): bool
+    {
+        $context = $context->forSubject($ticket);
+
+        if ($ticket->state->isFinal() || $context->isAgent() || $context->actor === null) {
+            return false;
+        }
+
+        if ((int) $ticket->created_by_actor_id !== (int) $context->actor->getKey()) {
+            return false;
+        }
+
+        if ($ticket->state instanceof Draft) {
+            return Tma::isHere($ticket->created_on_instance_uid);
+        }
+
+        return ! $ticket->entries()->messages()->exists();
+    }
+
+    /** Retoucher le titre et la priorité : le Support, à son tour, là où il fait autorité. */
+    public function mayQualify(Ticket $ticket, Context $context): bool
+    {
+        $context = $context->forSubject($ticket);
+
+        return ! $ticket->state instanceof Draft && ! $ticket->state->isFinal() && $ticket->authorityIsHere()
+            && $ticket->sideInCharge() === Side::Handler && $this->isSupport($ticket, $context);
     }
 
     /**
@@ -193,7 +245,12 @@ class TicketWorkflow
                 $to = $move->to($ticket);
 
                 app(Timeline::class)->forTransition($transitionUlid, fn () => $move->apply($ticket, $data, $context));
-                $ticket->state->transitionTo($to);
+
+                if ($to !== $from::class) {
+                    $ticket->state->transitionTo($to);
+                } else {
+                    $ticket->save();
+                }
 
                 $transition = $ticket->transitions()->create([
                     'ulid' => $transitionUlid,
@@ -218,14 +275,14 @@ class TicketWorkflow
         return $transition;
     }
 
-    /** Une application cliente demande au maître ce qui touche un ticket du Support. */
+    /** Une application cliente demande au maître ce qui touche un ticket transmis. */
     public function delegatesToMaster(Ticket $ticket, Context $context): bool
     {
-        return Tma::isClient() && $ticket->handling_mode === HandlingMode::ServiceDesk && ! $context->isApi();
+        return Tma::isClient() && $ticket->isShared() && ! $context->isApi();
     }
 
     /**
-     * Le maître prépare un ticket pour une application cliente, au nom de l'un de ses utilisateurs (addendum §3) :
+     * Le maître prépare un ticket pour une application cliente, au nom de l'un de ses correspondants (addendum §3.5) :
      * un brouillon invisible chez le client jusqu'à sa publication (tout de suite, ou à `publish_at`).
      *
      * @param  array<string, mixed>  $attributes  title, description, priority, publish_at
@@ -237,7 +294,7 @@ class TicketWorkflow
             throw new AuthorizationException(__('Seul le Support prépare un ticket pour un client.'));
         }
 
-        if (! $context->isSystem() && Gate::getPolicyFor(Ticket::class) !== null && ! Gate::forUser($context->user)->allows('create', Ticket::class)) {
+        if (! $context->isSystem() && ! $this->mayCreate($context)) {
             throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
         }
 
@@ -247,11 +304,12 @@ class TicketWorkflow
             ...collect($attributes)->only(['title', 'description', 'priority', 'publish_at', 'task_id'])->all(),
             'source_instance_uid' => $instance->uid,
             'created_on_instance_uid' => Tma::instanceUid(),
-            'handling_mode' => HandlingMode::ServiceDesk,
             'client_type' => $instance->client_type,
             'client_id' => $instance->client_id,
             'requester_actor_id' => $actor->getKey(),
             'created_by_actor_id' => $context->actor->getKey(),
+            // Son auteur en est le contact au Support.
+            'assignee_actor_id' => $context->actor->getKey(),
         ]);
 
         // Son auteur et son demandeur en sont d'office destinataires principaux.
@@ -264,13 +322,18 @@ class TicketWorkflow
     }
 
     /**
-     * Crée un ticket en brouillon, au nom de l'utilisateur du contexte.
+     * Crée une demande en brouillon, au nom du correspondant du Support du contexte. Dans le maître, un ticket se
+     * prépare pour un client (`createForClient()`).
      *
      * @param  array<string, mixed>  $attributes  title, description, priority, task_id (la tâche dont il part)
      */
     public function create(array $attributes, Context $context): Ticket
     {
-        if (! $context->isSystem() && Gate::getPolicyFor(Ticket::class) !== null && ! Gate::forUser($context->user)->allows('create', Ticket::class)) {
+        if (Tma::isMaster()) {
+            throw new AuthorizationException(__('Dans le Support, un ticket se prépare pour un client.'));
+        }
+
+        if (! $context->isSystem() && ! $this->mayCreate($context)) {
             throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
         }
 
@@ -286,5 +349,17 @@ class TicketWorkflow
         event(new TicketCreated($ticket, $context));
 
         return $ticket;
+    }
+
+    /** Faire une demande : le droit de créer, et être correspondant du Support (client) ou membre du Support (maître). */
+    public function mayCreate(Context $context): bool
+    {
+        $user = $context->user;
+
+        if ($user === null || (Gate::getPolicyFor(Ticket::class) !== null && ! Gate::forUser($user)->allows('create', Ticket::class))) {
+            return false;
+        }
+
+        return Tma::isMaster() ? TmaGate::allows($user, TmaGate::HANDLE) : Addressables::isCorrespondent($user);
     }
 }

@@ -40,6 +40,6 @@ class AutoCloseWarning extends Notification implements ShouldQueue
             ]))
             ->line(__('Sans activité de votre part, il sera clos automatiquement le :date.', ['date' => Dates::format($this->closesOn, 'd/m/Y', $notifiable instanceof Authenticatable ? $notifiable : null)]))
             ->action(__('Ouvrir le ticket'), TicketUrl::view($this->ticket))
-            ->line(__('Un commentaire suffit à le garder ouvert.'));
+            ->line(__('Votre réponse, ou une simple note, suffit à le garder ouvert.'));
     }
 }

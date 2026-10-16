@@ -9,30 +9,37 @@ order: 100
 Les droits du module se donnent dans l'écran des rôles, comme les autres. Toutes leurs permissions commencent par
 `tma.`.
 
-## Tickets (`tma.ticket.*`) et tâches projet (`tma.task.*`)
+## Tickets (`tma.ticket.*`)
+
+Sur un ticket, les droits disent **qui est qui** et ouvrent ce qui est **à côté du workflow**. Les passages normaux
+(demander des précisions, répondre, confirmer…) ne sont **pas** des droits : ils suivent le tour (voir
+[Qui doit agir ?](#modal-tma.comprendre.la-main)).
 
 | Permission | Ce qu'elle permet |
 | --- | --- |
 | `viewany`, `view` | voir la liste, ouvrir une fiche |
-| `create`, `edit`, `delete` | créer, modifier, supprimer (un brouillon) |
-| `comment` | écrire des messages et répondre |
+| `create`, `edit`, `delete` | créer, modifier, supprimer (un brouillon) ; avec le tour et l'auteur de la demande en plus |
+| **`correspond`** — **Correspondant du Support** (application cliente) | faire une demande et la transmettre, en être le demandeur ; le Support peut le nommer (demandeur d'un ticket préparé, destinataire) |
+| **`handle`** — **Membre du Support** (maître) | traiter les demandes : demander des précisions, marquer comme résolu… à son tour ; être choisi comme contact |
+| `force-close` — **Forçage** | forcer la clôture d'un ticket ouvert, hors du tour (voir [Les forçages](#modal-tma.tickets.forcages)) |
+| `force-return` — **Forçage** | reprendre la main sans attendre le demandeur (Support) |
 | `note` | écrire des notes et les archiver (tout le monde sur le ticket les lit) |
+| `remind` | relancer qui a la main |
+| `notify` | envoyer maintenant les notifications groupées en attente |
 | `time` | saisir et modifier du temps (Support) |
-| `sync` | renvoyer un ticket ou une tâche à son application (Support) |
-| `remind` | relancer qui a la main sur un ticket (tickets) |
-| `notify` | envoyer maintenant les notifications groupées en attente (tickets) |
-| `workflow.{passage}` | faire ce passage : `workflow.take-charge`, `workflow.validate`… |
+| `sync` | renvoyer un ticket à son application (Support) |
 
-La famille **Passages du ticket** (`tma.ticket.workflow.*`) regroupe un droit par passage. Un rôle de l'équipe qui
-traite reçoit par exemple `take-charge`, `request-answer`, `pause`, `resume`, `submit-for-validation`, `close`,
-`refuse` ; un rôle de demandeur `submit`, `answer`, `validate`, `reopen`, `cancel`.
+Par exemple, chez Desapp : un rôle de correspondant (`correspond`, `note`, `remind`, la liste) ; chez Filbreeze, un rôle
+du Support (`handle`, `note`, `remind`, `time`…) et, pour les administrateurs, les forçages.
 
-**`tma.ticket.workflow.transmit`**, affiché **Correspondant du Support : écrire et transmettre au Support**, fait
-d'une personne un **correspondant du Support** : ses demandes partent au Support (elle ne voit pas « Confier à
-l'équipe EDM »), elle répond au Support pour un demandeur, et le Support peut la nommer demandeur d'un ticket préparé
-ou destinataire. Sans ce droit, une personne est **interne** : elle confie ses demandes à l'équipe EDM et le Support
-ne la voit pas. Par exemple, chez Desapp : `support_equipe_edm` (traite et correspond), `support_demandeur`
-(correspond), `support_interne` (interne). Voir [Comprendre le module](#modal-tma.comprendre).
+## Tâches projet (`tma.task.*`)
+
+| Permission | Ce qu'elle permet |
+| --- | --- |
+| `viewany`, `view`, `create`, `edit`, `delete` | la liste, la fiche ; créer, modifier, supprimer (Support) |
+| `comment`, `note` | écrire des messages, des notes |
+| `time`, `sync` | saisir du temps, renvoyer une tâche (Support) |
+| `workflow.{passage}` | faire ce passage : `workflow.publish`, `workflow.complete`, `workflow.reopen`… |
 
 ## Les autres écrans
 
@@ -45,6 +52,6 @@ ne la voit pas. Par exemple, chez Desapp : `support_equipe_edm` (traite et corre
 
 ## Les droits ne font pas tout
 
-Même avec tous les droits, on ne fait que ce que la situation permet : on ne modifie pas un ticket qui attend l'autre
-partie, on ne confirme pas un ticket à la place du demandeur, une application cliente ne saisit pas de temps. Voir
-[Comprendre le module](#modal-tma.comprendre).
+Même avec tous les droits, Super Admin compris, on ne fait que ce que le tour permet : on ne répond pas, on ne
+confirme pas à la place du demandeur, le Support ne reprend pas la main sans forçage, une application cliente ne saisit
+pas de temps. Voir [Qui doit agir ?](#modal-tma.comprendre.la-main).

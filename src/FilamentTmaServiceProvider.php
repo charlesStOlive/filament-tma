@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
 use CharlesStOlive\FilamentTma\Commands\NotifyCommand;
 use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
+use CharlesStOlive\FilamentTma\Commands\ResetSchemaCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\SendDigestCommand;
 use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
@@ -72,26 +73,14 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 CleanupCommand::class,
                 InstallCommand::class,
                 DemoCommand::class,
+                ResetSchemaCommand::class,
             ])
             ->hasMigrations([
-                'create_filament_tma_tables',
-                'create_filament_tma_instances_table',
-                'create_filament_tma_time_entries_table',
-                'create_filament_tma_tasks_table',
-                'create_filament_tma_allowances_table',
-                'add_publish_at_to_tma_tickets_table',
-                'create_filament_tma_audits_table',
-                'create_filament_tma_agents_tables',
-                'add_short_name_to_tma_instances_table',
-                'convert_tma_summary_entries_to_messages',
-                'drop_due_on_from_tma_tickets_table',
-                'rename_ends_on_to_due_on_in_tma_tasks_table',
-                'rework_tma_notes',
-                'add_private_to_tma_entries_table',
-                'create_tma_projects_table',
-                'drop_description_from_tma_time_entries_table',
-                'create_tma_notices_table',
-                'create_tma_recipients_table',
+                'create_tma_actors_and_instances_tables',
+                'create_tma_projects_and_tasks_tables',
+                'create_tma_tickets_tables',
+                'create_tma_time_and_allowances_tables',
+                'create_tma_notices_and_audits_tables',
             ]);
     }
 

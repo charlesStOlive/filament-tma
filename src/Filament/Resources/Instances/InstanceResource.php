@@ -87,7 +87,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 TextInput::make('name')->label(__('Nom'))->required()->maxLength(255),
                 TextInput::make('short_name')->label(__('Nom court du client'))->maxLength(30)
                     ->placeholder('EDM')
-                    ->helperText(__('Il nomme l’équipe du client et certains passages : « Équipe EDM », « Publier chez EDM ». Il part chez le client avec « Configuration de l’application ».'))
+                    ->helperText(__('Il nomme le client dans certains libellés : « Publier chez EDM », « Correspondants EDM ». Il part chez le client avec « Configuration de l’application ».'))
                     ->hintAction(Help::action('tma.comprendre.vocabulaire', __('Les mots du module'))),
                 TextInput::make('uid')->label(__('Identifiant (TMA_INSTANCE_UID de l’application)'))
                     ->required()->length(26)->unique(ignoreRecord: true)

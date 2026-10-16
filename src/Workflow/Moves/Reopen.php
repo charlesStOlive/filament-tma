@@ -2,20 +2,15 @@
 
 namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
-use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/**
- * Le demandeur n'est pas satisfait : il dit pourquoi, et la main revient à l'équipe qui traite la demande
- * (« Retour au Support », « Retour à l'équipe EDM »).
- */
+/** Le demandeur n'est pas satisfait : il dit pourquoi, et la main revient au Support (« Retour au Support »). */
 class Reopen extends Move
 {
     use WritesMessages;
@@ -32,18 +27,7 @@ class Reopen extends Move
 
     public function label(): string
     {
-        return __('Retour à l’équipe qui traite');
-    }
-
-    public function labelFor(Ticket $ticket): string
-    {
-        $client = Terms::client($ticket->source_instance_uid);
-
-        return match (true) {
-            $ticket->handling_mode !== HandlingMode::Local => __('Retour au Support'),
-            $client === null => __('Retour à l’équipe locale'),
-            default => __('Retour à l’équipe :client', ['client' => $client]),
-        };
+        return __('Retour au Support');
     }
 
     public function color(): string

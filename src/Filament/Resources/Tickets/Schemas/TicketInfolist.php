@@ -2,7 +2,6 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -71,12 +70,9 @@ class TicketInfolist
                     TextEntry::make('waiting_on')->label(__('En attente de'))
                         ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
                         ->placeholder('—'),
-                    TextEntry::make('handling_mode')->label(__('Traité par'))->badge()
-                        ->formatStateUsing(fn (Ticket $record): string => $record->handledBy() ?? __('Pas encore confié'))
-                        ->hintAction(Help::action('tma.comprendre.traitement', __('Équipe locale ou Support ?'))),
                     TextEntry::make('priority')->label(__('Priorité'))->badge(),
                     TextEntry::make('requester.name')->label(__('Demandeur')),
-                    TextEntry::make('assignee.name')->label(__('Pris en charge par'))->placeholder('—'),
+                    TextEntry::make('assignee.name')->label(__('Contact au Support'))->placeholder('—'),
                     TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                         ->visible(fn (Ticket $record): bool => $record->paused_until !== null),
                     TextEntry::make('sourceInstance.name')->label(__('Application'))
@@ -87,7 +83,7 @@ class TicketInfolist
                         ->visible(fn (Ticket $record): bool => $record->task !== null),
                     TextEntry::make('sync_status')->label(__('Synchro'))->badge()
                         ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
-                        ->visible(fn (Ticket $record): bool => $record->handling_mode === HandlingMode::ServiceDesk)
+                        ->visible(fn (Ticket $record): bool => $record->isShared())
                         ->helperText(fn (Ticket $record): ?string => $record->last_sync_error),
                     TextEntry::make('created_at')->label(__('Créé le'))->dateTime('d/m/Y H:i'),
                     TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),

@@ -4,16 +4,10 @@ namespace CharlesStOlive\FilamentTma\Filament\Concerns;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
-use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\States\Ticket\Draft;
-use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
-use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Support\Html;
-use CharlesStOlive\FilamentTma\Support\Tma;
-use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -27,17 +21,17 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Le nouveau message, sous l'historique d'un ticket ou d'une tâche : un texte lu de tous, demandeur compris, avec des
  * fichiers. Les notes s'écrivent à part, en fenêtre (`HasNotes`).
  *
- * Ses boutons suivent qui doit agir. La partie qu'on attend y trouve ses réponses, qui font avancer le ticket avec ce
- * texte (`Move::replyField()`) : le demandeur « Répondre », ou « Confirmer et clore » / « Retour au Support » un ticket résolu ;
- * l'équipe qui traite « Demander des précisions » ou « Marquer comme résolu » — sur un ticket nouveau, elle le prend
- * en charge au passage. L'autre partie n'a qu'« Envoyer le message » : une précision, qui ne change pas l'état.
+ * Sur un ticket, un message va toujours avec un passage (addendum §3.2) : seule la partie dont c'est le tour écrit, par
+ * les passages que le moteur lui permet (`Move::replyField()`). Le demandeur « Répond », ou « Confirme et clôt » /
+ * renvoie au Support un ticket résolu ; le Support « Demande des précisions » ou « Marque comme résolu ». Il n'y a pas
+ * de message à part : hors de son tour, ou pour un point d'étape, la zone renvoie aux notes. Sur une tâche projet, on
+ * « Envoie le message ».
  */
 trait HasComposer
 {
@@ -60,19 +54,36 @@ trait HasComposer
                 Text::make(fn (): string => $this->composerHint())->color('gray'),
                 RichEditor::make('body')
                     ->hiddenLabel()
+                    ->visible(fn (): bool => $this->composerCanWrite())
                     ->placeholder(__('Votre message…'))
                     ->toolbarButtons([
                         ['bold', 'italic', 'underline', 'strike', 'link'],
                         ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
                         ['undo', 'redo'],
                     ]),
-                TimelineActions::attachmentsField(),
-                Actions::make($this->composerActions())->key('composerActions')->alignEnd(),
+                TimelineActions::attachmentsField()->visible(fn (): bool => $this->composerCanWrite()),
+                Actions::make($this->composerActions())->key('composerActions')->alignEnd()
+                    ->visible(fn (): bool => $this->composerCanWrite()),
             ]);
     }
 
-    /** La zone de réponse a quelque chose à proposer à cet utilisateur. */
+    /**
+     * La zone de réponse se montre : sur un ticket en cours d'échange, toujours (hors de son tour, elle le dit) ; sur
+     * une tâche, si on peut y écrire.
+     */
     public function hasComposer(): bool
+    {
+        $record = $this->getRecord();
+
+        if ($record instanceof Ticket) {
+            return $record->isShared() && $record->acceptsMessages();
+        }
+
+        return $this->composerCanWrite();
+    }
+
+    /** Cet utilisateur peut écrire maintenant : un message, ou une réponse. */
+    public function composerCanWrite(): bool
     {
         return $this->composerCanMessage() || $this->composerReplies() !== [];
     }
@@ -105,7 +116,8 @@ trait HasComposer
         return $actions;
     }
 
-    protected function composerCanComment(): bool
+    /** « Envoyer le message » : sur une tâche, qui a le droit d'y écrire ; sur un ticket, jamais (un message va avec un passage). */
+    protected function composerCanMessage(): bool
     {
         /** @var Trackable $record */
         $record = $this->getRecord();
@@ -114,26 +126,8 @@ trait HasComposer
     }
 
     /**
-     * « Envoyer le message » : pour qui peut écrire un message, sauf qui répond pour le demandeur qu'on attend — son
-     * message est sa réponse (« Répondre », « Retour au Support »…), pas une précision à côté.
-     */
-    protected function composerCanMessage(): bool
-    {
-        if (! $this->composerCanComment()) {
-            return false;
-        }
-
-        foreach ($this->composerReplies() as $move) {
-            if (in_array(Side::Requester, $move->sides(), true)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Les réponses que cet utilisateur peut faire maintenant : celles de la partie qu'on attend, s'il en est.
+     * Les réponses que cet utilisateur peut faire maintenant : celles de la partie dont c'est le tour, s'il est la
+     * personne attendue (le moteur en décide, `TicketWorkflow::allows()`).
      *
      * @return array<int, Move>
      */
@@ -148,35 +142,10 @@ trait HasComposer
         $workflow = app(TicketWorkflow::class);
         $context = Context::current();
 
-        // Le demandeur répond en demandeur ; tous les autres, au nom de l'équipe qui traite. Sur un ticket de l'équipe du
-        // client, une même application tient les deux rôles : c'est la personne qui les départage. Sur un ticket
-        // transmis au Support, un correspondant du Support (qui peut lui écrire) répond aussi pour le demandeur.
-        $isRequester = (bool) $record->requester?->isUser(auth()->user());
-        $speaksForRequester = $isRequester || ($record->handling_mode === HandlingMode::ServiceDesk
-            && Tma::isClient()
-            && TmaGate::allows(auth()->user(), TmaGate::workflowAction('transmit'), $record));
-
         return $this->composerRepliesCache ??= array_values(array_filter(
             $workflow->moves(),
-            fn (Move $move): bool => $move->replyField() !== null
-                && (in_array(Side::Requester, $move->sides(), true) ? $speaksForRequester : ! $isRequester)
-                && ($workflow->allows($record, $move, $context) || $this->composerTakesChargeFirst($record, $move)),
+            fn (Move $move): bool => $move->replyField() !== null && $workflow->allows($record, $move, $context),
         ));
-    }
-
-    /**
-     * Sur un ticket nouveau, l'équipe qui le traite répond (« Demander des précisions », « Marquer comme résolu ») en le
-     * prenant en charge au passage.
-     */
-    protected function composerTakesChargeFirst(Ticket $ticket, Move $move): bool
-    {
-        $workflow = app(TicketWorkflow::class);
-        $context = Context::current()->forSubject($ticket);
-
-        return $ticket->state instanceof Submitted
-            && in_array(InProgress::class, $move->from(), true)
-            && $workflow->allows($ticket, 'take-charge', $context)
-            && ($context->isAgent() || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket));
     }
 
     /** Ce que la zone dit, au-dessus du texte : qui on attend, et ce que fera le bouton. */
@@ -192,12 +161,10 @@ trait HasComposer
         $waitingOn = $record->waitingOnFor(auth()->user());
 
         return match (true) {
-            $record->state instanceof Draft => __('Ce brouillon n’est encore confié à personne : votre message reste dans cette application.'),
-            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'answer') => __(':team attend votre réponse.', ['team' => $record->handledBy() ?? __('L’équipe')]),
+            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'answer') => __(':support attend votre réponse.', ['support' => Terms::support()]),
             collect($replies)->contains(fn (Move $move): bool => $move->key() === 'validate') => __('Le travail est fait : confirmez pour clore, ou renvoyez la demande en disant ce qui ne va pas.'),
-            $replies !== [] => __('« Envoyer le message » garde la main ; « Demander des précisions » ou « Marquer comme résolu » la passe au demandeur.'),
-            $waitingOn === null => __('Tout le monde lira ce message.'),
-            default => __('En attente de : :who. Votre message ne change pas l’état du ticket.', ['who' => $waitingOn]),
+            $replies !== [] => __('« Demander des précisions » ou « Marquer comme résolu » passe la main au demandeur. Pour un point d’étape, écrivez une note.'),
+            default => __('En attente de : :who. Ce n’est pas votre tour : vous pouvez écrire une note, ou modifier votre dernier message tant qu’il est le dernier.', ['who' => $waitingOn ?? '—']),
         };
     }
 
@@ -223,25 +190,6 @@ trait HasComposer
             // La question, la réponse, ce qui ne va pas : sans texte, le passage n'a pas de sens.
             if (Html::isBlank($body) && in_array('required', (array) ($move->rules($ticket)[$move->replyField()] ?? []), true)) {
                 throw ValidationException::withMessages(['body' => __('Le message est vide.')]);
-            }
-
-            if ($this->composerTakesChargeFirst($ticket, $move)) {
-                $workflow->run($ticket, 'take-charge', [], $context);
-                $ticket->refresh();
-            }
-
-            if ($move->replyField() === '') {
-                // Un passage sans texte à lui (« Confirmer et clore ») : le texte, s'il y en a, part en message avant,
-                // lié au passage (l'historique les montre ensemble).
-                $transitionUlid = (string) Str::ulid();
-
-                if (! Html::isBlank($body) || $uploads !== []) {
-                    app(Timeline::class)->forTransition($transitionUlid, fn () => app(Timeline::class)->add($ticket, EntryType::Comment, $body, $context, uploads: $uploads));
-                }
-
-                $workflow->run($ticket, $move, [], $context, $transitionUlid);
-
-                return;
             }
 
             $workflow->run($ticket, $move, [$move->replyField() => $body, 'files' => Uploads::toBase64($uploads)], $context);

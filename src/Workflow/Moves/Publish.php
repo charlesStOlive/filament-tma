@@ -13,7 +13,7 @@ use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
  * Le maître publie un ticket qu'il a préparé pour un client (addendum §3) : invisible jusque-là, il part chez le
- * client, au nom de son demandeur, et attend d'être pris en charge.
+ * client, au nom de son demandeur ; son auteur en est le contact au Support.
  */
 class Publish extends Move
 {

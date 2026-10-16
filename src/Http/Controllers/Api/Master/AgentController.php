@@ -104,7 +104,7 @@ class AgentController
         )]);
     }
 
-    /** Un passage (prendre en charge, demander une réponse…) au nom de l'agent ; la réponse donne l'état à recopier. */
+    /** Un passage (demander des précisions, marquer comme résolu…) au nom de l'agent ; la réponse donne l'état à recopier. */
     public function move(Request $request, string $ref): JsonResponse
     {
         $data = $request->validate([

@@ -9,7 +9,8 @@ return [
     |
     | « master » : l'application du Support (Filbreeze). Elle reçoit les tickets transmis, saisit les temps,
     | crée les tâches projet.
-    | « client » : une application cliente (Desapp…). Ses tickets sont traités localement, ou transmis au maître.
+    | « client » : une application cliente (Desapp…). Ses correspondants y écrivent leurs demandes et les transmettent
+    | au maître, qui fait autorité dès lors (addendum §2).
     |
     */
 
@@ -24,7 +25,7 @@ return [
     | Il ne doit plus changer une fois des tickets créés : il est écrit dans chacun.
     | ticket_prefix : début des numéros lisibles des tickets créés ici (DES-0042) ; task_prefix : celui des tâches
     | projet, numérotées par le maître (T-0007).
-    | short_name : mode client, le nom court du client (« EDM »). Il forme « Équipe EDM », « Publier chez EDM »… ;
+    | short_name : mode client, le nom court du client (« EDM »). Il forme « Publier chez EDM », « Correspondants EDM » ;
     | le maître le règle dans la fiche de l'application, et `tma:install --short-name` l'écrit ici.
     |
     */
@@ -42,7 +43,7 @@ return [
     | Le maître (mode client)
     |--------------------------------------------------------------------------
     |
-    | Sans URL, le circuit du Support est fermé : seuls les tickets traités par l'équipe locale existent.
+    | Sans URL, le circuit du Support est fermé : on ne fait que des brouillons.
     | Le jeton n'est jamais versionné : il vient de .env.
     |
     */
@@ -206,7 +207,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | support_defaults (maître) : les adresses des membres du Support qui reçoivent ce qu'une application cliente
-    | adresse « au Support » (son compte passerelle) ; vide : qui peut prendre en charge.
+    | adresse « au Support » (son compte passerelle) ; vide : les membres du Support (`tma.ticket.handle`).
     | support_members (client) : les membres du Support reliés ici (agents) qu'on peut nommer un par un, en plus du
     | Support tout entier ; à réserver aux comptes Super Admin.
     |

@@ -2,7 +2,6 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
-use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
 use CharlesStOlive\FilamentTma\Filament\Actions\NotificationActions;
@@ -66,7 +65,7 @@ class ViewTicket extends ViewRecord
             ->label(__('Renvoyer à l’application'))
             ->icon('heroicon-m-arrow-path')
             ->visible(fn (Ticket $record): bool => Tma::isMaster()
-                && $record->handling_mode === HandlingMode::ServiceDesk
+                && $record->isShared()
                 && TmaGate::allows(auth()->user(), TmaGate::SYNC, $record))
             ->action(function (Ticket $record): void {
                 $record->forceFill(['sync_status' => SyncStatus::Pending])->saveQuietly();

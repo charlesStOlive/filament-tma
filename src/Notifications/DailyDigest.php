@@ -50,7 +50,7 @@ class DailyDigest extends Notification implements ShouldQueue
 
         $titles = [
             'answer' => __('Vos demandes qui attendent votre réponse ou votre confirmation'),
-            'take' => __('À prendre en charge'),
+            'take' => __('Nouvelles demandes sans contact'),
             'mine' => __('En cours chez vous'),
             'resume' => __('Reprennent aujourd’hui'),
         ];

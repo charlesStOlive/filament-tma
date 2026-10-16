@@ -27,10 +27,10 @@ final class InstanceClient
     }
 
     /** @return array<int, array{id: string, name: string, email: string|null, service_desk: bool}> */
-    public function users(bool $includeLocalOnly = false): array
+    public function users(): array
     {
         return Http::call(__('Utilisateurs de :name', ['name' => $this->instance->name]), fn () => $this->http()
-            ->get($this->instance->apiUrl('users'), $includeLocalOnly ? ['include_local_only' => 1] : []))
+            ->get($this->instance->apiUrl('users')))
             ->json('data', []);
     }
 

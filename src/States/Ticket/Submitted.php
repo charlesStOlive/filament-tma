@@ -25,7 +25,7 @@ class Submitted extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Attend d’être pris en charge.');
+        return __('Transmis au Support : attend sa première réponse.');
     }
 
     public function inHandsOf(): ?Side

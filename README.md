@@ -73,7 +73,7 @@ Dépendances : `charlesstolive/filament-state-fusion-enhanced` (les états), `fi
 | `TMA_INSTANCE_NAME` | son nom affiché (défaut : `APP_NAME`) |
 | `TMA_TICKET_PREFIX` | début des numéros des tickets créés ici : `DES` donne `DES-0042` |
 | `TMA_TASK_PREFIX` | maître : début des numéros des tâches projet (`T` donne `T-0007`) |
-| `TMA_MASTER_URL`, `TMA_MASTER_TOKEN`, `TMA_MASTER_API_USER` | mode client : le maître, et le compte dont il détient un jeton (voir [docs/API.md](docs/API.md)). Sans URL, seul le traitement local existe |
+| `TMA_MASTER_URL`, `TMA_MASTER_TOKEN`, `TMA_MASTER_API_USER` | mode client : le maître, et le compte dont il détient un jeton (voir [docs/API.md](docs/API.md)). Sans URL, on ne fait que des brouillons |
 | `TMA_PUBLIC_URL` | maître : son adresse vue des applications clientes (`http://filbreeze.test` en développement) |
 | `TMA_CLI_TOKEN` | le jeton personnel utilisé par les commandes `tma:*` |
 | `TMA_ALLOWANCE_NOTIFY` | maître : adresses prévenues aux seuils des forfaits (séparées par des virgules) |
@@ -87,44 +87,51 @@ Dans le maître, `config/filament-tma.php` déclare aussi le modèle des clients
 
 ## Les tickets
 
-Huit états (`States\Ticket`), et des **mouvements** (`Workflow\Moves`) qui les relient. Chaque mouvement dit quelle
-partie peut le faire :
+Un ticket va toujours d'une application cliente au Support (le maître), qui fait autorité dès qu'il quitte le
+brouillon (addendum §2). Huit états (`States\Ticket`), et des **mouvements** (`Workflow\Moves`) qui les relient.
 
-- le **demandeur**, c'est-à-dire l'application source ;
-- l'**intervenant** : un collègue de l'application source en traitement local, le maître en centre de service.
+**La règle du tour** (addendum §3) : chaque état dit à qui est le tour ; dans le circuit normal, seule cette partie
+agit, et du côté du client, seulement le demandeur lui-même (`Move::allowsRequester()`). Les passages normaux ne sont
+pas des droits : aucun droit, pas même Super Admin, ne permet d'agir hors de son tour. Les **forçages**
+(`Move::override()`) ne dépendent que de leur droit.
 
-Quand la main est à l'autre partie, on ne peut plus qu'ajouter des commentaires, des notes et des fichiers.
-
-| Mouvement | De | Vers | Partie |
+| Mouvement | De | Vers | Qui |
 |---|---|---|---|
-| Soumettre | Brouillon | Soumis | demandeur |
-| Transmettre au centre de service | Brouillon (demandeur) ; Soumis, En cours, En attente (intervenant local) | Soumis, au centre de service | les deux |
-| Publier chez le client | Brouillon préparé par le maître | Soumis | maître |
-| Prendre en charge | Soumis | En cours | intervenant |
-| Refuser (motif) | Soumis | Annulé | intervenant |
-| Demander une réponse (question) | En cours | En attente du demandeur | intervenant |
-| Répondre (réponse) | En attente du demandeur | En cours | demandeur |
-| Mettre en pause (date) | En cours | En pause | intervenant |
-| Reprendre | En pause, En attente du demandeur | En cours | intervenant |
-| Soumettre à validation | En cours | À valider | intervenant |
-| Valider | À valider | Clôturé | demandeur |
-| Retour au Support / à l'équipe EDM (motif) | À valider | En cours | demandeur |
-| Clôturer sans réponse | En attente du demandeur, À valider | Clôturé | intervenant |
-| Annuler (motif) | tout état ouvert | Annulé | demandeur avant prise en charge, intervenant ensuite |
-| Clôture automatique | En attente du demandeur, À valider | Clôturé | planificateur |
+| Transmettre au Support (contact au Support : d'office s'il n'y en a qu'un) | Brouillon | Nouveau, chez ce contact | le demandeur (correspondant) |
+| Retirer la demande (motif, sauf brouillon) | Brouillon, Nouveau | Annulé | le demandeur |
+| Publier chez le client | Brouillon préparé par le maître | Nouveau | le Support |
+| Refuser (motif) | Nouveau | Annulé | le Support |
+| Demander des précisions (question) | Nouveau, En cours | En attente du demandeur | le Support |
+| Marquer comme résolu | Nouveau, En cours | Résolu | le Support |
+| Mettre en pause (date) | Nouveau, En cours | En pause | le Support |
+| Reprendre | En pause | En cours | le Support |
+| Répondre (réponse) | En attente du demandeur | En cours | le demandeur |
+| Confirmer et clore (mot facultatif) | Résolu | Clos | le demandeur |
+| Retour au Support (motif) | Résolu | En cours | le demandeur |
+| Prendre la main | En attente du demandeur, Résolu | (inchangé) : il devient le demandeur | un autre destinataire principal, de la même application |
+| Forcer la clôture (motif) | tout état ouvert après le brouillon | Clos | droit `force-close` |
+| Forcer le retour | En attente du demandeur, Résolu | En cours | droit `force-return` (Support) |
+| Clôture automatique | En attente du demandeur, Résolu | Clos | planificateur |
 | Reprise à la date prévue | En pause | En cours | planificateur |
-| Publication programmée | Brouillon préparé par le maître | Soumis | planificateur |
+| Publication programmée | Brouillon préparé par le maître | Nouveau | planificateur |
+
+Pas de « prise en charge » : le contact au Support est choisi à la transmission, et le Support répond dès « Nouveau ».
+
+**Messages** : un message va toujours avec un passage ; il n'y a pas de message à part. Un point d'étape, une
+précision : une note ; on peut aussi relancer (`remind`). Sur un ticket, le temps n'a pas de texte. Un message ne se modifie que s'il est le
+dernier, par son auteur ; la demande, par son auteur, tant qu'aucun message ne l'a suivie (`PATCH tickets/{ulid}`
+depuis le client).
 
 Tout passe par `Workflow\TicketWorkflow::run()`, quelle que soit l'origine : interface, API, commande ou
 planificateur. Cette méthode :
 
-- contrôle l'état, la partie et le droit ;
+- contrôle l'état, la partie, la personne (le tour) ou le droit d'un forçage ;
 - valide les données ;
 - écrit l'historique (`tma_state_transitions`) ;
 - lance `Events\TicketTransitioned`.
 
-Sur un ticket du centre de service, une application cliente ne fait pas le mouvement elle-même : elle le demande au
-maître, puis recopie le résultat. Une application peut ajouter un mouvement :
+Sur un ticket transmis, une application cliente ne fait pas le mouvement elle-même : elle le demande au maître, puis
+recopie le résultat. Une application peut ajouter un mouvement :
 `app(TicketWorkflow::class)->register(new MonMouvement)`.
 
 **Brouillons du maître.** Le centre de service peut préparer un ticket pour un client, au nom de l'un de ses
@@ -192,15 +199,29 @@ repartir de zéro, dans l'ordre :
 php artisan tma:demo --wipe --force
 # maître : vider, puis projets, tâches (terminée, en cours, en retard, programmée, annulée), temps, tickets préparés
 php artisan tma:demo --fresh --force
-# application cliente : tickets de l'équipe dans tous les états, demandes transmises au Support et traitées par le
-# membre du Support relié (question, en cours avec notes et temps, résolue, nouvelle, partie d'une tâche),
-# messages et notes sur les tâches
+# application cliente : demandes au Support dans tous les états, traitées par le membre du Support relié (nouvelle,
+# retirée, question, reprise par un autre destinataire, en cours avec notes et temps, en pause, résolue, close,
+# close d'office, partie d'une tâche), messages et notes sur les tâches
 php artisan tma:demo --force
 ```
 
-Le jeu du client prend ses vrais utilisateurs : demandeurs (qui créent des demandes), équipe (qui peut transmettre au
-Support) et le membre du Support relié ici. Les histoires sont datées dans le passé, à l'heure du narrateur. Jamais en
+Le jeu du client prend ses vrais utilisateurs : les correspondants du Support (`tma.ticket.correspond`) et le membre
+du Support relié ici. Les histoires sont datées dans le passé, à l'heure du narrateur. Jamais en
 production sans `--force`.
+
+## Remettre le schéma à plat
+
+Le plugin a un seul jeu de migrations (addendum §3 bis). Dans une installation qui a passé les anciennes : retirer de
+`database/migrations` les anciennes migrations `*tma*`, publier les nouvelles
+(`vendor:publish --tag=filament-tma-migrations`), puis, **avant** `migrate` :
+
+```bash
+php artisan tma:reset-schema --force   # garde les applications reliées, les membres du Support, les forfaits
+php artisan tma:reset-schema --all --force   # vide tout
+php artisan permissions:sync --force   # puis donner correspond / handle / les forçages aux rôles
+```
+
+Tickets, tâches, messages, notes et temps sont perdus.
 
 ## Tâches planifiées et notifications
 
@@ -218,9 +239,9 @@ Le plugin déclare lui-même ses tâches planifiées :
 **Les destinataires** (`Workflow\Recipients`, table `tma_recipients`) : chaque ticket et chaque tâche a des
 principaux, prévenus tout de suite de ce qui s'y passe (courriel et/ou cloche de Filament, au choix de chacun :
 `notifications.channels`, « Mes notifications »), et des secondaires, prévenus dans le bilan. L'auteur est principal
-d'office ; confier un ticket, le prendre en charge et publier une tâche exigent un principal dans l'équipe qui
-reçoit. Le client nomme ses correspondants du Support (le droit `tma.ticket.workflow.transmit`), ses internes sur ce
-qu'il traite lui-même, et le Support par son compte passerelle, que le maître traduit en
+d'office, comme le contact au Support choisi à la transmission ; publier une tâche exige un principal chez le client. Le client nomme ses
+correspondants du Support (le droit `tma.ticket.correspond`) et le Support par son compte passerelle, que le maître
+traduit en
 `recipients.support_defaults` ; le maître nomme ses membres et les correspondants du client (`GET users`). La cloche
 demande `->databaseNotifications()` sur le panel.
 
@@ -265,19 +286,18 @@ Les droits suivent le format de `filament-permission-manager`, sans en dépendre
 
 - **tickets** :
   - `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` ;
-  - `comment`, `note` (écrire des notes et les archiver), `time`, `sync` ;
-  - la famille « Passages du ticket » : `tma.ticket.workflow.{mouvement}`.
-- **tâches** : les mêmes en `tma.task.*`, avec la famille « Passages de la tâche ».
+  - qui est qui : `correspond` (correspondant du Support, client), `handle` (membre du Support, maître) ;
+  - à côté du workflow : `note` (écrire des notes et les archiver), `remind`, `notify`, `time`, `sync` ;
+  - les forçages : `force-close`, `force-return`.
+- **tâches** : `tma.task.*`, avec `comment`, `note`, `time`, `sync` et la famille « Passages de la tâche »
+  (`tma.task.workflow.{mouvement}`).
 - **applications clientes** : `tma.instance.*`.
 - **forfaits** : `tma.allowance.*`, plus `reset` ;
 - **journal d'audit** : `tma.audit.viewany`.
 - **widget du forfait côté client** : `widgets.allowanceoverview.viewany`.
 
-Dans une application cliente, `tma.ticket.workflow.transmit` sépare les utilisateurs du centre de service des
-utilisateurs « local uniquement ». Ces derniers n'apparaissent pas chez le maître.
-
-Sans le gestionnaire, ces actions restent ouvertes à qui voit l'objet, comme dans les autres plugins. Qui a la main
-compte toujours, quels que soient les droits.
+Les passages normaux d'un ticket ne sont pas des droits : ils suivent le tour, quels que soient les droits. Sans le
+gestionnaire, les actions restent ouvertes à qui voit l'objet, comme dans les autres plugins.
 
 ## Les commandes `tma:*` (pour une IA)
 
@@ -286,8 +306,8 @@ Elles ne posent aucune question quand les options sont données. `--json` donne 
 ```bash
 php artisan tma:list [--type=tickets|tasks|all] [--state=in_progress,awaiting_requester] [--app=Desapp] [--project=] [--search=] [--mine] [--all] [--json]
 php artisan tma:show DES-0042|T-0007 [--json]
-php artisan tma:log DES-0042 --hours=2 --summary="…" [--date=2026-10-07] [--non-billable] [--internal] [--json]
-php artisan tma:log T-0007 --days=0.5 --summary-file=resume.md
+php artisan tma:log DES-0042 --hours=2 [--date=2026-10-07] [--non-billable] [--json]   (sur un ticket : pas de texte)
+php artisan tma:log T-0007 --days=0.5 --summary-file=resume.md   (tâche : avec le message qui dit ce qui a été fait)
 php artisan tma:log DES-0042 --minutes=30 --entry=01k…   (sur un message ou une note existants, voir tma:show)
 php artisan tma:comment DES-0042 --body="…" [--note] [--json]
 ```
@@ -296,11 +316,11 @@ php artisan tma:comment DES-0042 --body="…" [--note] [--json]
   Passport d'un utilisateur, et la commande a exactement ses droits.
 - **Dans le maître**, la commande agit directement.
 - **Dans une application cliente**, elle agit dans le maître par son API « agent », puisque le temps ne se saisit
-  que là. Le jeton est alors celui d'un utilisateur du maître. `--local` la fait agir sur les tickets locaux de
-  l'application, avec un jeton de l'application.
-- `tma:log` enregistre la durée (une saisie de temps) sur le message qui la résume, écrit dans l'historique et
-  partagé avec le client (`--internal` en fait une note sur le ticket) ; `--entry` la porte plutôt sur un message ou
-  une note existants.
+  que là. Le jeton est alors celui d'un utilisateur du maître. `--local` la fait agir sur les copies de l'application
+  (lecture, brouillons), avec un jeton de l'application.
+- `tma:log` enregistre la durée (une saisie de temps) sur un message ou une note existants (`--entry`), ou sur la fiche
+  entière. Sur une tâche projet, `--summary` écrit aussi le message qui la résume (`--internal` : une note) ; sur un
+  ticket, le temps n'a pas de texte (un message y va toujours avec un passage).
 
 ## Tests
 

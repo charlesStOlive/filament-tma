@@ -49,7 +49,7 @@ Dans `config/filament-tma.php`, déclarez aussi le modèle des clients :
 ## 3. Déclarer l'application cliente (Support)
 
 **Support › Applications clientes › Nouveau** : son nom, le **nom court** de son client (« EDM » : il forme
-« Équipe EDM », « Publier chez EDM », voir [Les mots du module](#modal-tma.comprendre.vocabulaire)), son adresse
+« Publier chez EDM », « Correspondants EDM », voir [Les mots du module](#modal-tma.comprendre.vocabulaire)), son adresse
 (telle que le Support la joint) et son client. L'**identifiant** est proposé d'office (le bouton ↻ en génère un autre) : gardez-le. Si l'application a déjà
 le sien (installée avant), collez-le à la place.
 
@@ -87,7 +87,7 @@ connexion à tout moment.
 Si la transmission échoue (Support injoignable), la commande **affiche le jeton** : collez-le dans la
 fiche, champ **Saisir le jeton à la main**.
 
-Sans configuration du Support, les demandes d'une application cliente ne sont traitées que par l'équipe du client.
+Sans configuration du Support, une application cliente ne fait que des brouillons : rien ne part.
 
 ## 6. Faire tourner les tâches de fond
 
@@ -104,8 +104,9 @@ php artisan permissions:sync --force
 ```
 
 Puis, dans l'écran des rôles, donnez aux rôles concernés les permissions `tma.*`. Voir [Les droits](#modal-tma.droits).
-Dans une application cliente, `tma.ticket.workflow.transmit` distingue les utilisateurs qui ont accès au Support de
-ceux qui ne passent que par l'équipe du client.
+Dans une application cliente, `tma.ticket.correspond` fait d'une personne un **correspondant du Support** ; chez le
+Support, `tma.ticket.handle` fait d'une personne un **membre du Support**. Les forçages (`force-close`,
+`force-return`) sont à réserver au Support.
 
 ## Les réglages courants (`config/filament-tma.php`)
 

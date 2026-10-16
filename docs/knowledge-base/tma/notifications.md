@@ -23,28 +23,21 @@ On en choisit un ou plusieurs de chaque sorte, et on les change tout au long de 
 | Moment | Qui devient principal |
 | --- | --- |
 | Création d'un ticket ou d'une tâche | son auteur, qui le reste toujours (et le demandeur d'un ticket préparé par le Support) |
-| **Confier à l'équipe** | la personne désignée, ou au moins un membre de l'équipe à choisir (ou **Tout le monde**) |
 | **Transmettre au Support** | qui transmet, et le Support (qui décide lui-même qui le reçoit) |
-| **Prendre en charge** | qui prend en charge ; il confirme ou complète les principaux de son équipe |
+| **Transmettre au Support** (le contact) | le contact au Support choisi par le demandeur (d'office s'il n'y en a qu'un) |
 | Publication d'une tâche | au moins une personne du client, à choisir (ou **Tout le monde**) |
 
 ### Qui peut être destinataire
 
-- Dans l'application du client : ses **correspondants du Support** ; sur une demande qu'elle traite elle-même, aussi
-  ses **internes** ; sur une demande au Support ou une tâche, **le Support**, nommé par le compte passerelle de
-  l'application, et certains membres du Support si l'application le permet.
-- Chez le Support : ses membres, et les **correspondants** du client. Un interne n'y apparaît jamais.
+- Dans l'application du client : ses **correspondants du Support**, et **le Support**, nommé par le compte passerelle
+  de l'application, avec certains membres du Support si l'application le permet.
+- Chez le Support : ses membres, et les **correspondants** du client.
+
+Un destinataire **principal** du côté du client peut aussi **prendre la main** quand le demandeur est absent (voir
+[Prendre la main](#modal-tma.tickets.question-reponse)) ; l'ancien demandeur en est prévenu.
 
 Chaque application prévient **ses propres utilisateurs** : quand le Support écrit sur un ticket de Desapp, c'est
 Desapp qui prévient ses destinataires, à la réception.
-
-### La demande d'un interne transmise au Support
-
-Quand un correspondant transmet au Support la demande d'un **interne**, l'interne cesse d'en être destinataire : il
-n'est plus prévenu de rien (ni courriel, ni cloche, ni bilan), n'y écrit plus et n'y fait plus aucun passage. Le côté
-demandeur, ce sont alors les **correspondants principaux** de la demande (au départ, celui qui l'a transmise) : ils
-reçoivent les questions du Support, ses relances, les rappels et l'avertissement de clôture, et répondent à sa
-place.
 
 ## Courriel ou cloche
 
@@ -56,7 +49,7 @@ tickets, ou **Mes notifications du Support** dans le menu de son compte. Sans au
 
 Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** :
 
-- **ce qui l'attend** : ses demandes qui attendent sa réponse ou sa confirmation, les tickets à prendre en charge, ce
+- **ce qui l'attend** : ses demandes qui attendent sa réponse ou sa confirmation, les demandes nouvelles sans contact, ce
   qu'il traite (tickets en cours, tâches projet qui lui sont confiées), ses pauses qui reprennent aujourd'hui. Ce qui
   attend depuis plus de 5 jours, ou une tâche dont l'échéance prévue est passée, est signalé **en retard** ;
 - **depuis le dernier envoi** : ce qui a été mis de côté pour lui, ticket par ticket.

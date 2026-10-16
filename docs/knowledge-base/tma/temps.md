@@ -28,12 +28,13 @@ Dans ce bloc : **Saisir du temps** :
   clic ;
 - **Le** : le jour de l'intervention ; c'est lui qui range le temps dans son mois ;
 - **Durée**, en minutes, heures ou jours (une journée vaut 7 heures, réglable) ;
-- **Sur** : un message ou une note de la fiche, ou **un nouveau message** ;
-- **Ce qui a été fait** (pour un nouveau message) : écrit dans l'historique de la fiche, avec le temps ;
+- **Sur** : un message ou une note de la fiche ; sur une tâche projet, aussi **un nouveau message** ;
+- **Ce qui a été fait** (tâche projet, pour un nouveau message) : écrit dans l'historique de la tâche, avec le temps ;
 - **Facturable** ou non.
 
-Le temps ne porte pas lui-même de texte : ce qui a été fait se lit dans le message ou la note sur lequel il porte. Sans
-message choisi ni écrit, il porte sur la fiche entière.
+Le temps ne porte pas lui-même de texte : ce qui a été fait se lit dans le message ou la note sur lequel il porte. Sur
+un ticket, où un message va toujours avec un passage, on n'écrit rien avec le temps : pour le dire, écrivez d'abord une
+note, puis rattachez-y le temps. Sans message ni note choisis, il porte sur la fiche entière.
 
 Une intervention = une ligne. Un ticket ouvert de janvier à mars a donc son temps réparti sur chacun de ces mois.
 
@@ -52,7 +53,8 @@ dépassements, une saisie qui le ferait dépasser est refusée. Voir [Les forfai
 
 ## Depuis un assistant IA
 
-La commande `tma:log` saisit du temps sur un message qu'elle écrit (ce qui a été fait), ou sur un message existant.
+La commande `tma:log` saisit du temps sur un message ou une note existants, ou sur la fiche entière ; sur une tâche
+projet, aussi sur un message qu'elle écrit (ce qui a été fait).
 Voir [Les commandes](#modal-tma.commandes).
 
 ## En détail

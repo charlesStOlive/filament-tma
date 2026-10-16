@@ -17,43 +17,47 @@ reste à facturer. Il relie deux sortes d'applications.
   suivent ce qui les concerne.
 
 Une application cliente ne parle qu'au Support, jamais à une autre application cliente. Le Support ne voit d'un
-client que ce que ce client lui a confié.
+client que ce que ce client lui a transmis.
 
 ## Qui parle au Support
 
-Une seule chose compte : le droit **Correspondant du Support** (voir [Les droits](#modal-tma.droits)).
+Un ticket va **toujours** d'une application cliente au Support. Une seule chose compte côté client : le droit
+**Correspondant du Support** (voir [Les droits](#modal-tma.droits)).
 
-| Qui | Ses demandes | Avec qui il échange |
-| --- | --- | --- |
-| **Le Support** | — | reçoit les demandes des correspondants, les traite et fait autorité |
-| **Les correspondants du Support** : les personnes du client qui ont ce droit | **Transmettre au Support** | le Support, et les personnes de leur application ; le Support peut les nommer (demandeur, destinataire) |
-| **Les internes** : les autres utilisateurs du client | **Confier à l'équipe EDM** | seulement les personnes de leur application ; le Support ne les voit pas |
+| Qui | Ce qu'il fait |
+| --- | --- |
+| **Les correspondants du Support** : les personnes du client qui ont ce droit | écrivent une demande, la **transmettent au Support**, en sont le demandeur ; le Support peut les nommer (demandeur d'un ticket préparé, destinataire) |
+| **Le Support** : ses membres (le droit **Membre du Support**) | reçoit les demandes, les traite, et **fait autorité** dès qu'un ticket est transmis |
 
-À part, l'**équipe EDM** est l'équipe qui **traite** les demandes au sein de l'application du client (le droit
-**Prendre en charge**) : elle reçoit ce que les internes lui confient, le traite, ou le transmet au Support si l'un de
-ses membres est correspondant. Son nom vient du **nom court** du client (voir
-[Les mots du module](#modal-tma.comprendre.vocabulaire)).
+Les autres utilisateurs du client n'ont rien à faire dans le module.
 
-Une demande transmise au Support n'en revient pas. Sur une demande transmise, un correspondant peut répondre au
-Support à la place du demandeur. La demande d'un interne, une fois transmise par l'équipe, ne le concerne plus : il
-n'en est plus prévenu et n'y écrit plus ; ce sont les correspondants qui répondent pour lui. Voir
-[Les tickets](#modal-tma.tickets).
+## Le tour
 
-## Le demandeur, et qui doit agir
+Chaque ticket a deux parties : le **demandeur** (une personne du client) et le **Support**. À chaque étape, le ticket
+attend **l'une des deux** : la fiche l'affiche à droite, dans **Suivi › En attente de**.
 
-Chaque ticket a deux parties :
+**Seule la partie dont c'est le tour agit**, et du côté du client, **seulement le demandeur lui-même**. Aucun droit ne
+permet d'agir à la place de l'autre, pas même celui d'un administrateur. L'autre partie peut écrire une **note**, ou
+modifier son dernier message s'il est encore le dernier.
 
-- le **demandeur**, la personne qui a ouvert la demande ;
-- l'**équipe qui la traite** : l'équipe du client, ou le Support. Celui de l'équipe qui s'en occupe apparaît dans
-  **Pris en charge par**.
+Un message va toujours avec un passage : le Support pose une question (« Demander des précisions ») ou marque le
+ticket comme résolu, le demandeur répond, confirme ou renvoie. Pour le reste (un point d'étape, une précision), on
+écrit une note.
 
-À chaque étape, le ticket attend **l'une des deux** : la fiche l'affiche à droite, dans **Suivi › En attente de**.
-Celle qu'on attend fait avancer le ticket ; l'autre ne peut qu'**ajouter** : un message, une note, une pièce
-jointe. Elle ne modifie plus le ticket et ne fait pas les passages réservés à l'autre partie.
+Exemple : le Support pose une question ; le ticket attend le demandeur. Le Support ne peut plus que lui écrire une note
+ou le relancer ; la réponse du demandeur (« Répondre ») lui rend la main.
 
-Exemple : le Support pose une question (« Demander des précisions ») ; le ticket attend le demandeur. Un
-message du Support pendant ce temps n'y change rien ; la réponse du demandeur (« Répondre ») rend la main au
-Support.
+En transmettant, le demandeur choisit son **contact au Support** (d'office s'il n'y en a qu'un) : le ticket arrive
+chez lui, qui répond tout de suite. Il n'y a pas de « prise en charge ».
+
+Deux exceptions, voulues :
+
+- le demandeur peut **retirer sa demande** tant qu'elle est **Nouveau** (le Support n'a pas encore répondu) ;
+- un **forçage** (« Forcer la clôture », « Forcer le retour ») passe outre le tour, avec son propre droit, réservé au
+  Support (voir [Les forçages](#modal-tma.tickets.forcages)).
+
+Si le demandeur est absent, un autre **destinataire principal** du ticket, dans son application, peut **prendre la
+main** : il devient le demandeur (voir [Prendre la main](#modal-tma.tickets.question-reponse)).
 
 ## Ce que l'on trouve dans le module
 
@@ -73,5 +77,5 @@ Pour installer et relier les applications : [Configuration de départ](#modal-tm
 
 - [Les mots du module](#modal-tma.comprendre.vocabulaire)
 - [Qui doit agir ?](#modal-tma.comprendre.la-main)
-- [L'équipe du client ou le Support](#modal-tma.comprendre.traitement)
+- [Du client au Support](#modal-tma.comprendre.traitement)
 - [Les membres du Support dans une application cliente](#modal-tma.agents)

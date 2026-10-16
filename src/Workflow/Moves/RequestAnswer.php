@@ -6,13 +6,16 @@ use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
+use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
+use CharlesStOlive\FilamentTma\Workflow\Concerns\AnswersTheRequest;
 use CharlesStOlive\FilamentTma\Workflow\Concerns\WritesMessages;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
 
-/** L'équipe qui traite la demande pose une question : la main passe au demandeur jusqu'à sa réponse. */
+/** Le Support pose une question, sur une demande nouvelle ou en cours : la main passe au demandeur jusqu'à sa réponse. */
 class RequestAnswer extends Move
 {
+    use AnswersTheRequest;
     use WritesMessages;
 
     public function key(): string
@@ -42,7 +45,7 @@ class RequestAnswer extends Move
 
     public function from(): array
     {
-        return [InProgress::class];
+        return [Submitted::class, InProgress::class];
     }
 
     public function to(Ticket $ticket): string
@@ -67,6 +70,7 @@ class RequestAnswer extends Move
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
+        $this->answering($ticket, $context);
         $ticket->waiting_since = now();
         $this->writeComment($ticket, $data['question'], $context, ['question' => true], files: $data['files'] ?? []);
     }

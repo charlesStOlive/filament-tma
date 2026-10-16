@@ -8,6 +8,8 @@ use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
+use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -19,6 +21,12 @@ use Filament\Schemas\Schema;
 
 class TicketForm
 {
+    /** Le Support retouche le titre et la priorité ; la demande elle-même (texte, fichiers) reste à son auteur. */
+    public static function demandLocked(string $operation, ?Ticket $record): bool
+    {
+        return $operation === 'edit' && $record !== null && ! app(TicketWorkflow::class)->mayEditDemand($record, Context::current());
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
@@ -64,6 +72,7 @@ class TicketForm
             ])->columnSpanFull(),
             RichEditor::make('description')
                 ->label(__('Description'))
+                ->disabled(fn (string $operation, ?Ticket $record): bool => self::demandLocked($operation, $record))
                 ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('Mise en forme du texte')))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
@@ -73,6 +82,7 @@ class TicketForm
                 ->columnSpanFull(),
             SpatieMediaLibraryFileUpload::make('attachments')
                 ->label(__('Pièces jointes'))
+                ->disabled(fn (string $operation, ?Ticket $record): bool => self::demandLocked($operation, $record))
                 ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
                 ->collection(Ticket::ATTACHMENTS_COLLECTION)
                 ->disk(config('filament-tma.attachments.disk', 'local'))

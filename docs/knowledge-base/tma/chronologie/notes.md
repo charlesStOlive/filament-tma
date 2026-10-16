@@ -8,11 +8,12 @@ order: 10
 
 Une note se pose **à côté** de l'échange : une piste, une remarque, une capture, un rappel. Elle commente **un
 message** en particulier, ou **le ticket entier**. Elle ne répond à personne et ne change pas l'état du ticket :
-elle s'ajoute, quelle que soit la partie qui a la main.
+elle s'ajoute, quelle que soit la partie qui a la main. C'est ce qu'on écrit quand ce n'est pas son tour, ou pour un point
+d'étape : elle prévient les destinataires comme un message.
 
 | | Message | Note |
 | --- | --- | --- |
-| Pour quoi | l'**échange** : questions, réponses, précisions | un commentaire à côté, sur un message ou sur le ticket |
+| Pour quoi | l'**échange**, avec un passage : questions, réponses, « résolu » | un commentaire à côté (point d'étape, piste, précision), sur un message ou sur le ticket, à tout moment |
 | Qui la lit | tout le monde sur le ticket, des deux côtés | tout le monde, des deux côtés ; ou son auteur seul s'il la garde pour lui |
 | Où l'écrire | **Nouveau message**, sous l'historique | **Ajouter une note**, sous le message ou sous la demande |
 | Change l'état ? | une réponse, oui ; un simple message, non | non |

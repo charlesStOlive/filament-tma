@@ -5,12 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Les notifications du module, ici :
- * - `tma_notices` : ce qui a été dit à chacun (un passage, un message, une note, une relance…), envoyé tout de suite
- *   (`sent_at` posé) ou mis de côté pour le prochain récapitulatif (`sent_at` vide). Une même chose n'est dite qu'une
- *   fois à une personne (`key`) ;
- * - `tma_notification_preferences` : comment chacun veut être prévenu quand il est destinataire principal (courriel,
- *   cloche de l'application, ou les deux).
+ * Les notifications du module (envoyées tout de suite, ou gardées pour le bilan), le choix de chacun (courriel,
+ * cloche), et le journal des actions sensibles (CDC §23).
  */
 return new class extends Migration
 {
@@ -37,10 +33,25 @@ return new class extends Migration
             $table->json('channels')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('tma_audits', function (Blueprint $table) {
+            $table->id();
+            $table->string('action')->index();
+            $table->nullableMorphs('subject');
+            $table->string('subject_label')->nullable();
+            $table->foreignId('actor_id')->nullable()->constrained('tma_actors')->nullOnDelete();
+            $table->string('instance_uid', 26);
+            $table->string('origin');
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+            $table->json('meta')->nullable();
+            $table->timestamp('created_at')->index();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('tma_audits');
         Schema::dropIfExists('tma_notification_preferences');
         Schema::dropIfExists('tma_notices');
     }

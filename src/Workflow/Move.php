@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Workflow;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
@@ -10,14 +11,17 @@ use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Component;
 
 /**
- * Un mouvement du workflow d'un ticket : « Prendre en charge », « Répondre »… Il dit d'où il part (`from()`), où il
+ * Un mouvement du workflow d'un ticket : « Demander des précisions », « Répondre »… Il dit d'où il part (`from()`), où il
  * mène (`to()`), quelle partie peut le faire (`sides()`), ce qu'il demande (`rules()`, `formSchema()`) et ce qu'il
- * écrit (`apply()`). `TicketWorkflow` contrôle et exécute ; le droit de chaque utilisateur est la permission
- * `tma.ticket.workflow.{clé}` (voir `Support\TmaGate`).
+ * écrit (`apply()`). `TicketWorkflow` contrôle et exécute.
+ *
+ * Un passage normal suit le tour (addendum §3.1) : il part d'un état où c'est le tour de sa partie, et du côté du
+ * demandeur, seul le demandeur le fait (`allowsRequester()`). Aucun droit ne l'ouvre. Un forçage (`override()`), lui,
+ * ne dépend que de son droit.
  */
 abstract class Move
 {
-    /** La clé, dans l'historique et dans la permission : `take-charge`. */
+    /** La clé, dans l'historique : `request-answer`. */
     abstract public function key(): string;
 
     abstract public function label(): string;
@@ -36,8 +40,7 @@ abstract class Move
     /**
      * Un passage de la zone de réponse de la fiche (sous la chronologie), plutôt qu'un bouton d'en-tête : c'est ainsi
      * que répond la partie qu'on attend, avec son texte. La clé du texte dans les données (`answer`, `question`…) ;
-     * '' pour un passage sans texte à lui, dont le texte éventuel s'écrit en message juste avant ; null pour un
-     * passage qui reste un bouton d'en-tête.
+     * null pour un passage qui reste un bouton d'en-tête.
      */
     public function replyField(): ?string
     {
@@ -67,10 +70,27 @@ abstract class Move
      */
     abstract public function sides(): array;
 
-    /** Une condition de plus pour une partie (l'annulation par le demandeur ne vaut qu'avant la prise en charge…). */
+    /** Une condition de plus pour une partie (un forçage permis à l'une et pas à l'autre…). */
     public function allowsSide(Side $side, Ticket $ticket): bool
     {
         return true;
+    }
+
+    /**
+     * Côté demandeur, qui le fait : le demandeur lui-même. « Prendre la main » est l'exception (un autre destinataire
+     * principal).
+     */
+    public function allowsRequester(Ticket $ticket, Actor $actor): bool
+    {
+        return (int) $ticket->requester_actor_id === (int) $actor->getKey();
+    }
+
+    /**
+     * Un forçage : le droit qui l'ouvre (`force-close`…), à la place du tour. Null pour un passage normal.
+     */
+    public function override(): ?string
+    {
+        return null;
     }
 
     /** Disponible pour ce ticket, en dehors des états et des droits (le circuit du Support est ouvert…). */

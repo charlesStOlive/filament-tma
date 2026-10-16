@@ -16,69 +16,149 @@ Vocabulaire : **maître** = Filbreeze, **client** = une application cliente (Des
 | « Prism pour l'affichage » (§20) | `charlesstolive/filament-prism` sert aux échanges avec des IA | Prism n'est pas une dépendance d'affichage. Usage IA éventuel plus tard (résumé, orthographe). |
 | Rendu graphique | `charlesstolive/filament-ui` (couleurs, `SplitView`, `SidePane`…) | Un composant de rendu réutilisable par d'autres plugins va dans filament-ui. Un rendu propre au plugin reste dans son CSS/JS, avec les couleurs de filament-ui. |
 | « Permissions Sync » (§13) | `charlesstolive/filament-permission-manager` (permissions, jetons API Passport, middlewares `fpm.api.*`) | Les droits et l'authentification API s'appuient dessus. |
-| Workflow (§7) | `charlesstolive/filament-state-fusion-enhanced` (sur `spatie/laravel-model-states`) | Les workflows sont des états spatie avec les actions state-fusion. À installer dans Desapp. |
+| Workflow (§7) | `charlesstolive/filament-state-fusion-enhanced` (sur `spatie/laravel-model-states`) | Les états sont des états spatie, affichés avec state-fusion ; les passages sont les mouvements du plugin (§3). |
 | Pièces jointes (§17) | `spatie/laravel-medialibrary` présent dans les deux applications | Pièces jointes et images via medialibrary. |
 
 Package : `charlesstolive/filament-tma`, dans `packages_filament/filament-tma`.
 
 ---
 
-## 2. Rôles : demandeur et intervenant
+## 2. Un seul circuit : le demandeur et le Support (16/10/2026)
 
-Un ticket a toujours deux parties :
+Remplace le « demandeur / intervenant » et les deux modes de traitement des débuts.
 
-- le **demandeur** : celui qui a ouvert la demande, côté application source ;
-- l'**intervenant** : celui qui la traite.
+Un ticket va **toujours** d'une application cliente au Support. Il a deux parties :
 
-Le **mode de traitement** dit qui est l'intervenant :
+- le **demandeur** : **une personne** de l'application cliente, celle qui a fait la demande (ou qui l'a reprise,
+  §3.3) ;
+- le **Support** : les membres du Support, dans le maître.
 
-| Mode | Intervenant | Application qui fait autorité |
+Le maître fait autorité dès que le ticket quitte le brouillon : l'application cliente lui demande chaque passage, il
+l'exécute, elle recopie le résultat (§7).
+
+**Le traitement interne est retiré** (traitement par l'équipe du client sans le Support, « Confier à l'équipe EDM »,
+escalade d'un ticket local, utilisateurs « internes », colonne `handling_mode`). S'il revient un jour, il aura son
+propre workflow, à part de celui-ci.
+
+Les droits ne disent plus quel passage chacun peut faire (§3) : ils disent qui est qui, et ouvrent quelques actions à
+côté du workflow.
+
+| Droit | Où | Ce qu'il donne |
 |---|---|---|
-| **Local** | un utilisateur de l'application source | l'application source |
-| **Centre de service** | l'équipe du maître | le maître |
+| `tma.ticket.correspond` — **Correspondant du Support** | client | faire une demande et la transmettre, en être le demandeur, être nommé par le Support (destinataire, demandeur d'un ticket préparé : `GET users`) |
+| `tma.ticket.handle` — **Membre du Support** | maître | traiter les demandes (§3.1), préparer un ticket pour un client |
+| `tma.ticket.force-close`, `tma.ticket.force-return` | les deux | les forçages (§3.4) |
+| `note`, `remind`, `notify`, `time`, `sync` | selon le cas | les actions à côté du workflow : notes, relance, notifications groupées, temps, synchro |
+| `viewany`, `view`, `create`, `edit`, `delete` | les deux | la liste et la fiche, comme ailleurs |
 
-Le traitement local est **primordial** : c'est un circuit complet, pas une étape avant transmission.
-Certains utilisateurs clients n'auront **que** ce circuit (aucun droit de transmission). Ils ne
-remontent pas au maître (voir §5).
-
-Un ticket local peut être transmis au centre de service à tout moment avant sa clôture
-(« Transmettre au centre de service »). L'inverse n'existe pas.
-
-Règle générale : **quand la main est à l'autre partie, on ne peut plus qu'ajouter** (commentaires,
-notes, pièces jointes). On ne modifie plus les champs du ticket et on ne déclenche pas de transition
-réservée à l'autre partie.
+Un membre du Support relié à une application cliente (`Models\Agent`) y agit pour le Support, avec ses droits du
+maître ; il n'y est jamais correspondant.
 
 ---
 
-## 3. Workflow des tickets
+## 3. Workflow des tickets (16/10/2026)
 
-Huit états. Ils remplacent les onze du CDC §7.2 : « Soumise » et « À qualifier » sont fusionnés
-dans **Soumis**, « À vérifier » et « Résolue » dans **À valider**, et « Refusée » devient un
-**Annulé** avec motif.
+Remplace l'ancien §3. Les états sont des états `spatie/laravel-model-states` (affichés avec
+`filament-state-fusion-enhanced`) ; les passages sont les **mouvements** du plugin (`Workflow\TicketWorkflow`), parce
+que plusieurs passages relient les mêmes états. Le moteur contrôle tout, quelle que soit l'origine (interface, API,
+commande) : masquer un bouton n'est jamais le seul contrôle.
 
-| État | La main est à | Transitions |
+### 3.1 Le tour
+
+**Chaque état dit à qui est le tour. Dans le circuit normal, seule cette partie agit, et du côté du demandeur,
+seulement le demandeur lui-même.** Les passages normaux ne sont pas des droits : aucun droit, pas même Super Admin, ne
+permet d'agir hors de son tour. Côté Support, tout membre du Support agit, pas seulement le contact du ticket.
+
+**Pas de « prise en charge »** (16/10/2026, remplace le passage « Prendre en charge ») : en transmettant, le demandeur
+choisit son **contact au Support** parmi les membres du Support reliés à son application — d'office s'il n'y en a
+qu'un ; sans membre relié, le maître le choisit (le seul membre par défaut, s'il n'y en a qu'un). Le ticket arrive
+chez ce contact, en Nouveau, et le Support répond tout de suite. Un ticket préparé par le maître a son auteur pour
+contact.
+
+| État | Le tour de | Passages normaux |
 |---|---|---|
-| **Brouillon** | son auteur | « Soumettre » (local, à un intervenant choisi) → Soumis · « Transmettre au centre de service » → Soumis · « Annuler » → Annulé |
-| **Soumis** | l'intervenant | « Prendre en charge » → En cours · « Refuser » (motif obligatoire) → Annulé · le demandeur peut « Annuler » tant que personne n'a pris en charge |
-| **En cours** | l'intervenant | « Demander une réponse » (question obligatoire) → En attente du demandeur · « Mettre en pause » (date obligatoire) → En pause · « Soumettre à validation » → À valider |
-| **En attente du demandeur** | le demandeur | « Répondre » (réponse obligatoire, par le demandeur) → En cours · « Reprendre » (par l'intervenant) → En cours · « Clôturer sans réponse » (par l'intervenant ou automatiquement, voir §4) → Clôturé |
-| **En pause** | l'intervenant | « Reprendre » → En cours, à la main ou automatiquement à la date prévue |
-| **À valider** | le demandeur | « Valider » → Clôturé · « Retour au Support » (motif obligatoire ; « Retour à l'équipe EDM » en traitement local) → En cours · clôture par l'intervenant ou automatique (voir §4) → Clôturé |
-| **Clôturé** | — | état final. C'est l'état « terminé » au sens de la facturation (CDC §14.4). |
-| **Annulé** | — | état final, avec auteur et motif. |
+| **Brouillon** | son auteur | « Transmettre au Support » → Nouveau · « Retirer » → Annulé (sans motif) · pour un ticket préparé par le maître : « Publier chez EDM » → Nouveau |
+| **Nouveau** | Support | « Demander des précisions » (question) → En attente du demandeur · « Marquer comme résolu » → Résolu · « Mettre en pause » (date) → En pause · « Refuser » (motif) → Annulé |
+| **En cours** | Support | les mêmes, sauf « Refuser » (après une réponse du demandeur, un renvoi ou une pause) |
+| **En pause** | Support | « Reprendre » → En cours, à la main ou à la date prévue |
+| **En attente du demandeur** | demandeur | « Répondre » (réponse) → En cours |
+| **Résolu** | demandeur | « Confirmer et clore » → Clos · « Retour au Support » (motif) → En cours |
+| **Clos**, **Annulé** | — | états finaux. Clos est l'état « terminé » de la facturation. |
 
-Compléments :
+Une seule exception, voulue : **le demandeur peut retirer sa demande tant qu'elle est Nouveau** (le Support n'a pas
+encore répondu), avec un motif.
 
-- « Transmettre au centre de service » est aussi possible depuis Soumis, En cours et En attente du
-  demandeur tant que le ticket est local : l'intervenant local escalade. Le ticket repart en
-  **Soumis**, en mode centre de service.
-- L'intervenant peut annuler, avec motif, depuis tout état non final.
-- Toute transition enregistre l'ancien et le nouvel état, l'auteur, l'application d'origine, le
-  motif et l'origine (interface, API, commande, planificateur).
-- Un commentaire ou une note ne change jamais l'état (CDC §9.4).
-- **Brouillons du maître** : le maître peut créer un ticket pour un client, invisible chez ce
-  client tant qu'il est en Brouillon. Il peut le publier tout de suite ou **programmer** sa
-  publication. Le client peut faire des brouillons, mais pas programmer de publication.
+Le Support ne reprend jamais la main dans le circuit normal : « Reprendre » ne part plus que d'une pause. Reprendre
+la main quand c'est le tour du demandeur, ou clore sans lui, ce sont des forçages (§3.4).
+
+### 3.2 Messages, notes, modifications
+
+- **Un message va toujours avec un passage** (16/10/2026) : il n'y a pas de message à part, ni « Envoyer le message ».
+  - Le demandeur, à son tour : « Répondre » ; sur un ticket résolu, « Confirmer et clore » (avec un mot facultatif) ou
+    « Retour au Support » (avec ce qui ne va pas).
+  - Le Support, à son tour : « Demander des précisions » ou « Marquer comme résolu », qui passent la main au demandeur.
+    Un point d'étape (« je regarde, je reviens vers vous ») s'écrit en **note**.
+  - Un brouillon ne reçoit pas de message : sa demande (titre, description) est le premier message.
+  - Sur un ticket, le **temps n'a pas de texte** : il porte sur un message ou une note existants, ou sur la fiche
+    entière (§10).
+- **À part, à tout moment**, chacun a :
+  - les **notes** (droit `note`), lues de tous et qui préviennent les destinataires comme un message ;
+  - la **modification de son dernier message** (ci-dessous) ;
+  - **« Relancer »** (droit `remind`) : un message marqué relance, adressé à qui a le tour. C'est le seul message sans
+    passage.
+- **Modifier un message** : seulement **le dernier message du ticket, par son auteur**, que ce soit son tour ou non.
+  Dès que quelqu'un d'autre écrit un message, plus personne ne touche aux messages précédents. Même règle pour tous,
+  et pour les tâches projet. Une note reste modifiable par son auteur.
+- **La demande** compte comme le premier message : son auteur la modifie (titre, description, priorité, pièces
+  jointes) en brouillon, puis après la transmission **tant qu'aucun message n'a suivi**. Le Support, à son tour,
+  retouche le titre et la priorité, jamais la description.
+
+### 3.3 Prendre la main (côté client)
+
+Quand c'est le tour du demandeur (En attente du demandeur, Résolu), un autre **destinataire principal** du ticket,
+correspondant de la même application, peut **« Prendre la main »** :
+
+- il **devient le demandeur** : c'est lui qu'on attend, qui répond, confirme ou renvoie ; si le Support lui répond de
+  nouveau, c'est encore lui qu'on attend ;
+- l'état ne change pas ; l'historique l'écrit (« Benoît reprend la demande de Léo ») et l'ancien demandeur est
+  prévenu ;
+- l'ancien demandeur reste destinataire principal : il peut reprendre la main de la même façon ;
+- jamais le Support ; jamais quand c'est le tour du Support ; aucun droit en plus. Le maître l'exécute, comme un
+  passage.
+
+### 3.4 Forçages
+
+Des actions distinctes du circuit normal, chacune avec **son propre droit**, réservées au Support ou au Super Admin.
+Rien n'empêche techniquement de les donner à un correspondant ; c'est à éviter.
+
+| Forçage | Depuis | Vers | Droit |
+|---|---|---|---|
+| **Forcer la clôture** (motif obligatoire) | tout état ouvert après transmission : Nouveau, En cours, En pause, En attente du demandeur, Résolu | Clos | `force-close` |
+| **Forcer le retour** (reprendre la main) | En attente du demandeur, Résolu | En cours | `force-return` (Support) |
+
+Le planificateur garde ses passages : clôture automatique (§4), reprise d'une pause à sa date, publication programmée.
+L'annulation par le Support « à tout moment » disparaît : il refuse un ticket Nouveau, ou force la clôture ensuite.
+
+### 3.5 Ce qui ne change pas
+
+- Toute transition enregistre l'ancien et le nouvel état, l'auteur, l'application d'origine, le motif et l'origine.
+- **Brouillons du maître** : le maître prépare un ticket pour un client, au nom d'un de ses correspondants, invisible
+  chez ce client tant qu'il est en brouillon ; il le publie tout de suite ou à une date.
+
+---
+
+## 3 bis. Migrations remises à plat (16/10/2026)
+
+Rien n'est encore en usage réel, production comprise : plutôt qu'un empilement de corrections, le plugin a **un seul
+jeu de migrations propres** (une par groupe de tables, au schéma final).
+
+- Installation neuve : `vendor:publish --tag=filament-tma-migrations` puis `migrate`, comme avant.
+- Installation existante : retirer de l'application les anciennes migrations `*tma*` publiées, publier les nouvelles,
+  puis **`php artisan tma:reset-schema --force` avant `migrate`**. La commande supprime les tables du module et leurs
+  lignes dans `migrations`, recrée le schéma, et garde par défaut les liaisons entre applications (applications
+  clientes, membres du Support reliés, forfaits) ; `--all` vide tout. Tickets, tâches, messages et temps sont perdus.
+- Les droits `tma.ticket.workflow.*` disparaissent : `permissions:sync`, puis donner `correspond`, `handle` et les
+  forçages aux rôles.
 
 ---
 
@@ -91,8 +171,7 @@ transition.
 
 - La clôture est enregistrée comme une transition d'origine « planificateur », avec le motif
   « Clôture automatique sans réponse ».
-- Chaque application ne clôture que les tickets dont elle a l'autorité : le maître ceux du centre
-  de service, l'application source ses tickets locaux.
+- Seul le maître clôture : il fait autorité sur tout ticket transmis.
 - Deux courriels sont prévus :
   - un **avertissement** avant la clôture (7 jours avant par défaut, désactivable) ;
   - un **avis de clôture**.
@@ -112,25 +191,16 @@ Décidé avec l'utilisateur :
   suit le principe de Filament : une seule notification Laravel `mail` + `database` (`toDatabase()` →
   `Filament\Notifications\Notification::getDatabaseMessage()`).
 - **Automatismes** : l'auteur toujours principal ; à l'envoi d'un ticket (confier) au moins un principal dans
-  l'équipe qui reçoit, et à la prise en charge (qui prend, par défaut, confirme) ; à la publication d'une tâche, au
+  l'équipe qui reçoit, et le contact au Support choisi à la transmission (16/10/2026) ; à la publication d'une tâche, au
   moins un principal chez le client.
 - **Deux applications** : le client ne nomme que ses utilisateurs, et le Support par son **compte passerelle**
   (`api.master_user`), d'office à la transmission ; le maître le traduit en ses destinataires par défaut
   (`recipients.support_defaults`, charles@notilac.fr). Le maître nomme ses membres et les utilisateurs du client.
   Des membres du Support reliés chez le client peuvent être nommés un par un si l'application le permet
   (`recipients.support_members`, charles@notilac.fr, comptes Super Admin).
-- **Correspondants du Support et internes** (remplace les « trois niveaux » du 10/10) : une seule chose compte, le
-  droit **Correspondant du Support** (`tma.ticket.workflow.transmit`, renommé dans l'écran des rôles). Qui l'a écrit
-  et transmet au Support, et le Support peut le nommer (demandeur d'un ticket préparé, destinataire) : c'est la liste
-  de `GET users`. Qui ne l'a pas est **interne** : il confie ses demandes à l'équipe EDM et n'échange qu'avec son
-  application ; il n'apparaît jamais chez le Support. Plus de distinction « équipe EDM / demandeurs » parmi les
-  correspondants ; l'**équipe EDM** ne désigne plus que ceux qui traitent dans l'application (« Prendre en charge »).
-  Chez Desapp : `support_equipe_edm` (traite et correspond), `support_demandeur` (correspond), `support_interne`
-  (interne : Mathilde).
-- **La demande d'un interne transmise au Support** (décidé le 15/10) : l'interne cesse d'en être destinataire, n'en
-  reçoit plus aucune notification, n'y écrit plus et n'y fait plus de passage ; idem sur les tâches. Le côté demandeur
-  passe aux correspondants principaux (celui qui a transmis), qui reçoivent questions, relances, rappels et
-  avertissement de clôture, et répondent pour lui (`Addressables::keptOut()`, `Notifier::requesterSide()`).
+- **Correspondants du Support** (15/10, simplifié le 16/10) : seuls les correspondants (`tma.ticket.correspond`)
+  font des demandes et sont adressables des deux côtés (`GET users`). Les « internes » et l'« équipe EDM » qui traitait
+  dans l'application disparaissent avec le traitement interne (§2).
 - **Rouvrir une tâche** (15/10) : terminée ou annulée, elle repart En cours (`TaskMoves\ReopenTask`, droit
   `tma.task.workflow.reopen`), dans le maître ou par un membre du Support depuis l'application cliente (le maître
   exécute, par la route agent).
@@ -143,18 +213,14 @@ Décidé avec l'utilisateur :
 ## 5. Utilisateurs entre applications
 
 - Le maître interroge le client pour connaître ses utilisateurs : `GET /api/tma/v1/users` (le
-  « getTmaUsers »). La réponse ne contient que les utilisateurs qui ont des droits sur le circuit
-  centre de service.
-  - Les utilisateurs **local uniquement** sont exclus par défaut. Ce filtre se lève par un
-    paramètre explicite.
+  « getTmaUsers »). La réponse ne contient que les correspondants du Support (§2).
   - Les réponses sont mises en cache côté maître (durée configurable, 1 h par défaut), avec un
     bouton de rafraîchissement.
 - Pas de table d'utilisateurs copiée. Chaque élément écrit par un utilisateur distant (ticket,
   commentaire, note, transition) garde une **référence d'auteur** : application, id distant, plus
   une copie du nom et de l'email au moment de l'écriture. L'historique reste lisible même si
   l'utilisateur disparaît de l'autre côté.
-- Les deux côtés lisent, créent et modifient selon leurs droits et selon qui a la main. Seul le
-  maître :
+- Les deux côtés lisent, créent et modifient selon le tour (§3). Seul le maître :
   - saisit du temps (heures ou jours, facturables ou non) sur les tickets et les tâches projet ;
   - crée des tâches projet ;
   - fait des brouillons invisibles et programme leur publication.
@@ -175,15 +241,14 @@ Décidé avec l'utilisateur :
   question / réponse avec images, sur les tickets comme sur les tâches projet.
 - Sur une **tâche projet**, le client ne peut ni créer de tâche ni changer son état. Il peut
   commenter, ajouter des notes et des images, et répondre.
-- Les notes correctives du demandeur pendant que la main est à l'intervenant sont des commentaires
-  ou des notes. Elles ne changent pas l'état.
+- Hors de son tour, on écrit des notes, pas des messages (§3.2).
 - **Notes (14/10/2026)** : une note commente un message de premier niveau ou le ticket entier, quelle que soit la
   partie qui a la main. Numérotée par ticket (n° 1, 2…, un numéro supprimé n'est pas redonné), avec texte et images.
   Quiconque a le droit `note` l'archive ou la ressort ; son auteur seul la modifie ou la supprime. Elle s'ouvre en
   fenêtre : la grande fenêtre montre le message (ou la demande) et ses notes à droite ; l'onglet « Notes » du volet
   les liste toutes. Le partage (`share-note`, `TMA_NOTES_SHARING`) disparaît.
-- **Modifier son message (14/10/2026)** : son auteur, tant que personne d'autre n'a écrit de message après lui,
-  même s'il a perdu la main.
+- **Modifier son message** (16/10/2026, remplace la règle du 14/10) : seulement le dernier message du ticket ou de
+  la tâche, par son auteur (§3.2).
 - **Note pour soi (14/10/2026)** : une note est lue de tous par défaut ; son auteur peut la garder pour lui
   (« Visible de moi seul », `private`), à l'écriture ou après, et la montrer plus tard. Elle voyage comme les autres
   (son auteur la retrouve des deux côtés), garde son numéro, ne change pas la dernière activité ; seul son auteur
@@ -232,7 +297,7 @@ fournies).
 ```bash
 php artisan tma:list    [--client=] [--app=] [--state=] [--json]
 php artisan tma:show    {ref} [--json]
-php artisan tma:log     {ref} --hours=2 --summary="…" [--date=] [--non-billable] [--json]
+php artisan tma:log     {ref} --hours=2 [--entry=] [--summary="…" (tâche)] [--date=] [--non-billable] [--json]
 php artisan tma:comment {ref} --body="…" [--note] [--json]
 ```
 
@@ -282,6 +347,8 @@ Décisions du 14/10/2026 :
   un message ou une note existants, ou sur un **nouveau message** écrit avec elle dans l'historique de la fiche
   (ticket ou tâche), ou, sans l'un ni l'autre, sur la fiche entière. Même chose pour un membre du Support depuis une
   application cliente, et pour `tma:log` (`--summary` écrit le message, `--entry` désigne un message existant).
+  **Sur un ticket** (16/10/2026), plus de texte avec le temps : il porte sur un message ou une note existants, ou sur
+  la fiche entière ; le nouveau message reste possible sur une tâche projet.
   Au-dessus de la durée, des raccourcis la remplissent (10, 15, 20, 30, 45 min ; 1, 2, 3 h ; ½ j ; 1 j).
 - **Supprimer une tâche (15/10/2026)** : dans le maître seulement (droit `tma.task.delete`), quel que soit son état,
   depuis la liste (icône, action groupée) ou la fiche, après un avertissement qui dit ce qui part. La tâche part avec
@@ -328,7 +395,7 @@ valider :
   de `allowances.notify`.
 - **Notifications** : aucune notification immédiate par défaut, tout passe par le récapitulatif quotidien (jours
   ouvrés, 8 h). La clôture automatique prévient toujours.
-- **Brouillons du maître** : la publication met le ticket en **Soumis** (il reste à le prendre en charge).
+- **Brouillons du maître** : la publication met le ticket en **Nouveau** ; son auteur en est le contact au Support.
 - **Tâches projet** : numérotées par le maître (`T-0007`) ; un résumé d'intervention s'ajoute aussi à un objet
   terminé (temps reporté après coup).
 - **Tâches et commandes** : `tma:list` et l'API agent couvrent tickets et tâches (`--type`).

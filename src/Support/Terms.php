@@ -9,8 +9,8 @@ use CharlesStOlive\FilamentTma\Models\Instance;
  *
  * - **Support** : l'équipe du maître, partout et sans réglage.
  * - **Le nom court du client** (« EDM ») : réglé pour chaque application cliente, dans sa fiche côté maître, et
- *   chez elle dans `filament-tma.instance.short_name` (que `tma:install --short-name` écrit). Il forme « Équipe EDM »
- *   (l'équipe locale, qui traite les demandes sans le Support) et « Publier chez EDM ».
+ *   chez elle dans `filament-tma.instance.short_name` (que `tma:install --short-name` écrit). Il forme « Publier chez
+ *   EDM » et « Correspondants EDM ».
  *
  * Tous les autres libellés passent par `__()` : une application en change un dans son fichier de traduction
  * (`lang/fr.json`), sans toucher au module.
@@ -49,17 +49,9 @@ final class Terms
         return self::$shortNames[$instanceUid];
     }
 
-    /** L'équipe locale du client, qui traite une demande sans le Support : « Équipe EDM ». */
-    public static function team(?string $instanceUid = null): string
-    {
-        $client = self::client($instanceUid);
-
-        return $client === null ? __('Équipe locale') : __('Équipe :client', ['client' => $client]);
-    }
-
     /**
      * Les correspondants du Support : les personnes d'une application cliente qui ont le droit d'écrire au Support
-     * (`tma.ticket.workflow.transmit`). Vus du client, « Correspondants du Support » ; vus du maître, « Correspondants
+     * (`tma.ticket.correspond`). Vus du client, « Correspondants du Support » ; vus du maître, « Correspondants
      * EDM ».
      */
     public static function correspondents(?string $instanceUid = null): string
@@ -71,20 +63,6 @@ final class Terms
         $client = $instanceUid === null ? null : self::clientOrInstance($instanceUid);
 
         return $client === null ? __('Correspondants du client') : __('Correspondants :client', ['client' => $client]);
-    }
-
-    /** Les utilisateurs internes d'une application cliente : sans le droit d'écrire au Support. */
-    public static function internals(): string
-    {
-        return __('Internes');
-    }
-
-    /** « Confier à l'équipe EDM » : un brouillon part à l'équipe locale, sans le Support. */
-    public static function submit(?string $instanceUid = null): string
-    {
-        $client = self::client($instanceUid);
-
-        return $client === null ? __('Confier à l’équipe locale') : __('Confier à l’équipe :client', ['client' => $client]);
     }
 
     /** « Publier chez EDM » : le maître ouvre un ticket ou une tâche à l'application cliente. */

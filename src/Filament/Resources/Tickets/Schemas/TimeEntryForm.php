@@ -29,7 +29,8 @@ use Illuminate\Support\Str;
  * Le formulaire d'une saisie de temps, chez le Support (`TimeEntriesRelationManager`) comme pour un membre du Support
  * dans une application cliente (`TimelineActions::agentTime()`) : le jour, la durée (les raccourcis la remplissent),
  * et ce sur quoi porte le temps. Le temps ne dit pas lui-même ce qui a été fait : il porte sur un message ou une note
- * de la fiche, ou sur le message écrit ici (`message`), ou, sans l'un ni l'autre, sur la fiche entière.
+ * de la fiche, ou, sans l'un ni l'autre, sur la fiche entière ; sur une tâche, aussi sur le message écrit ici
+ * (`message`). Sur un ticket, pas de texte : un message y va avec un passage.
  */
 final class TimeEntryForm
 {
@@ -122,7 +123,7 @@ final class TimeEntryForm
             ->columnSpanFull();
     }
 
-    /** On peut écrire un nouveau message sur cette fiche (pas sur un ticket terminé, ni une tâche annulée). */
+    /** On peut écrire un nouveau message avec le temps : sur une tâche (ni annulée), jamais sur un ticket. */
     private static function canWrite(Trackable $subject): bool
     {
         return app(Timeline::class)->canAdd($subject, EntryType::Comment, Context::current());

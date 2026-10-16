@@ -7,15 +7,16 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use Illuminate\Console\Command;
 
 /**
- * `tma:log DES-0042 --hours=2 --summary="…"` : saisir du temps (dans le maître) sur le message qui dit ce qui a été
- * fait, écrit dans la chronologie (CDC §16). `--summary-file` lit un résumé long dans un fichier (`-` : l'entrée
- * standard). `--entry` porte plutôt le temps sur un message ou une note qui existe déjà (son ulid, voir `tma:show`).
+ * `tma:log DES-0042 --hours=2 [--entry=01k…]` : saisir du temps (dans le maître), sur un message ou une note qui
+ * existe déjà (son ulid, voir `tma:show`), ou sur la fiche entière. Sur une tâche projet, `--summary` écrit aussi le
+ * message qui dit ce qui a été fait (`--summary-file` : un fichier, `-` l'entrée standard) ; sur un ticket, le temps n'a
+ * pas de texte (un message y va avec un passage).
  */
 class LogTimeCommand extends Command
 {
     use UsesTmaBackend;
 
-    protected $description = 'Saisit du temps sur un ticket, sur le message qui dit ce qui a été fait';
+    protected $description = 'Saisit du temps sur un ticket ou une tâche, sur un message, une note ou la fiche entière';
 
     public function __construct()
     {
@@ -25,10 +26,10 @@ class LogTimeCommand extends Command
             {--hours= : Durée en heures (1.5)}
             {--days= : Durée en jours (journée de '.(int) (config('filament-tma.time.day_minutes', 420) / 60).' h)}
             {--date= : Jour de l’intervention (AAAA-MM-JJ, aujourd’hui par défaut)}
-            {--summary= : Ce qui a été fait (écrit en message dans la chronologie)}
+            {--summary= : Tâche projet : ce qui a été fait (écrit en message dans la chronologie)}
             {--summary-file= : Fichier du résumé (- pour l’entrée standard)}
             {--non-billable : Temps non facturable}
-            {--internal : Le résumé devient une note sur le ticket plutôt qu’un message}
+            {--internal : Tâche projet : le résumé devient une note plutôt qu’un message}
             {--entry= : Ulid d’un message ou d’une note de la fiche sur lequel porte le temps (au lieu d’un résumé)}
             '.$this->backendOptions();
 

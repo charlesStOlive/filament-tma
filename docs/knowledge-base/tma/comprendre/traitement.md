@@ -1,32 +1,23 @@
 ---
-title: L'équipe du client ou le Support
+title: Du client au Support
 icon: heroicon-o-arrows-right-left
 order: 20
 ---
 
-# L'équipe du client ou le Support
+# Du client au Support
 
-La fiche d'un ticket l'affiche dans **Suivi › Traité par**.
+Un ticket naît en **brouillon** dans l'application du client, écrit par un correspondant du Support. Tant qu'il est
+brouillon, il ne quitte pas cette application.
 
-## L'équipe du client (« Équipe EDM »)
+**Transmettre au Support** l'envoie au maître (Filbreeze), qui **fait autorité** dès lors :
 
-La demande reste dans son application. Un collègue la traite : il la **prend en charge**, demande des précisions, la
-**marque comme résolue**. Le Support n'en sait rien.
-
-C'est le cas pour les demandes des **internes**, qui n'ont pas le droit d'écrire au Support. L'équipe, ce sont ceux qui
-peuvent **prendre en charge**. Son nom vient du nom court du client (voir
-[Les mots du module](#modal-tma.comprendre.vocabulaire)).
-
-## Le Support
-
-**Transmettre au Support** envoie la demande au maître (Filbreeze), qui la traite et **fait autorité** :
-
-- ses champs ne se modifient plus dans l'application d'origine ;
-- les passages du demandeur (Répondre, Confirmer et clore, Retour au Support…) sont faits par le Support, à la demande de
-  l'application ;
+- les passages du demandeur (Répondre, Confirmer et clore, Retour au Support, Prendre la main…) sont faits par le
+  Support, à la demande de l'application ; si le Support ne répond pas, rien n'est fait et un message le dit ;
+- la demande elle-même (titre, description, priorité, pièces jointes) reste à son auteur tant qu'aucun message ne l'a
+  suivie : il la modifie depuis son application, qui l'envoie au Support ;
 - tout ce qui est partagé est copié d'une application à l'autre (voir [La synchronisation](#modal-tma.synchronisation)).
 
-Seul un **correspondant du Support** transmet : son propre brouillon, ou un ticket que l'équipe du client traite déjà
-(elle escalade). Le ticket repart alors en **Nouveau**, chez le Support. Il ne revient jamais à l'équipe du client.
+Le Support peut aussi **préparer** un ticket pour un client, au nom de l'un de ses correspondants, et le publier tout
+de suite ou à une date (voir [Les tickets préparés](#modal-tma.tickets.prepares)).
 
-Si le Support ne répond pas, la transmission est annulée et un message le dit : réessayez plus tard.
+Si le Support ne répond pas au moment de la transmission, elle est annulée et un message le dit : réessayez plus tard.

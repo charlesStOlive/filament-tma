@@ -7,28 +7,27 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Les correspondants du Support d'une application cliente (`GET users` : le droit d'écrire au Support), gardés en
- * cache `api.users_cache_ttl` secondes (addendum §5). Les internes n'y sont pas, sauf demande explicite.
+ * cache `api.users_cache_ttl` secondes (addendum §5).
  */
 final class RemoteUsers
 {
     /** @return array<int, array{id: string, name: string, email: string|null, service_desk: bool}> */
-    public static function for(Instance $instance, bool $includeLocalOnly = false): array
+    public static function for(Instance $instance): array
     {
         return Cache::remember(
-            self::key($instance, $includeLocalOnly),
+            self::key($instance),
             (int) config('filament-tma.api.users_cache_ttl', 3600),
-            fn (): array => (new InstanceClient($instance))->users($includeLocalOnly),
+            fn (): array => (new InstanceClient($instance))->users(),
         );
     }
 
     public static function forget(Instance $instance): void
     {
-        Cache::forget(self::key($instance, false));
-        Cache::forget(self::key($instance, true));
+        Cache::forget(self::key($instance));
     }
 
-    private static function key(Instance $instance, bool $includeLocalOnly): string
+    private static function key(Instance $instance): string
     {
-        return 'filament-tma.users.'.$instance->uid.($includeLocalOnly ? '.all' : '');
+        return 'filament-tma.users.'.$instance->uid;
     }
 }
