@@ -4,11 +4,14 @@ namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Master;
 
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
+use CharlesStOlive\FilamentTma\Events\RecipientsChanged;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Sync\Payload;
 use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +26,21 @@ class TaskController
     public function show(Request $request, string $ulid): JsonResponse
     {
         return response()->json(Payload::snapshot($this->task($request, $ulid)));
+    }
+
+    /** `POST tasks/{ulid}/recipients` : comme pour un ticket (`TicketController::recipients()`). */
+    public function recipients(Request $request, string $ulid): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+        $task = $this->task($request, $ulid);
+        $request->validate(['recipients' => ['present', 'array'], 'actor' => ['required', 'array'], 'actor.instance_uid' => ['in:'.$instance->uid]]);
+
+        $actor = Mirror::actor($request->input('actor'));
+        $added = app(Recipients::class)->fromClient($task, $instance->uid, $request->input('recipients', []));
+        Notifier::recipientsAdded($task, $added, $actor);
+        event(new RecipientsChanged($task, Context::api($actor, $instance->uid, fromMaster: false)));
+
+        return response()->json(Payload::snapshot($task->refresh()));
     }
 
     /** `POST tasks/{ulid}/entries` : comme pour un ticket (`TicketController::entry()`). */

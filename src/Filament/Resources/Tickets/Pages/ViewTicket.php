@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Filament\Actions\MoveAction;
+use CharlesStOlive\FilamentTma\Filament\Actions\NotificationActions;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasNotes;
@@ -50,6 +51,7 @@ class ViewTicket extends ViewRecord
     {
         return [
             ...MoveAction::all(),
+            NotificationActions::remind(),
             ActionGroup::make([
                 EditAction::make(),
                 $this->resyncAction(),

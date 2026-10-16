@@ -69,6 +69,7 @@ class AgentController
             'parent_ulid' => ['nullable', 'string', 'size:26'],
             'files' => ['array'],
             'private' => ['boolean'],
+            'reminder' => ['boolean'],
         ]);
 
         if (! isset($data['type'])) {
@@ -76,7 +77,7 @@ class AgentController
         }
 
         return $this->respond(function () use ($request, $ref, $data): array {
-            $result = $this->backend($request)->write($ref, $data['type'], $data['body'], $data['parent_ulid'] ?? null, $data['files'] ?? [], $data['private'] ?? false);
+            $result = $this->backend($request)->write($ref, $data['type'], $data['body'], $data['parent_ulid'] ?? null, $data['files'] ?? [], $data['private'] ?? false, ! empty($data['reminder']) ? ['reminder' => true] : []);
 
             return ['entry' => Payload::entry($result['entry']), 'snapshot' => Payload::snapshot($result['subject'])];
         }, 201);

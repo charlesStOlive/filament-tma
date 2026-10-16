@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas;
 
 use CharlesStOlive\FilamentTma\Filament\Resources\Projects\ProjectResource;
+use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsFields;
 use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Support\Help;
@@ -19,6 +20,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TaskForm
 {
+    /** L'application du projet choisi. */
+    public static function instanceUid(Get $get): ?string
+    {
+        return Project::query()->find($get('project_id'))?->target_instance_uid;
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
@@ -37,7 +44,17 @@ class TaskForm
                 ->createOptionUsing(fn (array $data): int => ProjectResource::createProject($data)->getKey())
                 ->createOptionModalHeading(__('Nouveau projet'))
                 ->hintAction(Help::action('tma.projets', __('Les projets')))
+                ->live()
                 ->columnSpanFull(),
+            // Ses destinataires : son auteur d'office ; avant sa publication, au moins un principal chez le client.
+            Grid::make(2)->columnSpanFull()->schema(RecipientsFields::make(
+                fn (Get $get): ?string => self::instanceUid($get),
+                fn (?ProjectTask $record): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
+                    if (! $record?->isShared() && ! collect((array) $value)->contains(fn (mixed $key): bool => str_starts_with((string) $key, 'c:'))) {
+                        $fail(__('Choisissez au moins un destinataire principal chez le client, ou « Tout le monde ».'));
+                    }
+                },
+            )),
             TextInput::make('title')->label(__('Titre'))->required()->maxLength(255)->columnSpanFull(),
             Grid::make(2)->columnSpanFull()->schema([
                 DatePicker::make('starts_on')->label(__('Début'))

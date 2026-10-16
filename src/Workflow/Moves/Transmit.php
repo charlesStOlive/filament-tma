@@ -5,17 +5,20 @@ namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\InProgress;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 
 /**
  * « Transmettre au Support » (CDC §7.4) : le ticket part au maître, qui en devient l'autorité. Le demandeur le fait
@@ -86,8 +89,19 @@ class Transmit extends Move
         return true;
     }
 
+    /**
+     * Qui transmet et le Support (le compte passerelle, que le maître traduit en ses destinataires) deviennent
+     * principaux ; les internes, demandeur compris, cessent d'en être destinataires : un correspondant répond pour eux.
+     */
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
+        app(Recipients::class)->removeInternals($ticket);
+        app(Recipients::class)->add($ticket, $context->actor);
+
+        if ($gateway = Addressables::gateway()) {
+            app(Recipients::class)->add($ticket, Actor::forUser($gateway));
+        }
+
         $ticket->handling_mode = HandlingMode::ServiceDesk;
         $ticket->submitted_at = now();
         $ticket->sync_status = SyncStatus::Pending;

@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Uploads;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -169,6 +170,7 @@ final class Payload
             'transitions' => $ticket->transitions()->with('actor')->oldest('id')->get()
                 ->map(fn (StateTransition $transition): array => self::transition($transition))
                 ->all(),
+            'recipients' => Recipients::payload($ticket),
         ];
     }
 

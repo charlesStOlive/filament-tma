@@ -5,12 +5,14 @@ namespace CharlesStOlive\FilamentTma\Models;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Enums\Priority;
+use CharlesStOlive\FilamentTma\Enums\RecipientRole;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
 use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -195,9 +197,19 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
             ? [HandlingMode::ServiceDesk->value => $mayTake]
             : [HandlingMode::Local->value => $mayTake, HandlingMode::ServiceDesk->value => $agent !== null]));
 
+        // Le côté demandeur : sa propre demande ; un interne, seulement celles traitées ici ; un correspondant, aussi la
+        // demande transmise d'un interne dont il est destinataire principal (il répond pour lui).
+        $internal = Addressables::isInternal($user);
+
         return $query->where(fn (Builder $q): Builder => $q
             ->where(fn (Builder $q): Builder => $q->where('state', 'draft')->whereIn('created_by_actor_id', $me))
-            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['awaiting_requester', 'pending_validation'])->whereIn('requester_actor_id', $me))
+            ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['awaiting_requester', 'pending_validation'])->whereIn('requester_actor_id', $me)
+                ->when($internal, fn (Builder $q): Builder => $q->where('handling_mode', '!=', HandlingMode::ServiceDesk->value)))
+            ->when(Tma::isClient() && ! $internal && $agent === null, fn (Builder $q): Builder => $q->orWhere(fn (Builder $q): Builder => $q
+                ->whereIn('state', ['awaiting_requester', 'pending_validation'])
+                ->where('handling_mode', HandlingMode::ServiceDesk->value)
+                ->whereIn('requester_actor_id', Addressables::internalActorIds())
+                ->whereHas('recipients', fn (Builder $r): Builder => $r->where('role', RecipientRole::Primary->value)->whereIn('actor_id', $me))))
             ->orWhere(fn (Builder $q): Builder => $q->whereIn('state', ['submitted', 'in_progress'])->whereIn('assignee_actor_id', $me))
             ->orWhere(fn (Builder $q): Builder => $q->where('state', 'submitted')->whereNull('assignee_actor_id')->whereIn('handling_mode', $takes)));
     }

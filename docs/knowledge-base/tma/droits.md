@@ -19,17 +19,20 @@ Les droits du module se donnent dans l'écran des rôles, comme les autres. Tout
 | `note` | écrire des notes et les archiver (tout le monde sur le ticket les lit) |
 | `time` | saisir et modifier du temps (Support) |
 | `sync` | renvoyer un ticket ou une tâche à son application (Support) |
+| `remind` | relancer qui a la main sur un ticket (tickets) |
+| `notify` | envoyer maintenant les notifications groupées en attente (tickets) |
 | `workflow.{passage}` | faire ce passage : `workflow.take-charge`, `workflow.validate`… |
 
 La famille **Passages du ticket** (`tma.ticket.workflow.*`) regroupe un droit par passage. Un rôle de l'équipe qui
 traite reçoit par exemple `take-charge`, `request-answer`, `pause`, `resume`, `submit-for-validation`, `close`,
 `refuse` ; un rôle de demandeur `submit`, `answer`, `validate`, `reopen`, `cancel`.
 
-**`tma.ticket.workflow.transmit`** a un sens de plus dans une application cliente : il désigne l'**équipe du
-client** (« Équipe EDM »), les personnes en lien avec le **Support**. Leurs demandes partent au Support (elles ne
-voient pas « Confier à l'équipe EDM ») ; elles reçoivent celles des autres, qu'elles traitent ou transmettent, et
-répondent au Support pour le demandeur. Les autres utilisateurs ne passent que par elles, et le Support ne les voit
-pas. Voir [Comprendre le module](#modal-tma.comprendre).
+**`tma.ticket.workflow.transmit`**, affiché **Correspondant du Support : écrire et transmettre au Support**, fait
+d'une personne un **correspondant du Support** : ses demandes partent au Support (elle ne voit pas « Confier à
+l'équipe EDM »), elle répond au Support pour un demandeur, et le Support peut la nommer demandeur d'un ticket préparé
+ou destinataire. Sans ce droit, une personne est **interne** : elle confie ses demandes à l'équipe EDM et le Support
+ne la voit pas. Par exemple, chez Desapp : `support_equipe_edm` (traite et correspond), `support_demandeur`
+(correspond), `support_interne` (interne). Voir [Comprendre le module](#modal-tma.comprendre).
 
 ## Les autres écrans
 

@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
@@ -17,15 +18,15 @@ use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 
 /**
- * Le jeu d'exemples d'une application cliente, avec ses vrais utilisateurs : les demandeurs (qui créent des tickets),
- * l'équipe (qui peut transmettre au Support) et le membre du Support relié ici (`Agent`).
+ * Le jeu d'exemples d'une application cliente, avec ses vrais utilisateurs : les internes (qui ne font que confier
+ * leurs demandes à l'équipe), les correspondants du Support (qui lui écrivent : le droit « Transmettre au Support »),
+ * l'équipe qui traite (qui peut prendre en charge) et le membre du Support relié ici (`Agent`).
  *
- * - Des demandes traitées par l'équipe, dans tous les états : brouillon, nouvelle, en attente du demandeur, en
- *   pause, résolue, close, annulée.
+ * - Des demandes d'internes, traitées par l'équipe, dans tous les états : brouillon, nouvelle, en attente du
+ *   demandeur, en pause, résolue, close, annulée.
  * - Des demandes transmises au Support, que le membre du Support traite depuis ici (dans le maître) : question au
  *   demandeur, en cours avec des notes (dont une pour lui seul) et du temps, résolue, nouvelle ; l'une part d'une tâche.
  * - La participation aux tâches publiées : messages, note, réponse du Support.
@@ -42,13 +43,19 @@ final class ClientDemo extends Scenario
     {
         $this->tickets = app(TicketWorkflow::class);
         $this->timeline = app(Timeline::class);
-        [$requesters, $team, $agent] = $this->people();
-        // Les rôles du récit : trois demandeurs, deux membres de l'équipe (les mêmes s'il y a moins de monde).
-        [$leo, $mathilde, $benoit] = [$requesters[0], $requesters[1 % $requesters->count()], $requesters[2 % $requesters->count()]];
+        [$correspondents, $internals, $team, $agent] = $this->people();
+        // Les rôles du récit (les mêmes personnes reviennent s'il y a moins de monde) : trois correspondants du
+        // Support, trois demandes d'internes, deux membres de l'équipe qui traite.
+        [$leo, $benoit, $claire] = [$correspondents[0], $correspondents[1 % $correspondents->count()], $correspondents[2 % $correspondents->count()]];
         [$guillaume, $helpdesk] = [$team[0], $team[1 % $team->count()]];
         $this->teller = $guillaume;
 
-        $this->localTickets($leo, $mathilde, $benoit, $guillaume, $helpdesk);
+        if ($internals->isEmpty()) {
+            $this->say('Aucun interne (sans le droit « Transmettre au Support ») : demandes internes passées.');
+        } else {
+            [$mathilde, $paul, $lea] = [$internals[0], $internals[1 % $internals->count()], $internals[2 % $internals->count()]];
+            $this->localTickets($mathilde, $paul, $lea, $guillaume, $helpdesk);
+        }
 
         if ($agent === null) {
             $this->say('Pas de membre du Support relié ici : demandes au Support et tâches passées.');
@@ -56,11 +63,11 @@ final class ClientDemo extends Scenario
             return;
         }
 
-        $this->supportTickets($leo, $mathilde, $benoit, $guillaume, $helpdesk, $agent);
-        $this->tasks($leo, $mathilde, $guillaume, $agent);
+        $this->supportTickets($leo, $benoit, $claire, $guillaume, $agent, $internals->first());
+        $this->tasks($leo, $benoit, $guillaume, $agent);
     }
 
-    /** Les demandes que l'équipe traite elle-même. */
+    /** Les demandes des internes, que l'équipe traite elle-même. */
     private function localTickets(Authenticatable $leo, Authenticatable $mathilde, Authenticatable $benoit, Authenticatable $guillaume, Authenticatable $helpdesk): void
     {
         $this->at(1, '16:20', fn () => $this->draft($leo, 'Ajouter un filtre par pays sur la liste des parrains',
@@ -113,16 +120,26 @@ final class ClientDemo extends Scenario
         $this->say('Annulé : « La photo de l’enfant ne s’affiche pas »');
     }
 
-    /** Les demandes transmises au Support, traitées depuis ici par le membre du Support. */
-    private function supportTickets(Authenticatable $leo, Authenticatable $mathilde, Authenticatable $benoit, Authenticatable $guillaume, Authenticatable $helpdesk, Authenticatable $agent): void
+    /** Les demandes que les correspondants transmettent au Support, traitées depuis ici par le membre du Support. */
+    private function supportTickets(Authenticatable $leo, Authenticatable $mathilde, Authenticatable $benoit, Authenticatable $guillaume, Authenticatable $agent, ?Authenticatable $internal): void
     {
-        $error = $this->transmitted($leo, $guillaume, 'Erreur 500 à l’enregistrement d’un parrainage',
+        // La demande d'une interne, que l'équipe transmet : le Support pose sa question à l'équipe, pas à elle.
+        if ($internal !== null) {
+            $escalated = $this->submitted($internal, 'Les dons par virement n’apparaissent plus', 'Les virements de la semaine ne remontent pas dans la liste des dons.');
+            $this->move($escalated, 'take-charge', $guillaume);
+            $this->move($escalated, 'transmit', $guillaume);
+            $this->move($escalated, 'take-charge', $agent);
+            $this->move($escalated, 'request-answer', $agent, ['question' => self::html('Quelle banque, et depuis quelle date ?')]);
+            $this->say('Demande d’une interne transmise par l’équipe, le Support attend l’équipe : « Les dons par virement n’apparaissent plus »');
+        }
+
+        $error = $this->transmitted($leo, 'Erreur 500 à l’enregistrement d’un parrainage',
             'En enregistrant un nouveau parrainage, la page affiche « Erreur 500 ».', 'urgent');
         $this->move($error, 'take-charge', $agent);
         $this->move($error, 'request-answer', $agent, ['question' => self::html('Pour quel parrain ? Pouvez-vous donner son numéro et l’heure de l’erreur ?')]);
         $this->say('Au Support, en attente du demandeur : « Erreur 500 à l’enregistrement d’un parrainage »');
 
-        $twice = $this->transmitted($mathilde, $helpdesk, 'Les relances de dons partent en double',
+        $twice = $this->transmitted($mathilde, 'Les relances de dons partent en double',
             'Certains parrains reçoivent deux fois le même courriel de relance.', 'high');
         $this->move($twice, 'take-charge', $agent);
         $this->timeline->add($twice, EntryType::Note, self::html('Constaté surtout le lundi matin.'), Context::ui($guillaume));
@@ -131,17 +148,17 @@ final class ClientDemo extends Scenario
         $this->agentTime($twice, $agent, 90, $looking);
         $this->say('Au Support, en cours, avec une note pour soi et du temps : « Les relances de dons partent en double »');
 
-        $pdf = $this->transmitted($benoit, $guillaume, 'Le PDF du reçu fiscal est vide', 'Le reçu fiscal téléchargé est une page blanche.');
+        $pdf = $this->transmitted($benoit, 'Le PDF du reçu fiscal est vide', 'Le reçu fiscal téléchargé est une page blanche.');
         $this->move($pdf, 'take-charge', $agent);
         $this->move($pdf, 'submit-for-validation', $agent, ['message' => self::html('Corrigé en production : il manquait une police au modèle du reçu.')]);
         $this->say('Au Support, résolu : « Le PDF du reçu fiscal est vide »');
 
-        $this->transmitted($guillaume, $guillaume, 'Ajouter un export des parrains par pays', 'Un export Excel des parrains, regroupés par pays.', 'low');
+        $this->transmitted($guillaume, 'Ajouter un export des parrains par pays', 'Un export Excel des parrains, regroupés par pays.', 'low');
         $this->say('Au Support, nouveau : « Ajouter un export des parrains par pays »');
     }
 
     /** La participation aux tâches publiées, et un ticket qui part de l'une d'elles. */
-    private function tasks(Authenticatable $leo, Authenticatable $mathilde, Authenticatable $guillaume, Authenticatable $agent): void
+    private function tasks(Authenticatable $leo, Authenticatable $benoit, Authenticatable $guillaume, Authenticatable $agent): void
     {
         $tasks = ProjectTask::query()->whereNot('state', 'draft')->orderBy('number')->get();
         $done = $tasks->first(fn (ProjectTask $task): bool => $task->state::getMorphClass() === 'done');
@@ -153,7 +170,7 @@ final class ClientDemo extends Scenario
             return;
         }
 
-        $question = $this->timeline->add($mockups, EntryType::Comment, self::html('Peut-on prévoir une version mobile de l’espace parrain ?'), Context::ui($mathilde));
+        $question = $this->timeline->add($mockups, EntryType::Comment, self::html('Peut-on prévoir une version mobile de l’espace parrain ?'), Context::ui($benoit));
         $this->timeline->add($mockups, EntryType::Comment, self::html('Oui : la version mobile arrive avec les maquettes de la semaine prochaine.'), Context::ui($agent));
         $this->timeline->add($mockups, EntryType::Note, self::html('La charte graphique 2026 est dans le Drive › Communication.'), Context::ui($guillaume), $question);
         $this->say("Tâche {$mockups->number} : une question du client, la réponse du Support, une note de l’équipe");
@@ -168,8 +185,8 @@ final class ClientDemo extends Scenario
             'description' => self::html('Sur téléphone, les maquettes partagées s’ouvrent en tout petit.'),
             'priority' => 'normal',
             'task_id' => $mockups->getKey(),
-        ], Context::ui($mathilde));
-        $this->move($fromTask, 'transmit', $guillaume);
+        ], Context::ui($benoit));
+        $this->move($fromTask, 'transmit', $benoit);
         $this->say("Ticket ouvert à partir de la tâche {$mockups->number}, transmis au Support");
     }
 
@@ -187,11 +204,11 @@ final class ClientDemo extends Scenario
         return $ticket;
     }
 
-    /** Une demande que l'équipe transmet au Support (le Support fait autorité dès lors). */
-    private function transmitted(Authenticatable $user, Authenticatable $teamMember, string $title, string $text, string $priority = 'normal'): Ticket
+    /** Une demande qu'un correspondant transmet lui-même au Support (le Support fait autorité dès lors). */
+    private function transmitted(Authenticatable $user, string $title, string $text, string $priority = 'normal'): Ticket
     {
         $ticket = $this->draft($user, $title, $text, $priority);
-        $this->move($ticket, 'transmit', $teamMember);
+        $this->move($ticket, 'transmit', $user);
 
         return $ticket;
     }
@@ -211,10 +228,10 @@ final class ClientDemo extends Scenario
     }
 
     /**
-     * Les demandeurs (créent des tickets, ne transmettent pas), l'équipe (transmet au Support) et le membre du Support
-     * relié ici.
+     * Les correspondants du Support (le droit de lui écrire), les internes (qui ne font que confier), l'équipe qui
+     * traite (qui peut prendre en charge) et le membre du Support relié ici.
      *
-     * @return array{0: Collection<int, Authenticatable>, 1: Collection<int, Authenticatable>, 2: Authenticatable|null}
+     * @return array{0: Collection<int, Authenticatable>, 1: Collection<int, Authenticatable>, 2: Collection<int, Authenticatable>, 3: Authenticatable|null}
      */
     private function people(): array
     {
@@ -223,16 +240,20 @@ final class ClientDemo extends Scenario
         $users = $model::query()->orderBy('id')->get()
             ->reject(fn ($user): bool => (bool) $agent?->is($user))
             // Ceux qui peuvent créer une demande (les comptes de service, sans rôle, ne le peuvent pas).
-            ->filter(fn ($user): bool => Gate::getPolicyFor(Ticket::class) === null || Gate::forUser($user)->allows('create', Ticket::class));
+            ->filter(fn ($user): bool => Addressables::mayRequest($user));
 
-        $canTransmit = fn ($user): bool => TmaGate::allows($user, TmaGate::workflowAction('transmit'));
-        $team = $users->filter($canTransmit)->values();
-        $requesters = $users->reject($canTransmit)->values();
+        $correspondents = $users->filter(fn ($user): bool => Addressables::isCorrespondent($user))->values();
+        $internals = $users->reject(fn ($user): bool => Addressables::isCorrespondent($user))->values();
+        $team = $users->filter(fn ($user): bool => TmaGate::allows($user, TmaGate::workflowAction('take-charge')))->values();
 
-        if ($team->isEmpty()) {
-            throw new RuntimeException(__('Personne ici ne peut transmettre au Support (droit tma.ticket.workflow.transmit).'));
+        if ($correspondents->isEmpty()) {
+            throw new RuntimeException(__('Personne ici n’est correspondant du Support (droit tma.ticket.workflow.transmit).'));
         }
 
-        return [$requesters->isEmpty() ? $team : $requesters, $team, $agent];
+        if ($team->isEmpty()) {
+            throw new RuntimeException(__('Personne ici ne peut prendre en charge une demande (droit tma.ticket.workflow.take-charge).'));
+        }
+
+        return [$correspondents, $internals, $team, $agent];
     }
 }

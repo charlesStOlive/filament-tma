@@ -36,3 +36,14 @@ les messages.
 Le temps ne se saisit que chez le Support : depuis une application cliente, les commandes agissent **chez le
 Support**, avec le jeton d'un utilisateur du Support. `--local` les fait agir plutôt sur les tickets de l'application
 (ceux de l'équipe du client), avec un jeton de l'application.
+
+## Les notifications
+
+Deux commandes sans jeton, pour le planificateur et l'administrateur : elles n'écrivent rien dans les tickets, elles
+envoient ce que le module a décidé. Voir [Rappels et notifications](#modal-tma.notifications).
+
+```bash
+php artisan tma:notify --stale [--dry-run]     # rappelle à qui a la main ce qui ne bouge plus
+php artisan tma:notify --grouped [--dry-run]   # envoie maintenant les notifications en attente
+php artisan tma:digest [--pending] [--dry-run] # le récapitulatif (--pending : seulement qui a des nouveautés)
+```

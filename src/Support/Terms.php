@@ -57,6 +57,28 @@ final class Terms
         return $client === null ? __('Équipe locale') : __('Équipe :client', ['client' => $client]);
     }
 
+    /**
+     * Les correspondants du Support : les personnes d'une application cliente qui ont le droit d'écrire au Support
+     * (`tma.ticket.workflow.transmit`). Vus du client, « Correspondants du Support » ; vus du maître, « Correspondants
+     * EDM ».
+     */
+    public static function correspondents(?string $instanceUid = null): string
+    {
+        if (Tma::isClient()) {
+            return __('Correspondants du Support');
+        }
+
+        $client = $instanceUid === null ? null : self::clientOrInstance($instanceUid);
+
+        return $client === null ? __('Correspondants du client') : __('Correspondants :client', ['client' => $client]);
+    }
+
+    /** Les utilisateurs internes d'une application cliente : sans le droit d'écrire au Support. */
+    public static function internals(): string
+    {
+        return __('Internes');
+    }
+
     /** « Confier à l'équipe EDM » : un brouillon part à l'équipe locale, sans le Support. */
     public static function submit(?string $instanceUid = null): string
     {

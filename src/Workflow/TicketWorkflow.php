@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
@@ -107,8 +108,8 @@ class TicketWorkflow
             return false;
         }
 
-        // Qui peut parler au Support (le droit « Transmettre au Support ») forme l'équipe du client : ses demandes à
-        // lui partent au Support, il ne les confie pas à sa propre équipe.
+        // Un correspondant du Support (le droit d'écrire au Support) lui transmet ses demandes : il ne les confie pas à
+        // l'équipe de son application. Les internes, eux, ne font que confier.
         if ($move->key() === 'submit' && $this->allows($ticket, 'transmit', $context)) {
             return false;
         }
@@ -125,6 +126,11 @@ class TicketWorkflow
         // représente pour ce ticket. Un agent agit avec ses droits du maître, que le maître contrôle.
         if ($context->isAgent()) {
             return true;
+        }
+
+        // Un interne ne fait aucun passage sur une demande transmise au Support : un correspondant agit pour lui.
+        if (Addressables::keptOut($ticket, $context->user)) {
+            return false;
         }
 
         return ($context->isApi() && $context->user === null) || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $ticket);
@@ -248,6 +254,10 @@ class TicketWorkflow
             'created_by_actor_id' => $context->actor->getKey(),
         ]);
 
+        // Son auteur et son demandeur en sont d'office destinataires principaux.
+        app(Recipients::class)->add($ticket, $context->actor);
+        app(Recipients::class)->add($ticket, $actor);
+
         event(new TicketCreated($ticket, $context));
 
         return $ticket;
@@ -269,6 +279,9 @@ class TicketWorkflow
             'requester_actor_id' => $context->actor->getKey(),
             'created_by_actor_id' => $context->actor->getKey(),
         ]);
+
+        // Son auteur en est d'office destinataire principal.
+        app(Recipients::class)->add($ticket, $context->actor);
 
         event(new TicketCreated($ticket, $context));
 

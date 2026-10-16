@@ -5,14 +5,17 @@ namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Master;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
+use CharlesStOlive\FilamentTma\Events\RecipientsChanged;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Sync\Payload;
 use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +46,7 @@ class TicketController
             'transition' => ['required', 'array'],
             'transition.ulid' => ['required', 'string', 'size:26'],
             'files' => ['array'],
+            'recipients' => ['array'],
         ]);
 
         $existing = Ticket::withTrashed()->where('ulid', $payload['ticket']['ulid'])->first();
@@ -66,6 +70,9 @@ class TicketController
 
             Mirror::files($ticket, $request->input('files', []));
             Mirror::transition($ticket, [...$request->input('transition'), 'to_state' => 'submitted']);
+
+            // Ses destinataires à elle, et le Support (nos destinataires par défaut) : toujours un principal chez nous.
+            app(Recipients::class)->fromClient($ticket, $instance->uid, $request->input('recipients', []));
 
             return $ticket;
         });
@@ -148,6 +155,23 @@ class TicketController
         }
 
         return response()->json(['entry' => Payload::entry($entry)], $isNew ? 201 : 200);
+    }
+
+    /**
+     * `POST tickets/{ulid}/recipients` : les destinataires vus de l'application appelante (ses utilisateurs, le
+     * Support) ; la réponse donne l'état complet à recopier.
+     */
+    public function recipients(Request $request, string $ulid): JsonResponse
+    {
+        $instance = AuthenticateInstance::instance($request);
+        $ticket = $this->ticket($request, $ulid);
+        $request->validate(['recipients' => ['present', 'array'], 'actor' => ['required', 'array'], 'actor.instance_uid' => ['in:'.$instance->uid]]);
+
+        $added = app(Recipients::class)->fromClient($ticket, $instance->uid, $request->input('recipients', []));
+        Notifier::recipientsAdded($ticket, $added, Mirror::actor($request->input('actor')));
+        event(new RecipientsChanged($ticket, $this->context($request, $instance)));
+
+        return response()->json(Payload::snapshot($ticket->refresh()));
     }
 
     private function ticket(Request $request, string $ulid): Ticket

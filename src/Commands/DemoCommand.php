@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Commands;
 use CharlesStOlive\FilamentTma\Support\Demo\ClientDemo;
 use CharlesStOlive\FilamentTma\Support\Demo\MasterDemo;
 use CharlesStOlive\FilamentTma\Support\Demo\Wipe;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use Illuminate\Console\Command;
 use Throwable;
@@ -54,7 +55,8 @@ class DemoCommand extends Command
         $this->components->info(Tma::isMaster() ? __('Exemples du Support :') : __('Exemples de l’application cliente :'));
 
         try {
-            (Tma::isMaster() ? new MasterDemo($this) : new ClientDemo($this))->run();
+            // Des exemples, pas de vrais échanges : personne n'est prévenu.
+            Notifier::muted(fn () => (Tma::isMaster() ? new MasterDemo($this) : new ClientDemo($this))->run());
         } catch (Throwable $e) {
             $this->components->error($e->getMessage());
 

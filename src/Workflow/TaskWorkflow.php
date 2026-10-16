@@ -12,6 +12,8 @@ use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\States\Task\TaskDraft;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
+use CharlesStOlive\FilamentTma\Sync\MasterClient;
+use CharlesStOlive\FilamentTma\Sync\Mirror;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +33,7 @@ class TaskWorkflow
 
     public function __construct()
     {
-        foreach ([new TaskMoves\Publish, new TaskMoves\Complete, new TaskMoves\CancelTask, new TaskMoves\AutoPublish] as $move) {
+        foreach ([new TaskMoves\Publish, new TaskMoves\Complete, new TaskMoves\CancelTask, new TaskMoves\ReopenTask, new TaskMoves\AutoPublish] as $move) {
             $this->register($move);
         }
     }
@@ -60,11 +62,16 @@ class TaskWorkflow
         return $this->moves[$key] ?? throw new InvalidArgumentException("Mouvement de tâche inconnu : {$key}");
     }
 
+    /**
+     * Les passages se font dans le maître, avec le droit de chacun. Un membre du Support les fait aussi depuis une
+     * application cliente (`Context::forSubject()`) : le maître les exécute et contrôle ses droits de là-bas.
+     */
     public function allows(ProjectTask $task, string|TaskMove $move, Context $context): bool
     {
         $move = is_string($move) ? $this->move($move) : $move;
+        $asAgent = Tma::isClient() && $context->forSubject($task)->isAgent();
 
-        if (! Tma::isMaster() || ($context->isApi() && ! $context->fromMaster)
+        if ((! Tma::isMaster() && ! $asAgent) || ($context->isApi() && ! $context->fromMaster)
             || ! in_array($task->state::class, $move->from(), true)
             || ! $task->state->canTransitionTo($move->to())
             || ! $move->isAvailable($task)) {
@@ -75,7 +82,7 @@ class TaskWorkflow
             return $move->isSystem();
         }
 
-        return ! $move->isSystem() && TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $task);
+        return ! $move->isSystem() && ($asAgent || TmaGate::allows($context->user, TmaGate::workflowAction($move->key()), $task));
     }
 
     /** @param  array<string, mixed>  $data */
@@ -88,6 +95,14 @@ class TaskWorkflow
         }
 
         $data = Validator::make($data, $move->rules($task))->validate();
+
+        // Un membre du Support, depuis une application cliente : le maître fait le passage, l'état revient ici.
+        if (Tma::isClient()) {
+            $snapshot = app(MasterClient::class)->agentMove($context->forSubject($task)->agent, $task, $move->key(), $data);
+            DB::transaction(fn () => Mirror::snapshot($snapshot));
+
+            return $task->transitions()->where('move', $move->key())->latest('id')->firstOrFail();
+        }
 
         $transition = DB::transaction(function () use ($task, $move, $data, $context): StateTransition {
             $from = $task->state;
@@ -147,6 +162,9 @@ class TaskWorkflow
             'created_by_actor_id' => $context->actor?->getKey(),
             'assignee_actor_id' => $context->actor?->getKey(),
         ]);
+
+        // Son auteur en est d'office destinataire principal.
+        app(Recipients::class)->add($task, $context->actor);
 
         event(new TaskCreated($task, $context));
 

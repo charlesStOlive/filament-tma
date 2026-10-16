@@ -20,9 +20,9 @@ ticket reste lié à elle.
 
 Ensuite, selon votre rôle :
 
-- **Confier à l'équipe EDM** : vous n'êtes pas en lien avec le Support ; l'équipe de votre application traite la
-  demande, ou la transmet au Support ;
-- **Transmettre au Support** : vous faites partie de l'équipe EDM ; la demande part au Support, qui la traitera et
+- **Confier à l'équipe EDM** : vous êtes **interne** ; l'équipe qui traite dans votre application s'occupe de la
+  demande ;
+- **Transmettre au Support** : vous êtes **correspondant du Support** ; la demande part au Support, qui la traitera et
   fera autorité. Si le Support ne répond pas, rien ne change et un message le dit : réessayez plus tard.
 
 « EDM » est ici le nom court du client : voir [Les mots du module](#modal-tma.comprendre.vocabulaire).
@@ -51,8 +51,8 @@ comme résolu, Confirmer et clore, Retour au Support). Voir [L'historique](#moda
 
 | Passage | Par | Ce qu'il demande |
 | --- | --- | --- |
-| Confier à l'équipe EDM | le demandeur | la personne à qui la confier (facultatif) |
-| Transmettre au Support | le demandeur (brouillon) ou l'équipe du client | une confirmation |
+| Confier à l'équipe EDM | le demandeur (interne) | la personne à qui la confier, ou des destinataires dans l'équipe |
+| Transmettre au Support | un correspondant du Support (son brouillon, ou un ticket de l'équipe) | une confirmation |
 | Prendre en charge | l'équipe qui traite | — ; vous apparaissez dans « Pris en charge par » |
 | Refuser | l'équipe qui traite | un motif |
 | Demander des précisions | l'équipe qui traite | la question |

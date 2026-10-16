@@ -2,18 +2,20 @@
 
 namespace CharlesStOlive\FilamentTma\Commands;
 
-use CharlesStOlive\FilamentTma\Notifications\DailyDigest;
-use CharlesStOlive\FilamentTma\Support\Digest;
-use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\DigestSender;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
- * Le récapitulatif quotidien (CDC §12.1) : à chaque utilisateur, ce qui l'attend. Personne ne reçoit un courriel
- * vide. Planifié à `notifications.digest.at`, les jours `notifications.digest.days`.
+ * Le récapitulatif quotidien (CDC §12.1) : à chaque utilisateur, ce qui l'attend, et ce qui a été mis de côté pour
+ * lui depuis le dernier envoi. Personne ne reçoit un courriel vide. Planifié à `notifications.digest.at`, les jours
+ * `notifications.digest.days`.
  */
 class SendDigestCommand extends Command
 {
-    protected $signature = 'tma:digest {--dry-run : Afficher sans envoyer}';
+    protected $signature = 'tma:digest
+        {--pending : Seulement qui a des notifications en attente}
+        {--dry-run : Afficher sans envoyer}';
 
     protected $description = 'Envoie le récapitulatif quotidien de ce qui attend chacun';
 
@@ -25,26 +27,13 @@ class SendDigestCommand extends Command
             return self::SUCCESS;
         }
 
-        $sent = 0;
-        $model = Tma::userModel();
+        $result = DigestSender::send(
+            pendingOnly: (bool) $this->option('pending'),
+            dryRun: (bool) $this->option('dry-run'),
+            report: fn (Authenticatable $user, int $waiting, int $news) => $this->line(($user->email ?? $user->getAuthIdentifier())." : {$waiting} en attente, {$news} nouveauté(s)"),
+        );
 
-        $model::query()->each(function ($user) use (&$sent): void {
-            $sections = Digest::for($user);
-
-            if ($sections === []) {
-                return;
-            }
-
-            $count = collect($sections)->sum(fn ($items) => $items->count());
-            $this->line(($user->email ?? $user->getAuthIdentifier()).' : '.$count);
-            $sent++;
-
-            if (! $this->option('dry-run')) {
-                $user->notify(new DailyDigest($sections));
-            }
-        });
-
-        $this->components->info(($this->option('dry-run') ? '[simulation] ' : '')."{$sent} récapitulatif(s).");
+        $this->components->info(($this->option('dry-run') ? '[simulation] ' : '')."{$result['recipients']} récapitulatif(s), {$result['notices']} nouveauté(s).");
 
         return self::SUCCESS;
     }

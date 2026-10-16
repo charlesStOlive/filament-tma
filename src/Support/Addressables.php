@@ -1,0 +1,287 @@
+<?php
+
+namespace CharlesStOlive\FilamentTma\Support;
+
+use CharlesStOlive\FilamentTma\Contracts\Trackable;
+use CharlesStOlive\FilamentTma\Enums\HandlingMode;
+use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Agent;
+use CharlesStOlive\FilamentTma\Models\Instance;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Gate;
+
+/**
+ * Les personnes qu'on peut nommer destinataires d'un ticket ou d'une tâche, et leur clé dans les formulaires.
+ *
+ * Une seule chose compte pour le Support : le droit d'écrire au Support (« Correspondant du Support »,
+ * `tma.ticket.workflow.transmit`). Qui l'a est adressable des deux côtés ; qui ne l'a pas est interne à son
+ * application et n'échange qu'avec elle.
+ *
+ * - Dans une application cliente : ses correspondants du Support (`u:{id}`) ; sur un ticket qu'elle traite elle-même,
+ *   aussi ses internes ; sur un ticket du Support ou une tâche, le Support : son compte passerelle (`support`, celui
+ *   avec lequel le maître appelle l'application, `api.master_user`), que le maître traduit en ses destinataires par
+ *   défaut (`recipients.support_defaults`), et les membres du Support reliés ici que l'application autorise
+ *   (`recipients.support_members`, `m:{id dans le maître}`).
+ * - Dans le maître : ses membres du Support (qui peuvent prendre en charge, `u:{id}`) et les correspondants de
+ *   l'application cliente (`GET users`, `c:{id chez le client}`).
+ *
+ * L'équipe qui traite (confier, prendre en charge) est à part : `handlers()`.
+ */
+final class Addressables
+{
+    public const SUPPORT = 'support';
+
+    /**
+     * Les personnes possibles, par groupe, et celles qui sont déjà destinataires.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function options(?string $clientInstanceUid, ?Trackable $subject = null): array
+    {
+        $groups = Tma::isMaster() ? self::forMaster($clientInstanceUid) : self::forClient(self::isLocal($subject));
+        $known = array_merge(...array_values($groups));
+
+        foreach ($subject?->recipients()->with('actor')->get() ?? [] as $recipient) {
+            $key = self::keyFor($recipient->actor);
+
+            if (! array_key_exists($key, $known)) {
+                $groups[__('Autres destinataires')][$key] = self::label($recipient->actor);
+            }
+        }
+
+        return array_filter($groups);
+    }
+
+    /**
+     * Qui traite ici, pour confier un ticket ou le prendre en charge : dans une application cliente, son équipe (qui
+     * peut prendre en charge, membres du Support exclus) ; dans le maître, le Support.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function handlers(?Trackable $subject = null): array
+    {
+        $gateway = self::gateway();
+        $people = Tma::userModel()::query()->orderBy('name')->lazy()
+            ->filter(fn (Authenticatable $user): bool => (Tma::isMaster() || Agent::for($user) === null)
+                && (string) $user->getAuthIdentifier() !== (string) $gateway?->getAuthIdentifier()
+                && TmaGate::allows($user, TmaGate::workflowAction('take-charge'), $subject instanceof Ticket ? $subject : null))
+            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
+            ->all();
+
+        return [Tma::isMaster() ? Terms::support() : Terms::team() => $people];
+    }
+
+    /**
+     * Toutes les clés d'une liste groupée (le bouton « Tout le monde »), sauf le Support.
+     *
+     * @param  array<string, array<string, string>>  $options
+     * @return array<int, string>
+     */
+    public static function everyone(array $options): array
+    {
+        return collect($options)->except(Terms::support())->flatMap(fn (array $group): array => array_keys($group))->values()->all();
+    }
+
+    /** L'acteur d'une clé ; null si la personne n'est plus là. */
+    public static function resolve(string $key, ?string $clientInstanceUid): ?Actor
+    {
+        [$kind, $id] = array_pad(explode(':', $key, 2), 2, null);
+        $users = Tma::userModel();
+
+        return match ($kind) {
+            self::SUPPORT => ($gateway = self::gateway()) !== null ? Actor::forUser($gateway) : null,
+            'u' => ($user = $users::query()->find($id)) !== null ? Actor::forUser($user) : null,
+            'm' => self::supportMember((string) $id),
+            'c' => self::clientUser($clientInstanceUid, (string) $id),
+            default => null,
+        };
+    }
+
+    /** La clé d'une personne déjà destinataire. */
+    public static function keyFor(Actor $actor): string
+    {
+        if ($actor->isLocal()) {
+            return self::isGateway($actor) ? self::SUPPORT : 'u:'.$actor->user_id;
+        }
+
+        return (Tma::isClient() ? 'm:' : 'c:').$actor->remote_id;
+    }
+
+    /** Le compte passerelle de cette application cliente : il tient lieu du Support. */
+    public static function gateway(): ?Authenticatable
+    {
+        $email = config('filament-tma.api.master_user');
+
+        return Tma::isClient() && filled($email) ? Tma::userModel()::query()->where('email', $email)->first() : null;
+    }
+
+    public static function isGateway(?Actor $actor): bool
+    {
+        $gateway = self::gateway();
+
+        return $actor !== null && $gateway !== null && $actor->isLocal() && (string) $actor->user_id === (string) $gateway->getAuthIdentifier();
+    }
+
+    /** Le nom d'une personne, et d'où elle vient si elle n'est pas d'ici. */
+    public static function label(Actor $actor): string
+    {
+        if (self::isGateway($actor)) {
+            return __(':support (toute l’équipe)', ['support' => Terms::support()]);
+        }
+
+        return $actor->team() !== null ? "{$actor->name} ({$actor->team()})" : $actor->name;
+    }
+
+    /** Interne : une personne d'une application cliente sans le droit d'écrire au Support (membres du Support à part). */
+    public static function isInternal(?Authenticatable $user): bool
+    {
+        return $user !== null && Tma::isClient() && Agent::for($user) === null && ! self::isCorrespondent($user);
+    }
+
+    /** Ce qui touche le Support, dans une application cliente : un ticket transmis, une tâche. */
+    public static function concernsSupport(Trackable $subject): bool
+    {
+        return Tma::isClient() && ($subject instanceof ProjectTask
+            || ($subject instanceof Ticket && $subject->handling_mode === HandlingMode::ServiceDesk));
+    }
+
+    /**
+     * Un interne reste en dehors de ce qui touche le Support : il n'y écrit pas, n'y fait aucun passage, et n'en est
+     * jamais prévenu, même pour sa propre demande transmise (un correspondant répond à sa place).
+     */
+    public static function keptOut(Trackable $subject, ?Authenticatable $user): bool
+    {
+        return self::concernsSupport($subject) && self::isInternal($user);
+    }
+
+    /**
+     * Les acteurs d'ici des internes.
+     *
+     * @return array<int, int>
+     */
+    public static function internalActorIds(): array
+    {
+        if (! Tma::isClient()) {
+            return [];
+        }
+
+        $users = Tma::userModel()::query()->lazy()
+            ->filter(fn (Authenticatable $user): bool => self::isInternal($user))
+            ->map(fn (Authenticatable $user): string => (string) $user->getAuthIdentifier())
+            ->values()->all();
+
+        return Actor::query()->where('instance_uid', Tma::instanceUid())->whereIn('user_id', $users)
+            ->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+    }
+
+    /** Correspondant du Support : le droit d'écrire au Support (`tma.ticket.workflow.transmit`). */
+    public static function isCorrespondent(Authenticatable $user): bool
+    {
+        return TmaGate::allows($user, TmaGate::workflowAction('transmit'));
+    }
+
+    /** Peut faire une demande : le droit de créer un ticket. */
+    public static function mayRequest(Authenticatable $user): bool
+    {
+        return Gate::getPolicyFor(Ticket::class) === null || Gate::forUser($user)->allows('create', Ticket::class);
+    }
+
+    /**
+     * Un ticket que l'application traite elle-même (ou une demande encore à créer) : les internes y ont leur place, le
+     * Support non.
+     */
+    private static function isLocal(?Trackable $subject): bool
+    {
+        return $subject === null || ($subject instanceof Ticket && $subject->handling_mode !== HandlingMode::ServiceDesk);
+    }
+
+    /** @return array<string, array<string, string>> */
+    private static function forClient(bool $local): array
+    {
+        $support = [];
+
+        if (! $local && Tma::serviceDeskAvailable()) {
+            if (self::gateway() !== null) {
+                $support[self::SUPPORT] = __(':support (toute l’équipe)', ['support' => Terms::support()]);
+            }
+
+            foreach (self::supportMembers() as $agent) {
+                $support['m:'.$agent->master_user_id] = $agent->user->name.' ('.Terms::support().')';
+            }
+        }
+
+        [$correspondents, $internals] = [[], []];
+
+        foreach (Tma::userModel()::query()->orderBy('name')->lazy() as $user) {
+            if (Agent::for($user) !== null || (string) $user->getAuthIdentifier() === (string) self::gateway()?->getAuthIdentifier()) {
+                continue;
+            }
+
+            if (self::isCorrespondent($user)) {
+                $correspondents['u:'.$user->getAuthIdentifier()] = (string) $user->name;
+            } elseif ($local && self::mayRequest($user)) {
+                $internals['u:'.$user->getAuthIdentifier()] = (string) $user->name;
+            }
+        }
+
+        return [Terms::support() => $support, Terms::correspondents() => $correspondents, Terms::internals() => $internals];
+    }
+
+    /** @return array<string, array<string, string>> */
+    private static function forMaster(?string $clientInstanceUid): array
+    {
+        $support = Tma::userModel()::query()->orderBy('name')->lazy()
+            ->filter(fn (Authenticatable $user): bool => TmaGate::allows($user, TmaGate::workflowAction('take-charge')))
+            ->mapWithKeys(fn (Authenticatable $user): array => ['u:'.$user->getAuthIdentifier() => (string) $user->name])
+            ->all();
+
+        $correspondents = collect(self::clientUsers($clientInstanceUid))
+            ->mapWithKeys(fn (array $user): array => ['c:'.$user['id'] => $user['name'].($user['email'] ? ' — '.$user['email'] : '')])
+            ->all();
+
+        return [Terms::support() => $support, Terms::correspondents($clientInstanceUid) => $correspondents];
+    }
+
+    /**
+     * Les membres du Support reliés ici que l'application permet de nommer.
+     *
+     * @return iterable<Agent>
+     */
+    private static function supportMembers(): iterable
+    {
+        $emails = array_filter((array) config('filament-tma.recipients.support_members', []));
+
+        return $emails === [] ? [] : Agent::query()->with('user')->get()
+            ->filter(fn (Agent $agent): bool => $agent->user !== null && in_array($agent->user->email, $emails, true));
+    }
+
+    private static function supportMember(string $masterUserId): ?Actor
+    {
+        $agent = collect(self::supportMembers())->first(fn (Agent $agent): bool => (string) $agent->master_user_id === $masterUserId);
+
+        return $agent === null ? null : Actor::fromInstance($agent->master_uid, $masterUserId, (string) $agent->user->name, $agent->user->email);
+    }
+
+    /** @return array<int, array{id: string, name: string, email: string|null, service_desk?: bool}> */
+    private static function clientUsers(?string $clientInstanceUid): array
+    {
+        $instance = Instance::forUid($clientInstanceUid);
+
+        return $instance === null ? [] : rescue(fn (): array => RemoteUsers::for($instance), [], false);
+    }
+
+    private static function clientUser(?string $clientInstanceUid, string $id): ?Actor
+    {
+        $known = $clientInstanceUid === null ? null : Actor::query()->where('instance_uid', $clientInstanceUid)->where('remote_id', $id)->first();
+        $user = collect(self::clientUsers($clientInstanceUid))->firstWhere('id', $id);
+
+        if ($user === null) {
+            return $known;
+        }
+
+        return Actor::fromInstance((string) $clientInstanceUid, $id, (string) $user['name'], $user['email'] ?? null);
+    }
+}

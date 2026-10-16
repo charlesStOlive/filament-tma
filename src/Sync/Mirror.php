@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Sync;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Events\SnapshotMirrored;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Project;
@@ -12,8 +13,10 @@ use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\Uploads;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -309,7 +312,8 @@ final class Mirror
     }
 
     /**
-     * Un état complet (`Payload::snapshot()`) : le ticket, ses transitions, ses entrées.
+     * Un état complet (`Payload::snapshot()`) : le ticket, ses transitions, ses entrées. Ce qui n'était pas encore
+     * ici est annoncé (`SnapshotMirrored`), pour prévenir les utilisateurs d'ici.
      *
      * @param  array<string, mixed>  $snapshot
      * @param  array<string, mixed>  $overrides
@@ -321,20 +325,40 @@ final class Mirror
             ? self::task($snapshot['task'], $overrides)
             : self::ticket($snapshot['ticket'], $overrides);
 
-        foreach ($snapshot['transitions'] ?? [] as $transition) {
-            self::transition($ticket, $transition);
+        $newTransitions = [];
+
+        foreach ($snapshot['transitions'] ?? [] as $payload) {
+            $transition = self::transition($ticket, $payload);
+
+            if ($transition->wasRecentlyCreated) {
+                $newTransitions[] = $transition;
+            }
         }
 
         // Les réponses après leur message : le parent doit exister.
         $entries = collect($snapshot['entries'] ?? [])->sortBy(fn (array $entry): int => filled($entry['parent_ulid'] ?? null) ? 1 : 0);
         $missing = [];
+        $newEntries = [];
 
         foreach ($entries as $payload) {
             $entry = self::entry($ticket, $payload);
 
+            if ($entry->wasRecentlyCreated) {
+                $newEntries[] = $entry;
+            }
+
             if (($payload['files_count'] ?? 0) > $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)->count() && empty($payload['files'])) {
                 $missing[] = $entry->ulid;
             }
+        }
+
+        // Les destinataires tels que le maître les connaît ; ceux ajoutés sans autre nouveauté l'apprennent.
+        $newRecipients = array_key_exists('recipients', $snapshot) ? app(Recipients::class)->mirror($ticket, (array) $snapshot['recipients']) : [];
+
+        if ($newTransitions !== [] || $newEntries !== []) {
+            event(new SnapshotMirrored($ticket->refresh(), $newTransitions, $newEntries));
+        } elseif ($newRecipients !== []) {
+            Notifier::recipientsAdded($ticket, $newRecipients);
         }
 
         return ['ticket' => $ticket, 'missing_media' => $missing];

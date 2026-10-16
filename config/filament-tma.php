@@ -168,11 +168,17 @@ return [
     | Rappels et notifications
     |--------------------------------------------------------------------------
     |
-    | digest : le récapitulatif quotidien de ce qui attend chacun (CDC §12.1) — heure, jours (1 = lundi), fuseau,
-    | et `late_after_days` : au-delà, une attente est signalée en retard.
-    | immediate : les mouvements qui préviennent tout de suite (CDC §12.2). Par défaut aucun : tout passe par le
-    | récapitulatif. Possibles : request-answer, submit-for-validation, submit, take-charge, reopen, answer.
-    | La clôture automatique prévient toujours.
+    | Qui est prévenu : les destinataires d'un ticket ou d'une tâche. Un principal l'apprend tout de suite, un
+    | secondaire dans son bilan ; les autres, rien.
+    | digest : le bilan du matin, ce qui attend chacun (CDC §12.1) puis ce qui a été mis de côté pour lui depuis le
+    | dernier envoi — heure, jours (1 = lundi), fuseau, et `late_after_days` : au-delà, une attente est signalée en
+    | retard.
+    | channels : comment un principal est prévenu, `mail` et/ou `database` (la cloche de Filament : le panel doit
+    | avoir `->databaseNotifications()`). user_choice : chacun le change pour lui (« Mes notifications »).
+    | stale : le rappel, à qui a la main, d'un ticket qui n'a pas changé d'état depuis `after_days` jours (ni brouillon,
+    | ni en pause, ni terminé), ou d'une tâche en cours sans activité ; chaque matin à `at`, les jours du bilan, dans le
+    | bilan, puis de nouveau tous les `after_days` jours tant que rien ne bouge.
+    | keep_days : les notifications envoyées sont effacées au-delà (`model:prune`).
     |
     */
 
@@ -184,7 +190,31 @@ return [
             'timezone' => env('TMA_TIMEZONE', env('APP_TIMEZONE', 'Europe/Paris')),
             'late_after_days' => 5,
         ],
-        'immediate' => [],
+        'channels' => ['mail', 'database'],
+        'user_choice' => true,
+        'stale' => [
+            'enabled' => true,
+            'after_days' => 7,
+            'at' => '07:30',
+        ],
+        'keep_days' => 90,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Destinataires
+    |--------------------------------------------------------------------------
+    |
+    | support_defaults (maître) : les adresses des membres du Support qui reçoivent ce qu'une application cliente
+    | adresse « au Support » (son compte passerelle) ; vide : qui peut prendre en charge.
+    | support_members (client) : les membres du Support reliés ici (agents) qu'on peut nommer un par un, en plus du
+    | Support tout entier ; à réserver aux comptes Super Admin.
+    |
+    */
+
+    'recipients' => [
+        'support_defaults' => array_filter(explode(',', (string) env('TMA_SUPPORT_DEFAULTS', ''))),
+        'support_members' => array_filter(explode(',', (string) env('TMA_SUPPORT_MEMBERS', ''))),
     ],
 
     /*

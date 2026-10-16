@@ -4,16 +4,17 @@ namespace CharlesStOlive\FilamentTma\Http\Controllers\Api\Client;
 
 use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Tma;
-use CharlesStOlive\FilamentTma\Support\TmaGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * `GET users` : les utilisateurs de cette application qui ont des droits sur le Support, c'est-à-dire
- * qui peuvent transmettre un ticket (`tma.ticket.workflow.transmit`). Les utilisateurs « local uniquement » (qui
- * voient les tickets sans pouvoir les transmettre) ne sont donnés qu'avec `include_local_only=1`.
+ * `GET users` : les correspondants du Support de cette application, ceux qui ont le droit d'écrire au Support
+ * (`tma.ticket.workflow.transmit`) — les seuls que le maître peut nommer demandeur d'un ticket préparé ou
+ * destinataire. Les internes (qui voient les tickets sans ce droit) ne sont donnés qu'avec `include_local_only=1`,
+ * `service_desk` à faux. Jamais les membres du Support ni le compte du maître.
  */
 class UserController
 {
@@ -33,7 +34,7 @@ class UserController
                 return; // un membre du Support n'est pas un demandeur
             }
 
-            $serviceDesk = TmaGate::allows($user, TmaGate::workflowAction('transmit'));
+            $serviceDesk = Addressables::isCorrespondent($user);
             $seesTickets = ! $hasPolicy || Gate::forUser($user)->allows('viewAny', Ticket::class);
 
             if ($serviceDesk || ($includeLocalOnly && $seesTickets)) {

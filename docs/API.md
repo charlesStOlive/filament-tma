@@ -127,6 +127,8 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
   premier niveau qu'elle commente (sans parent, elle porte sur le ticket entier).
 - `number` : le numéro d'une note dans son ticket. Celle qui reçoit le garde s'il est libre chez elle, sinon elle
   prend le suivant et le dit dans sa réponse.
+- `meta` : `transition` (le passage écrit avec ce message), `reminder` (un message de relance : qui a la main chez
+  celle qui reçoit est prévenu tout de suite).
 - `edited_at` (message ou note modifié), `archived_at` (note archivée), `deleted_at` (note supprimée) : absents,
   ce que sait l'application qui reçoit ne change pas.
 - `file_uuids` : les fichiers de l'entrée ; ceux qui n'y sont plus sont retirés chez celle qui reçoit.
@@ -169,9 +171,20 @@ entrées, envoyées supprimées elles aussi) ; celle qui reçoit la retire, et n
 ### État complet (snapshot)
 
 ```json
-{ "kind": "ticket", "ticket": { "…" }, "entries": [ "…toutes les entrées, notes supprimées comprises, sans fichiers" ], "transitions": [ "…" ] }
-{ "kind": "task", "task": { "…" }, "entries": [ "…" ], "transitions": [ "…" ] }
+{ "kind": "ticket", "ticket": { "…" }, "entries": [ "…toutes les entrées, notes supprimées comprises, sans fichiers" ], "transitions": [ "…" ], "recipients": [ "…" ] }
+{ "kind": "task", "task": { "…" }, "entries": [ "…" ], "transitions": [ "…" ], "recipients": [ "…" ] }
 ```
+
+### Destinataires
+
+```json
+[ { "actor": { "…acteur" }, "role": "primary|secondary", "support": false } ]
+```
+
+Les personnes à prévenir : un principal tout de suite, un secondaire dans son bilan (`Workflow\Recipients`). Chaque
+application prévient les siennes. `support: true` : le compte passerelle d'une application cliente, qui tient lieu du
+Support ; le maître le remplace par ses destinataires par défaut (`recipients.support_defaults`) et ne le garde pas.
+Dans un état complet, la liste du maître remplace celle du client ; un client d'avant les destinataires l'ignore.
 
 ### État d'un forfait
 
@@ -214,12 +227,24 @@ Le maître le range (chiffré) dans la fiche de l'application appelante, puis l'
   "ticket": { "…ticket, tel qu'il est chez le client" },
   "entries": [ "…messages et notes, avec leurs fichiers" ],
   "files": [ "…pièces jointes du ticket" ],
-  "transition": { "…la transition transmit, avec son ulid" }
+  "transition": { "…la transition transmit, avec son ulid" },
+  "recipients": [ "…destinataires vus du client, le Support compris" ]
 }
 ```
 
-Le maître crée le ticket en **Soumis**, au centre de service, rattaché au client de l'instance. Réponse : `201`
-(ou `200` si déjà transmis) avec l'état complet.
+Le maître crée le ticket en **Soumis**, au centre de service, rattaché au client de l'instance, avec ses
+destinataires (toujours au moins un principal chez lui). Réponse : `201` (ou `200` si déjà transmis) avec l'état
+complet.
+
+### `POST tickets/{ulid}/recipients` et `POST tasks/{ulid}/recipients`
+
+```json
+{ "recipients": [ "…destinataires vus du client" ], "actor": { "…qui les change" } }
+```
+
+Les personnes de l'application appelante remplacent celles qu'avait le maître ; le Support (`support: true`) devient
+ses destinataires par défaut ; un membre du Support nommé est ajouté, jamais retiré. Les personnes ajoutées sont
+prévenues. Réponse : l'état complet, à recopier.
 
 ### `GET tickets/{ulid}`
 
@@ -267,7 +292,7 @@ refusé (403). `{ref}` : le numéro (`DES-0042`, `T-0007`) ou l'ulid du ticket o
 | `GET agent/tickets/{ref}` | un ticket, sa description et sa chronologie en texte |
 | `POST agent/tickets/{ref}/time` `{ minutes, worked_on?, summary?, entry_ulid?, billable?, internal? }` | une saisie de temps : sur le message que `summary` écrit (une note avec `internal`), sur un message ou une note existants (`entry_ulid`, pas avec `summary`), ou sur la fiche entière ; réponse : la saisie, `entry`, `snapshot` |
 | `POST agent/tickets/{ref}/entries` `{ body, note? }` | un message, ou une note sur le ticket entier |
-| `POST agent/tickets/{ref}/entries` `{ type, body, parent_ulid?, files?, private? }` | un message ou une note d'agent ; la réponse donne aussi l'état à recopier (`snapshot`) |
+| `POST agent/tickets/{ref}/entries` `{ type, body, parent_ulid?, files?, private?, reminder? }` | un message ou une note d'agent (`reminder` : un message de relance, `meta.reminder`) ; la réponse donne aussi l'état à recopier (`snapshot`) |
 | `PATCH agent/tickets/{ref}/entries/{ulid}` `{ body?, files?, remove_files?, private?, archived?, delete? }` | l'agent modifie son message ou sa note (la garde pour lui ou la montre : `private`), archive une note (`archived`), supprime la sienne (`delete`) ; réponse : `snapshot` |
 | `POST agent/tickets/{ref}/moves` `{ move, data?, transition_ulid? }` | un passage, avec les droits de l'agent ; réponse : `snapshot` |
 
@@ -288,8 +313,10 @@ Réponses : `{ "data": … }` ; 404 pour un ticket introuvable.
 
 ### `GET users`
 
-Les utilisateurs qui ont des droits sur le centre de service (`tma.ticket.workflow.transmit`).
-`?include_local_only=1` ajoute ceux qui voient les tickets sans pouvoir les transmettre.
+Les utilisateurs qui peuvent faire une demande (`tma.ticket.create`) : demandeurs possibles d'un ticket préparé par le
+maître, et destinataires possibles. `service_desk` : de l'équipe en lien avec le Support
+(`tma.ticket.workflow.transmit`), sinon demandeur. `?include_local_only=1` ajoute ceux qui voient les tickets sans
+pouvoir en faire. Jamais les membres du Support ni le compte du maître.
 
 ```json
 { "data": [ { "id": "7", "name": "Ada Lovelace", "email": "ada@exemple.fr", "service_desk": true } ] }
@@ -307,8 +334,8 @@ Corps : un état complet (`kind` : `ticket` ou `task`).
 - **Tâche** : destinée à cette application (`target_instance_uid`), jamais en brouillon (422) ; elle est créée à sa
   première réception (`Events\TaskReceived`).
 
-Le client recopie, puis prévient lui-même ses utilisateurs (avertissement avant clôture, clôture automatique, et
-les passages de `notifications.immediate`). Réponse :
+Le client recopie, puis prévient lui-même ses utilisateurs de ce qui est nouveau : passages, messages, notes,
+relances, tâche publiée (`Events\SnapshotMirrored`, `Support\Notifier`), avertissement avant clôture. Réponse :
 
 ```json
 { "missing_media": [ "01k…" ] }

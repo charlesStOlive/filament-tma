@@ -100,6 +100,44 @@ transition.
   un utilisateur de Desapp : il synchronise la transition, et Desapp envoie le courriel. Cela vaut
   pour toutes les notifications.
 
+### Notifications et destinataires (15/10)
+
+Décidé avec l'utilisateur :
+
+- **Destinataires** sur chaque ticket et chaque tâche (`tma_recipients`) : un ou plusieurs **principaux**, prévenus
+  tout de suite de ce qui s'y passe ; un ou plusieurs **secondaires**, qui ne l'apprennent que dans le bilan ; les
+  autres, rien. « Tout le monde » coche d'un clic toutes les personnes possibles. Modifiables tout au long de la vie
+  du ticket. Remplace les « personnes qui suivent » et les modes par sorte.
+- **Principal : courriel, cloche de Filament, ou les deux, au choix de chacun** (« Mes notifications »). La cloche
+  suit le principe de Filament : une seule notification Laravel `mail` + `database` (`toDatabase()` →
+  `Filament\Notifications\Notification::getDatabaseMessage()`).
+- **Automatismes** : l'auteur toujours principal ; à l'envoi d'un ticket (confier) au moins un principal dans
+  l'équipe qui reçoit, et à la prise en charge (qui prend, par défaut, confirme) ; à la publication d'une tâche, au
+  moins un principal chez le client.
+- **Deux applications** : le client ne nomme que ses utilisateurs, et le Support par son **compte passerelle**
+  (`api.master_user`), d'office à la transmission ; le maître le traduit en ses destinataires par défaut
+  (`recipients.support_defaults`, charles@notilac.fr). Le maître nomme ses membres et les utilisateurs du client.
+  Des membres du Support reliés chez le client peuvent être nommés un par un si l'application le permet
+  (`recipients.support_members`, charles@notilac.fr, comptes Super Admin).
+- **Correspondants du Support et internes** (remplace les « trois niveaux » du 10/10) : une seule chose compte, le
+  droit **Correspondant du Support** (`tma.ticket.workflow.transmit`, renommé dans l'écran des rôles). Qui l'a écrit
+  et transmet au Support, et le Support peut le nommer (demandeur d'un ticket préparé, destinataire) : c'est la liste
+  de `GET users`. Qui ne l'a pas est **interne** : il confie ses demandes à l'équipe EDM et n'échange qu'avec son
+  application ; il n'apparaît jamais chez le Support. Plus de distinction « équipe EDM / demandeurs » parmi les
+  correspondants ; l'**équipe EDM** ne désigne plus que ceux qui traitent dans l'application (« Prendre en charge »).
+  Chez Desapp : `support_equipe_edm` (traite et correspond), `support_demandeur` (correspond), `support_interne`
+  (interne : Mathilde).
+- **La demande d'un interne transmise au Support** (décidé le 15/10) : l'interne cesse d'en être destinataire, n'en
+  reçoit plus aucune notification, n'y écrit plus et n'y fait plus de passage ; idem sur les tâches. Le côté demandeur
+  passe aux correspondants principaux (celui qui a transmis), qui reçoivent questions, relances, rappels et
+  avertissement de clôture, et répondent pour lui (`Addressables::keptOut()`, `Notifier::requesterSide()`).
+- **Rouvrir une tâche** (15/10) : terminée ou annulée, elle repart En cours (`TaskMoves\ReopenTask`, droit
+  `tma.task.workflow.reopen`), dans le maître ou par un membre du Support depuis l'application cliente (le maître
+  exécute, par la route agent).
+- **Le bilan** (récapitulatif existant) : « Ce qui vous attend » puis « Depuis le dernier envoi ». **Rappel** d'un
+  ticket sans changement d'état depuis 7 jours à qui a la main, dans le bilan. **À la main** : « Envoyer maintenant »
+  (`notify`), « Relancer » (`remind`, toujours tout de suite, par courriel au moins), `tma:notify --stale|--grouped`.
+
 ---
 
 ## 5. Utilisateurs entre applications
@@ -256,6 +294,8 @@ Décisions du 14/10/2026 :
   se lit comme un premier message (auteur, heure de publication, description).
 - **Brouillon de tâche (15/10/2026)** : rien ne s'y écrit (pas de message) avant sa publication ; sa description est
   le premier message.
+- **Destinataires d'une tâche (15/10/2026)** : comme un ticket (§4) ; pour l'enregistrer avant sa publication, ou la
+  publier, au moins un principal chez le client.
 - **Jeu d'exemples** : `tma:demo` (voir le README), rejouable, par le vrai workflow.
 - **Fuseaux** : les dates s'enregistrent en UTC et s'affichent dans le fuseau du lecteur (`users.timezone` s'il
   existe, sinon celui de Filament), y compris dans les vues propres au module et les courriels (`Support\Dates`).

@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
 use CharlesStOlive\FilamentTma\Enums\HandlingMode;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
+use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -91,6 +92,7 @@ class TicketInfolist
                     TextEntry::make('created_at')->label(__('Créé le'))->dateTime('d/m/Y H:i'),
                     TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
                 ]),
+            RecipientsSection::make(),
         ];
     }
 }

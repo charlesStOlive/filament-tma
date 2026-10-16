@@ -36,8 +36,8 @@ final class Digest
             'url' => rescue(fn () => $item instanceof Ticket ? TicketUrl::view($item) : null, null, false),
         ];
 
-        $answer = $actor === null ? collect() : Ticket::query()
-            ->where('requester_actor_id', $actor->getKey())
+        // Ses demandes qui l'attendent ; celles transmises d'un interne attendent les correspondants qui répondent pour lui.
+        $answer = $actor === null ? collect() : Ticket::query()->awaiting($user)
             ->whereIn('state', ['awaiting_requester', 'pending_validation'])
             ->get()
             ->map(fn (Ticket $t) => $row($t, $t->waiting_since ?? $t->validation_requested_at ?? $t->last_activity_at));

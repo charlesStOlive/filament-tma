@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas;
 use CharlesStOlive\FilamentTma\Filament\Resources\Projects\ProjectResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TicketInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
+use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
@@ -67,6 +68,7 @@ class TaskInfolist
                         ->visible(fn (): bool => Tma::isMaster())
                         ->onDemand(),
                 ]),
+            RecipientsSection::make(),
             Section::make(__('Calendrier'))->compact()->columnSpanFull()
                 ->headerActions([Help::title('tma.taches.periode', __('Début et échéance'))])
                 ->columns(2)

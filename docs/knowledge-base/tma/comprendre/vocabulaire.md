@@ -14,7 +14,9 @@ Le module emploie les mots des outils de support les plus courants. Quelques-uns
 | --- | --- |
 | **Demandeur** | la personne qui a ouvert la demande |
 | **Support** | l'équipe qui fait la maintenance, et son application (Filbreeze) |
-| **Équipe EDM** | les personnes du client (ici, EDM) en lien avec le Support : elles traitent les demandes des autres, ou les transmettent au Support |
+| **Correspondant du Support** | une personne du client qui a le droit d'écrire au Support : elle lui transmet ses demandes, et le Support peut la nommer demandeur ou destinataire |
+| **Interne** | une personne du client sans ce droit : elle confie ses demandes à l'équipe EDM et n'échange qu'avec les personnes de son application |
+| **Équipe EDM** | les personnes du client (ici, EDM) qui traitent les demandes au sein de l'application (le droit **Prendre en charge**) |
 | **Pris en charge par** | la personne qui s'occupe de la demande |
 | **Intervenant** | celui qui a fait une saisie de temps, une intervention précise |
 | **Membre du Support** | une personne du Support qui travaille aussi depuis l'application d'un client (voir [Les membres du Support](#modal-tma.agents)) |
@@ -24,7 +26,7 @@ Le module emploie les mots des outils de support les plus courants. Quelques-uns
 Chaque application cliente a un **nom court** : « EDM » pour Enfants du Mékong. Il forme :
 
 - **Équipe EDM** : dans **Traité par** et **En attente de** ;
-- **Confier à l'équipe EDM** : le passage qui confie un brouillon à l'équipe du client ;
+- **Confier à l'équipe EDM** : le passage par lequel un interne confie un brouillon à l'équipe qui traite ;
 - **Publier chez EDM** : le passage par lequel le Support ouvre un ticket ou une tâche au client.
 
 Dans l'historique, il signale aussi d'où vient une personne : « EDM » à côté d'un nom, vu du Support ; « Support »,

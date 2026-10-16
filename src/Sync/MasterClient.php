@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
+use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Http\Client\PendingRequest;
 
 /**
@@ -56,6 +57,21 @@ final class MasterClient
             'entries' => $entries,
             'transition' => Payload::transition($transition),
             'files' => Payload::files($ticket),
+            'recipients' => Recipients::payload($ticket),
+        ]))->json();
+    }
+
+    /**
+     * Les destinataires d'un ticket ou d'une tâche du Support, vus d'ici (`Workflow\Recipients::fromClient()`).
+     *
+     * @param  array<int, array<string, mixed>>  $recipients
+     * @return array<string, mixed> l'état chez le maître
+     */
+    public function recipients(Trackable $subject, array $recipients, Context $context): array
+    {
+        return Http::call(__('Support'), fn () => $this->http()->post($this->url(($subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$subject->ulid}/recipients"), [
+            'recipients' => $recipients,
+            'actor' => Payload::actor($context->actor),
         ]))->json();
     }
 
@@ -110,7 +126,7 @@ final class MasterClient
      * @param  array<int, array<string, mixed>>  $files
      * @return array{entry: array<string, mixed>, snapshot: array<string, mixed>}
      */
-    public function agentEntry(Agent $agent, Trackable $subject, string $type, string $body, ?string $parentUlid, array $files = [], bool $private = false): array
+    public function agentEntry(Agent $agent, Trackable $subject, string $type, string $body, ?string $parentUlid, array $files = [], bool $private = false, bool $reminder = false): array
     {
         return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/entries"), [
             'type' => $type,
@@ -118,6 +134,7 @@ final class MasterClient
             'parent_ulid' => $parentUlid,
             'files' => $files,
             'private' => $private,
+            'reminder' => $reminder,
         ]))->json('data');
     }
 

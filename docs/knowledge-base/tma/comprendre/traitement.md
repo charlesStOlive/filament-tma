@@ -13,8 +13,9 @@ La fiche d'un ticket l'affiche dans **Suivi › Traité par**.
 La demande reste dans son application. Un collègue la traite : il la **prend en charge**, demande des précisions, la
 **marque comme résolue**. Le Support n'en sait rien.
 
-C'est le cas pour les utilisateurs qui n'ont pas accès au Support. Le nom de l'équipe vient du nom court du client
-(voir [Les mots du module](#modal-tma.comprendre.vocabulaire)).
+C'est le cas pour les demandes des **internes**, qui n'ont pas le droit d'écrire au Support. L'équipe, ce sont ceux qui
+peuvent **prendre en charge**. Son nom vient du nom court du client (voir
+[Les mots du module](#modal-tma.comprendre.vocabulaire)).
 
 ## Le Support
 
@@ -25,7 +26,7 @@ C'est le cas pour les utilisateurs qui n'ont pas accès au Support. Le nom de l'
   l'application ;
 - tout ce qui est partagé est copié d'une application à l'autre (voir [La synchronisation](#modal-tma.synchronisation)).
 
-On transmet un brouillon (le demandeur), ou un ticket que l'équipe du client traite déjà (elle escalade). Le ticket
-repart alors en **Nouveau**, chez le Support. Il ne revient jamais à l'équipe du client.
+Seul un **correspondant du Support** transmet : son propre brouillon, ou un ticket que l'équipe du client traite déjà
+(elle escalade). Le ticket repart alors en **Nouveau**, chez le Support. Il ne revient jamais à l'équipe du client.
 
 Si le Support ne répond pas, la transmission est annulée et un message le dit : réessayez plus tard.

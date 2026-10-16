@@ -19,19 +19,25 @@ reste à facturer. Il relie deux sortes d'applications.
 Une application cliente ne parle qu'au Support, jamais à une autre application cliente. Le Support ne voit d'un
 client que ce que ce client lui a confié.
 
-## Trois niveaux
+## Qui parle au Support
 
-| Qui | Ses demandes | Ce qu'il reçoit |
+Une seule chose compte : le droit **Correspondant du Support** (voir [Les droits](#modal-tma.droits)).
+
+| Qui | Ses demandes | Avec qui il échange |
 | --- | --- | --- |
-| **Le Support** | — | les demandes transmises par l'équipe du client ; il les traite et fait autorité |
-| **L'équipe du client** (« Équipe EDM ») : les personnes en lien avec le Support | **Transmettre au Support**, directement | les demandes des autres utilisateurs : elle les traite, ou les transmet au Support |
-| **Les autres utilisateurs** du client | **Confier à l'équipe EDM** | — |
+| **Le Support** | — | reçoit les demandes des correspondants, les traite et fait autorité |
+| **Les correspondants du Support** : les personnes du client qui ont ce droit | **Transmettre au Support** | le Support, et les personnes de leur application ; le Support peut les nommer (demandeur, destinataire) |
+| **Les internes** : les autres utilisateurs du client | **Confier à l'équipe EDM** | seulement les personnes de leur application ; le Support ne les voit pas |
 
-Ce qui fait partie de l'équipe du client, c'est le droit **Transmettre au Support** (voir [Les droits](#modal-tma.droits)).
-Le nom de l'équipe vient du **nom court** du client (voir [Les mots du module](#modal-tma.comprendre.vocabulaire)).
+À part, l'**équipe EDM** est l'équipe qui **traite** les demandes au sein de l'application du client (le droit
+**Prendre en charge**) : elle reçoit ce que les internes lui confient, le traite, ou le transmet au Support si l'un de
+ses membres est correspondant. Son nom vient du **nom court** du client (voir
+[Les mots du module](#modal-tma.comprendre.vocabulaire)).
 
-Une demande transmise au Support n'en revient pas. Sur une demande transmise, l'équipe du client peut répondre au
-Support à la place du demandeur. Voir [Les tickets](#modal-tma.tickets).
+Une demande transmise au Support n'en revient pas. Sur une demande transmise, un correspondant peut répondre au
+Support à la place du demandeur. La demande d'un interne, une fois transmise par l'équipe, ne le concerne plus : il
+n'en est plus prévenu et n'y écrit plus ; ce sont les correspondants qui répondent pour lui. Voir
+[Les tickets](#modal-tma.tickets).
 
 ## Le demandeur, et qui doit agir
 

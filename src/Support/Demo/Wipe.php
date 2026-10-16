@@ -39,6 +39,8 @@ final class Wipe
             DB::table('tma_allowance_alerts')->delete();
             DB::table('tma_allowance_statuses')->delete();
             DB::table('tma_state_transitions')->delete();
+            DB::table('tma_notices')->whereIn('subject_type', $morphs)->delete();
+            DB::table('tma_recipients')->whereIn('subject_type', $morphs)->delete();
             DB::table('tma_entries')->whereNotNull('parent_id')->delete();
             DB::table('tma_entries')->delete();
             DB::table('tma_tickets')->delete();

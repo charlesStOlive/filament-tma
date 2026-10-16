@@ -117,8 +117,10 @@ ceux qui ne passent que par l'équipe du client.
 | `auto_close.warn_days_before` | 7 | avertissement avant la clôture |
 | `allowances.thresholds` | 80, 90, 100, 110 | seuils des forfaits, en % |
 | `allowances.block_overage` | non | refuser une saisie qui dépasserait le forfait |
-| `notifications.digest.at` | 08:00 | heure du récapitulatif quotidien |
-| `notifications.immediate` | aucun | passages qui préviennent tout de suite |
+| `notifications.digest.at` | 08:00 | heure du bilan quotidien |
+| `notifications.channels` | courriel et cloche | comment un destinataire principal est prévenu (chacun peut changer) |
+| `notifications.stale.after_days` | 7 | rappel de ce qui ne bouge plus |
+| `recipients.support_defaults` | — | maître : qui reçoit ce qu'un client adresse « au Support » |
 | `attachments.accepted_types` | images, PDF, bureautique, CSV, ZIP | types de fichiers acceptés |
 | `attachments.max_size_kb` | 10 240 | taille maximale d'un fichier |
 | `cleanup.retention_days` | 90 | délai avant suppression définitive |

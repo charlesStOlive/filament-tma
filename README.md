@@ -211,15 +211,26 @@ Le plugin déclare lui-même ses tâches planifiées :
 | `tma:close-stale` | chaque jour à `auto_close.at` (7 h) | Avertit le demandeur `warn_days_before` jours (7) avant de clôturer un ticket où la main est à lui et où rien ne s'est passé depuis `after_days` jours (28). Un ticket averti a toujours ce délai entier. Toute activité remet le compte à zéro. |
 | `tma:resume-paused` | tous les quarts d'heure | Reprend les pauses arrivées à leur date. |
 | `tma:publish-scheduled` | chaque minute | Publie les tâches et les brouillons du maître arrivés à leur date. |
-| `tma:digest` | jours ouvrés à 8 h (`notifications.digest`) | Envoie à chacun ce qui l'attend : réponses et validations, tickets à prendre, en cours, reprises du jour. Les retards sont signalés et personne ne reçoit de courriel vide. |
+| `tma:notify --stale` | jours du récapitulatif à `notifications.stale.at` (7 h 30) | Rappelle à qui a la main un ticket qui n'a pas changé d'état depuis `stale.after_days` jours (7), ni brouillon, ni en pause, ni terminé ; dans le maître, une tâche en cours sans activité depuis autant. Une fois par période tant que rien ne bouge. |
+| `tma:digest` | jours ouvrés à 8 h (`notifications.digest`) | Envoie à chacun ce qui l'attend (réponses et validations, tickets à prendre, en cours, reprises du jour) et ce qui a été mis de côté pour lui depuis le dernier envoi. Les retards sont signalés et personne ne reçoit de courriel vide. |
+| `model:prune` (`Models\Notice`) | chaque nuit | Efface les notifications envoyées depuis plus de `notifications.keep_days` jours (90). |
 
-Les **notifications immédiates** sont désactivées par défaut (CDC §12.2) : tout passe par le récapitulatif.
-`notifications.immediate` liste les mouvements qui préviennent tout de suite (`request-answer`,
-`submit-for-validation`, `submit`, `take-charge`, `reopen`, `answer`, `publish`). La clôture automatique prévient
-toujours.
+**Les destinataires** (`Workflow\Recipients`, table `tma_recipients`) : chaque ticket et chaque tâche a des
+principaux, prévenus tout de suite de ce qui s'y passe (courriel et/ou cloche de Filament, au choix de chacun :
+`notifications.channels`, « Mes notifications »), et des secondaires, prévenus dans le bilan. L'auteur est principal
+d'office ; confier un ticket, le prendre en charge et publier une tâche exigent un principal dans l'équipe qui
+reçoit. Le client nomme ses correspondants du Support (le droit `tma.ticket.workflow.transmit`), ses internes sur ce
+qu'il traite lui-même, et le Support par son compte passerelle, que le maître traduit en
+`recipients.support_defaults` ; le maître nomme ses membres et les correspondants du client (`GET users`). La cloche
+demande `->databaseNotifications()` sur le panel.
 
-**Chaque application prévient ses propres utilisateurs** (`Support\Notifier`). Un passage fait par le maître est
-annoncé au demandeur par l'application cliente, à la réception.
+**À la demande** : « Envoyer maintenant » (liste des tickets, droit `notify`) ou `tma:notify --grouped` envoie tout de
+suite leur bilan à qui a des notifications en attente ; « Relancer » (fiche, droit `remind`) écrit un message
+marqué relance et prévient tout de suite qui a la main.
+
+**Chaque application prévient ses propres utilisateurs** : ce qui est fait ici par les événements du workflow, ce qui
+arrive de l'autre application par l'état recopié (`Events\SnapshotMirrored`). Une même chose n'est dite qu'une fois à
+une personne, et jamais à son auteur. Les exemples de `tma:demo` ne préviennent personne.
 
 ## Audit et nettoyage
 

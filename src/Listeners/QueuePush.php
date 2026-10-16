@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\EntryChanged;
+use CharlesStOlive\FilamentTma\Events\RecipientsChanged;
 use CharlesStOlive\FilamentTma\Events\TaskDeleted;
 use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
@@ -24,12 +25,13 @@ use CharlesStOlive\FilamentTma\Support\Tma;
  */
 class QueuePush
 {
-    public function handle(TicketTransitioned|TaskTransitioned|EntryAdded|EntryChanged|TicketUpdated|TaskUpdated|TaskDeleted|AutoCloseWarned|TimeEntryChanged $event): void
+    public function handle(TicketTransitioned|TaskTransitioned|EntryAdded|EntryChanged|TicketUpdated|TaskUpdated|TaskDeleted|AutoCloseWarned|TimeEntryChanged|RecipientsChanged $event): void
     {
         $ticket = match (true) {
             $event instanceof TaskTransitioned, $event instanceof TaskUpdated, $event instanceof TaskDeleted => $event->task,
             $event instanceof EntryAdded, $event instanceof EntryChanged => $event->entry->subject,
             $event instanceof TimeEntryChanged => $event->entry->subject,
+            $event instanceof RecipientsChanged => $event->subject,
             default => $event->ticket,
         };
 

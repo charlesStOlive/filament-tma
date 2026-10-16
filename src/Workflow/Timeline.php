@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\EntryChanged;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Support\Addressables;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -63,6 +64,11 @@ final class Timeline
             return $type === EntryType::Note || $ticket->acceptsMessages();
         }
 
+        // Un interne n'écrit rien sur ce qui touche le Support (ticket transmis, tâche) : un correspondant le fait.
+        if (Addressables::keptOut($ticket, $context->user)) {
+            return false;
+        }
+
         return match ($type) {
             // L'échange s'arrête avec le ticket (pas avec une tâche terminée) ; les notes restent possibles.
             EntryType::Comment => $ticket->acceptsMessages() && TmaGate::allows($context->user, TmaGate::COMMENT, $ticket),
@@ -84,7 +90,7 @@ final class Timeline
     {
         $subject = $entry->subject;
 
-        if (! $subject instanceof Trackable || $entry->trashed() || ($entry->isNote() && ! self::notesEnabled())) {
+        if (! $subject instanceof Trackable || $entry->trashed() || ($entry->isNote() && ! self::notesEnabled()) || Addressables::keptOut($subject, $context->user)) {
             return false;
         }
 
@@ -129,7 +135,7 @@ final class Timeline
         $agentContext = $context->forSubject($ticket);
 
         if ($agentContext->isAgent()) {
-            return $this->writeAsAgent($ticket, $type, (string) $body, $agentContext, $parent, $uploads, $private);
+            return $this->writeAsAgent($ticket, $type, (string) $body, $agentContext, $parent, $uploads, $private, ! empty($meta['reminder']));
         }
 
         return $this->write($ticket, $type, (string) $body, $context, $parent, $meta, $uploads, $private);
@@ -137,13 +143,13 @@ final class Timeline
 
     /**
      * Un membre du Support écrit, depuis une application cliente, dans le maître et en son nom de là-bas ; l'entrée
-     * revient ici par l'état recopié.
+     * revient ici par l'état recopié. Une relance (`$reminder`) le reste là-bas.
      *
      * @param  array<int, array{path: string, name?: string}>  $uploads
      */
-    private function writeAsAgent(Trackable $subject, EntryType $type, string $body, Context $context, ?Entry $parent, array $uploads, bool $private): Entry
+    private function writeAsAgent(Trackable $subject, EntryType $type, string $body, Context $context, ?Entry $parent, array $uploads, bool $private, bool $reminder = false): Entry
     {
-        $result = app(MasterClient::class)->agentEntry($context->agent, $subject, $type->value, $body, $parent?->ulid, Uploads::toBase64($uploads), $private);
+        $result = app(MasterClient::class)->agentEntry($context->agent, $subject, $type->value, $body, $parent?->ulid, Uploads::toBase64($uploads), $private, $reminder);
 
         DB::transaction(fn () => Mirror::snapshot($result['snapshot']));
         Uploads::discard($uploads);

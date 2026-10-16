@@ -24,6 +24,10 @@ final class TmaGate
 
     public const SYNC = 'sync';
 
+    public const REMIND = 'remind';
+
+    public const NOTIFY = 'notify';
+
     public const WORKFLOW_FAMILY = 'workflow';
 
     /** @var array<class-string<Model>, class-string> la Resource qui déclare les droits de chaque objet */

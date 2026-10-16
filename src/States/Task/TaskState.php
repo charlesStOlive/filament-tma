@@ -44,6 +44,7 @@ abstract class TaskState extends State implements HasFilamentState, HasFilamentS
             ->registerState([TaskDraft::class, TaskInProgress::class, TaskDone::class, TaskCancelled::class])
             ->allowTransition(TaskDraft::class, TaskInProgress::class)
             ->allowTransition(TaskInProgress::class, TaskDone::class)
-            ->allowTransition([TaskDraft::class, TaskInProgress::class], TaskCancelled::class);
+            ->allowTransition([TaskDraft::class, TaskInProgress::class], TaskCancelled::class)
+            ->allowTransition([TaskDone::class, TaskCancelled::class], TaskInProgress::class);
     }
 }

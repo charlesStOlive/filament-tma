@@ -21,8 +21,8 @@ use Illuminate\Support\Facades\DB;
  * L'API du client pour le maître : il pousse l'état d'un ticket du Support, puis les fichiers qui
  * manquent. Le maître ne peut pousser qu'un ticket de cette application, et ne joue que l'intervenant.
  *
- * Chaque application notifie ses propres utilisateurs : c'est ici que le demandeur apprend l'avertissement ou la
- * clôture automatique décidés par le maître.
+ * Chaque application notifie ses propres utilisateurs : ce que l'état reçu apporte de nouveau (passages, messages,
+ * notes) les prévient (`Support\Notifier`), comme l'avertissement de clôture automatique décidé par le maître.
  */
 class SyncController
 {
@@ -49,12 +49,12 @@ class SyncController
         abort_if($before === null && ! $preparedByMaster, 404, __('Ticket inconnu de cette application.'));
 
         $warnedBefore = $before?->auto_close_warned_at;
-        $knownTransitions = $before?->transitions()->pluck('ulid')->all() ?? [];
 
+        // Les passages et entrées nouveaux préviennent les utilisateurs d'ici (`SnapshotMirrored`, `Support\Notifier`).
         $result = DB::transaction(fn () => Mirror::snapshot($request->all()));
         $ticket = $result['ticket']->refresh();
 
-        $this->notifyRequester($ticket, $warnedBefore, $knownTransitions);
+        $this->warnRequester($ticket, $warnedBefore);
         event(new TicketSynced($ticket));
 
         return response()->json(['missing_media' => $result['missing_media']]);
@@ -107,18 +107,21 @@ class SyncController
         return response()->json(['files_count' => $entry->refresh()->getMedia(Entry::ATTACHMENTS_COLLECTION)->count()]);
     }
 
-    /** @param  array<int, string>  $knownTransitions */
-    private function notifyRequester(Ticket $ticket, ?\DateTimeInterface $warnedBefore, array $knownTransitions): void
+    /**
+     * L'avertissement de clôture automatique décidé par le maître, dit au demandeur à sa première réception (ou, pour
+     * la demande d'un interne, aux correspondants qui répondent pour lui).
+     */
+    private function warnRequester(Ticket $ticket, ?\DateTimeInterface $warnedBefore): void
     {
-        $user = $ticket->requester?->isLocal() ? $ticket->requester->user : null;
-
-        if ($user !== null && $warnedBefore === null && $ticket->auto_close_warned_at !== null) {
-            $closesOn = $ticket->last_activity_at->copy()->addDays((int) config('filament-tma.auto_close.after_days', 28));
-            $user->notify(new AutoCloseWarning($ticket, max($closesOn, $ticket->auto_close_warned_at->copy()->addDays((int) config('filament-tma.auto_close.warn_days_before', 7)))));
+        if ($warnedBefore !== null || $ticket->auto_close_warned_at === null) {
+            return;
         }
 
-        // Les passages reçus : la clôture automatique, et ceux de `notifications.immediate`.
-        $ticket->transitions()->whereNotIn('ulid', $knownTransitions)->with('actor')->get()
-            ->each(fn ($transition) => Notifier::transition($ticket, $transition));
+        $closesOn = $ticket->last_activity_at->copy()->addDays((int) config('filament-tma.auto_close.after_days', 28));
+        $closesOn = max($closesOn, $ticket->auto_close_warned_at->copy()->addDays((int) config('filament-tma.auto_close.warn_days_before', 7)));
+
+        foreach (Notifier::requesterSide($ticket) as $user) {
+            $user->notify(new AutoCloseWarning($ticket, $closesOn));
+        }
     }
 }

@@ -30,8 +30,10 @@ Route::prefix('api/tma/v1')
             Route::get('tickets/{ulid}', [TicketController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ulid}/moves', [TicketController::class, 'move'])->name('tickets.move');
             Route::post('tickets/{ulid}/entries', [TicketController::class, 'entry'])->name('tickets.entry');
+            Route::post('tickets/{ulid}/recipients', [TicketController::class, 'recipients'])->name('tickets.recipients');
             Route::get('tasks/{ulid}', [TaskController::class, 'show'])->name('tasks.show');
             Route::post('tasks/{ulid}/entries', [TaskController::class, 'entry'])->name('tasks.entry');
+            Route::post('tasks/{ulid}/recipients', [TaskController::class, 'recipients'])->name('tasks.recipients');
         });
 
         // Le maître, appelé par un de ses utilisateurs (les commandes tma:* lancées dans une application cliente).

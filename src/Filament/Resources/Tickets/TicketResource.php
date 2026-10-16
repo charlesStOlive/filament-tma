@@ -41,8 +41,10 @@ use UnitEnum;
  *
  * Droits, au format de charlesstolive/filament-permission-manager (`permissions:sync` les crée), sans en dépendre :
  * - la liste : `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` (policy de repli du gestionnaire) ;
- * - `$specificPermissions` : `comment`, `note` (écrire des notes et les archiver ; tout le monde les lit), `time`, `sync` ;
- * - la famille `workflow` : un droit par mouvement, `tma.ticket.workflow.take-charge`… (`TmaGate`).
+ * - `$specificPermissions` : `comment`, `note` (écrire des notes et les archiver ; tout le monde les lit), `time`, `sync`,
+ *   `remind` (relancer qui a la main), `notify` (envoyer maintenant les notifications groupées en attente) ;
+ * - la famille `workflow` : un droit par mouvement, `tma.ticket.workflow.take-charge`… (`TmaGate`). Celui de
+ *   « Transmettre au Support » fait d'une personne un correspondant du Support (`Support\Addressables`).
  *
  * Qui a la main compte aussi, et ne dépend d'aucun droit : on ne modifie un ticket qu'en brouillon ou quand on en
  * est l'équipe qui le traite et qu'il est à nous (`Ticket::fieldsEditableHere()`).
@@ -61,7 +63,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
     protected static ?string $permissionPrefix = 'tma.ticket';
 
     /** @var array<int, string> */
-    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC];
+    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC, TmaGate::REMIND, TmaGate::NOTIFY];
 
     /** @var array<string, string> */
     protected static array $permissionFamilies = [TmaGate::WORKFLOW_FAMILY => 'Passages du ticket'];
@@ -72,6 +74,8 @@ class TicketResource extends Resource implements HasKnowledgeBase
         TmaGate::NOTE => 'Écrire des notes et les archiver',
         TmaGate::TIME => 'Saisir et modifier du temps (maître)',
         TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
+        TmaGate::REMIND => 'Relancer qui a la main',
+        TmaGate::NOTIFY => 'Envoyer maintenant les notifications groupées',
     ];
 
     /**
@@ -82,7 +86,10 @@ class TicketResource extends Resource implements HasKnowledgeBase
     public static function permissionActions(): array
     {
         return collect(app(TicketWorkflow::class)->userMoves())
-            ->mapWithKeys(fn (Move $move): array => [TmaGate::workflowAction($move->key()) => $move->label()])
+            ->mapWithKeys(fn (Move $move): array => [TmaGate::workflowAction($move->key()) => $move->key() === 'transmit'
+                // Le droit qui fait d'une personne un correspondant du Support, adressable des deux côtés.
+                ? __('Correspondant du Support : écrire et transmettre au Support')
+                : $move->label()])
             ->all();
     }
 

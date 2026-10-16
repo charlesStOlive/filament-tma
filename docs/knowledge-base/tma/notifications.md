@@ -6,44 +6,98 @@ order: 80
 
 # Rappels et notifications
 
-## Le récapitulatif quotidien
+## Les destinataires
 
-Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** avec ce qui l'attend :
+Chaque ticket et chaque tâche a ses **destinataires**, visibles dans le bloc **Destinataires** du volet :
 
-- ses demandes qui attendent **sa réponse** ou **sa confirmation** ;
-- les tickets nouveaux que personne n'a pris et qu'il peut **prendre en charge** ;
-- ce qu'il **traite** : tickets en cours, tâches projet qui lui sont confiées ;
-- ses pauses qui **reprennent aujourd'hui**.
+- les **principaux** sont prévenus **tout de suite** de ce qui s'y passe : un changement d'état, un message, une
+  note, une relance ;
+- les **secondaires** l'apprennent dans leur **bilan** du matin ;
+- les autres ne reçoivent rien.
 
-Ce qui attend depuis plus de 5 jours, ou une tâche projet dont l'échéance prévue est passée, est signalé **en retard**.
+On en choisit un ou plusieurs de chaque sorte, et on les change tout au long de la vie du ticket (**Modifier**) ;
+**Tout le monde** coche d'un clic toutes les personnes possibles. Une personne ajoutée en est prévenue.
+
+### Qui devient destinataire tout seul
+
+| Moment | Qui devient principal |
+| --- | --- |
+| Création d'un ticket ou d'une tâche | son auteur, qui le reste toujours (et le demandeur d'un ticket préparé par le Support) |
+| **Confier à l'équipe** | la personne désignée, ou au moins un membre de l'équipe à choisir (ou **Tout le monde**) |
+| **Transmettre au Support** | qui transmet, et le Support (qui décide lui-même qui le reçoit) |
+| **Prendre en charge** | qui prend en charge ; il confirme ou complète les principaux de son équipe |
+| Publication d'une tâche | au moins une personne du client, à choisir (ou **Tout le monde**) |
+
+### Qui peut être destinataire
+
+- Dans l'application du client : ses **correspondants du Support** ; sur une demande qu'elle traite elle-même, aussi
+  ses **internes** ; sur une demande au Support ou une tâche, **le Support**, nommé par le compte passerelle de
+  l'application, et certains membres du Support si l'application le permet.
+- Chez le Support : ses membres, et les **correspondants** du client. Un interne n'y apparaît jamais.
+
+Chaque application prévient **ses propres utilisateurs** : quand le Support écrit sur un ticket de Desapp, c'est
+Desapp qui prévient ses destinataires, à la réception.
+
+### La demande d'un interne transmise au Support
+
+Quand un correspondant transmet au Support la demande d'un **interne**, l'interne cesse d'en être destinataire : il
+n'est plus prévenu de rien (ni courriel, ni cloche, ni bilan), n'y écrit plus et n'y fait plus aucun passage. Le côté
+demandeur, ce sont alors les **correspondants principaux** de la demande (au départ, celui qui l'a transmise) : ils
+reçoivent les questions du Support, ses relances, les rappels et l'avertissement de clôture, et répondent à sa
+place.
+
+## Courriel ou cloche
+
+Un destinataire principal est prévenu par **courriel**, dans la **cloche** de l'application (les notifications en
+haut de l'écran), ou les deux. Chacun choisit : **Notifications › Mes notifications**, en tête de la liste des
+tickets, ou **Mes notifications du Support** dans le menu de son compte. Sans aucun des deux, tout attend son bilan.
+
+## Le bilan
+
+Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** :
+
+- **ce qui l'attend** : ses demandes qui attendent sa réponse ou sa confirmation, les tickets à prendre en charge, ce
+  qu'il traite (tickets en cours, tâches projet qui lui sont confiées), ses pauses qui reprennent aujourd'hui. Ce qui
+  attend depuis plus de 5 jours, ou une tâche dont l'échéance prévue est passée, est signalé **en retard** ;
+- **depuis le dernier envoi** : ce qui a été mis de côté pour lui, ticket par ticket.
+
 Personne ne reçoit de courriel vide. L'heure, les jours et le fuseau se règlent.
 
-## Les notifications immédiates
+**Notifications › Envoyer maintenant**, en tête de la liste des tickets, envoie tout de suite leur bilan à ceux qui
+ont quelque chose en attente. Il faut le droit « Envoyer maintenant les notifications groupées ».
 
-Par défaut, il n'y en a pas : tout passe par le récapitulatif. L'application peut en activer certaines :
+## Relancer
 
-| Passage | Qui est prévenu |
-| --- | --- |
-| Demander des précisions, Marquer comme résolu, Prendre en charge, Publier | le demandeur |
-| Confier à l'équipe (à une personne désignée), Répondre, Retour à l'équipe | la personne qui a pris la demande en charge |
+Sur la fiche d'un ticket qui attend quelqu'un d'autre, **Relancer** écrit dans l'historique un message marqué
+**Relance** (votre mot, ou « Ce ticket attend votre retour. ») et prévient tout de suite qui a la main, par courriel
+même s'il n'a choisi aucun canal : le demandeur quand on traite la demande, l'intervenant (ou l'équipe qui doit la
+prendre) quand on l'attend. Le bouton n'apparaît pas à qui a lui-même la main, ni sur un brouillon, un ticket en
+pause ou terminé. Il faut le droit « Relancer qui a la main ».
 
-L'auteur du passage n'est jamais prévenu de son propre geste.
+## Le rappel de ce qui ne bouge plus
 
-## Ce qui prévient toujours
+Chaque jour ouvré à 7 h 30, juste avant le bilan, qui a la main reçoit dans son bilan un rappel pour :
+
+- un ticket qui **n'a pas changé d'état depuis 7 jours** (ni brouillon, ni en pause, ni terminé) ;
+- chez le Support, une **tâche en cours sans activité depuis 7 jours** (aucun message, note ou temps) : une tâche ne
+  change d'état qu'à sa publication et à sa fin.
+
+Le rappel revient tous les 7 jours tant que rien ne bouge. Le délai se règle. Un ticket qui attend le demandeur
+reçoit ainsi un rappel à 7 et 14 jours, puis l'avertissement de clôture à 21 jours, et se clôt à 28. Voir
+[La clôture automatique](#modal-tma.tickets.cloture-automatique).
+
+## Ce qui prévient aussi
 
 - **La clôture automatique** : le demandeur est averti 7 jours avant, puis à la clôture.
 - **Les seuils des forfaits** : les adresses configurées. Voir [Les forfaits](#modal-tma.forfaits).
-
-## Chacun chez soi
-
-Chaque application prévient **ses propres utilisateurs**. Quand le Support pose une question sur un ticket
-de Desapp, c'est Desapp qui envoie le courriel à son demandeur, à la réception.
 
 ## Les tâches automatiques
 
 | Tâche | Quand | Ce qu'elle fait |
 | --- | --- | --- |
 | Clôture automatique | chaque jour à 7 h | avertit puis clôture les tickets sans réponse du demandeur |
+| Rappel de ce qui ne bouge plus | jours ouvrés à 7 h 30 | rappelle à qui a la main ce qui n'a pas bougé depuis 7 jours |
 | Reprise des pauses | tous les quarts d'heure | reprend les tickets en pause arrivés à leur date |
 | Publications programmées | chaque minute | publie les tâches et les tickets préparés arrivés à leur date |
-| Récapitulatif | jours ouvrés à 8 h | envoie le récapitulatif |
+| Bilan | jours ouvrés à 8 h | envoie le bilan |
+| Ménage | chaque nuit | efface les notifications envoyées depuis plus de 90 jours |

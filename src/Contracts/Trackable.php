@@ -30,6 +30,9 @@ interface Trackable
 
     public function transitions(): MorphMany;
 
+    /** Les destinataires (`Models\Recipient`). */
+    public function recipients(): MorphMany;
+
     public function timeEntries(): MorphMany;
 
     public function touchActivity(): void;

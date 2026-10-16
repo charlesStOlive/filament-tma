@@ -14,6 +14,16 @@ Publier une tâche la fait passer **En cours** et l'envoie à son application cl
 
 Sans le droit de publier, la tâche reste en brouillon, et un message le dit.
 
+## Les destinataires
+
+Une tâche a des **destinataires principaux** (prévenus tout de suite de sa publication, puis de ce qui s'y passe) et
+des **secondaires** (dans leur bilan), choisis parmi les personnes du client qui peuvent faire une demande, et les
+membres du Support. Son auteur est principal d'office.
+
+Pour l'enregistrer avant sa publication, il faut **au moins un principal chez le client** ; **Tout le monde** les
+coche tous. **Publier chez EDM** le demande aussi s'il manque. Ils se changent ensuite à tout moment, dans le bloc
+**Destinataires** du volet. Voir [Rappels et notifications](#modal-tma.notifications).
+
 ## La publication programmée
 
 La date se saisit à votre heure (celle de votre compte). La tâche compte comme **publiée à l'heure dite** : c'est l'heure

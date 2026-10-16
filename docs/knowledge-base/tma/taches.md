@@ -21,6 +21,10 @@ est créée **par le Support**, dans un [projet](#modal-tma.projets), pour l'**a
 **Publier** fait passer la tâche de Brouillon à En cours et l'envoie à l'application cliente. On peut aussi
 programmer la publication (**Publication programmée**) : elle partira toute seule à cette date.
 
+**Rouvrir** remet une tâche terminée ou annulée En cours, chez le client aussi, avec un motif facultatif. C'est
+réservé au Support (le droit « Rouvrir » des tâches), dans le Support ou, pour un membre du Support, depuis
+l'application du client.
+
 ## Chez le Support
 
 **Support › Tâches projet › Nouveau** : le projet (qui donne l'application), le titre, début et échéance prévue
@@ -63,7 +67,8 @@ numéro n'est jamais redonné, et le journal d'audit garde la trace de la suppre
 Les tâches publiées pour l'application apparaissent dans **Support › Tâches projet**, rangées par projet. On y
 participe par l'[historique](#modal-tma.chronologie) : messages (dans **Nouveau message**, sous l'historique), notes,
 images, réponses. Une tâche **terminée** se commente encore ; une tâche **annulée** n'accepte plus que des notes. On
-ne crée pas de tâche et on ne change pas son état.
+ne crée pas de tâche et on ne change pas son état, sauf un membre du Support, qui y travaille au nom du Support
+(Terminer, Annuler, Rouvrir). Seuls les **correspondants du Support** y écrivent : un interne la lit, sans plus.
 
 ## Le volet de la tâche
 

@@ -66,15 +66,16 @@ final class LocalBackend implements Backend
      * Un message (commentaire, note, réponse), avec ses fichiers reçus en base64.
      *
      * @param  array<int, array<string, mixed>>  $files
+     * @param  array<string, mixed>  $meta  ce que l'entrée porte en plus (`reminder` : une relance)
      */
-    public function write(string $ref, string $type, string $body, ?string $parentUlid = null, array $files = [], bool $private = false): array
+    public function write(string $ref, string $type, string $body, ?string $parentUlid = null, array $files = [], bool $private = false, array $meta = []): array
     {
         $subject = $this->find($ref);
         $context = $this->context();
         $parent = filled($parentUlid) ? $subject->entries()->where('ulid', $parentUlid)->first() : null;
 
-        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files, $private): Entry {
-            $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent, private: $private);
+        $entry = Auditor::as($context, fn () => DB::transaction(function () use ($subject, $type, $body, $context, $parent, $files, $private, $meta): Entry {
+            $entry = app(Timeline::class)->add($subject, EntryType::from($type), $body, $context, $parent, $meta, private: $private);
             Mirror::files($entry, $files);
 
             return $entry;

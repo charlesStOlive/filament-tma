@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Models\Concerns;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\Recipient;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -23,6 +24,12 @@ trait IsTrackable
     public function transitions(): MorphMany
     {
         return $this->morphMany(StateTransition::class, 'subject');
+    }
+
+    /** Les destinataires : principaux et secondaires (`Workflow\Recipients`). */
+    public function recipients(): MorphMany
+    {
+        return $this->morphMany(Recipient::class, 'subject');
     }
 
     /** Les saisies de temps (dans le maître ; un client n'a que les totaux, `time_total_minutes`). */

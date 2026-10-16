@@ -2,10 +2,12 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
+use CharlesStOlive\FilamentTma\Filament\Actions\NotificationActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -114,6 +116,14 @@ class ListTickets extends ListRecords
     {
         return [
             CreateAction::make()->label(__('Nouvelle demande')),
+            ActionGroup::make([
+                NotificationActions::settings(),
+                NotificationActions::sendNow(),
+            ])
+                ->label(__('Notifications'))
+                ->icon('heroicon-o-bell')
+                ->color('gray')
+                ->button(),
         ];
     }
 }

@@ -150,7 +150,7 @@ trait HasComposer
 
         // Le demandeur répond en demandeur ; tous les autres, au nom de l'équipe qui traite. Sur un ticket de l'équipe du
         // client, une même application tient les deux rôles : c'est la personne qui les départage. Sur un ticket
-        // transmis au Support, l'équipe du client (qui peut lui parler) répond aussi pour le demandeur.
+        // transmis au Support, un correspondant du Support (qui peut lui écrire) répond aussi pour le demandeur.
         $isRequester = (bool) $record->requester?->isUser(auth()->user());
         $speaksForRequester = $isRequester || ($record->handling_mode === HandlingMode::ServiceDesk
             && Tma::isClient()

@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Commands\DemoCommand;
 use CharlesStOlive\FilamentTma\Commands\InstallCommand;
 use CharlesStOlive\FilamentTma\Commands\ListTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\LogTimeCommand;
+use CharlesStOlive\FilamentTma\Commands\NotifyCommand;
 use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
 use CharlesStOlive\FilamentTma\Commands\SendDigestCommand;
@@ -17,6 +18,8 @@ use CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached;
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\EntryChanged;
+use CharlesStOlive\FilamentTma\Events\RecipientsChanged;
+use CharlesStOlive\FilamentTma\Events\SnapshotMirrored;
 use CharlesStOlive\FilamentTma\Events\TaskDeleted;
 use CharlesStOlive\FilamentTma\Events\TaskTransitioned;
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
@@ -28,9 +31,10 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Listeners\AuditTrail;
 use CharlesStOlive\FilamentTma\Listeners\CheckAllowances;
 use CharlesStOlive\FilamentTma\Listeners\NotifyAllowanceThreshold;
-use CharlesStOlive\FilamentTma\Listeners\NotifyAutoClosure;
+use CharlesStOlive\FilamentTma\Listeners\NotifyFollowers;
 use CharlesStOlive\FilamentTma\Listeners\QueueAllowancesPush;
 use CharlesStOlive\FilamentTma\Listeners\QueuePush;
+use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -64,6 +68,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 CommentTicketCommand::class,
                 PublishScheduledTasksCommand::class,
                 SendDigestCommand::class,
+                NotifyCommand::class,
                 CleanupCommand::class,
                 InstallCommand::class,
                 DemoCommand::class,
@@ -85,6 +90,8 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'add_private_to_tma_entries_table',
                 'create_tma_projects_table',
                 'drop_description_from_tma_time_entries_table',
+                'create_tma_notices_table',
+                'create_tma_recipients_table',
             ]);
     }
 
@@ -98,7 +105,8 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
 
     /**
      * Le CSS de la chronologie, publié avec les assets de Filament (`php artisan filament:assets`) ; les tâches
-     * planifiées (clôture des tickets sans réponse chaque matin, reprise des pauses) ; les notifications.
+     * planifiées (clôture des tickets sans réponse chaque matin, reprise des pauses, rappel de ce qui ne bouge plus,
+     * récapitulatif) ; les notifications.
      */
     public function packageBooted(): void
     {
@@ -116,13 +124,14 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
             AuditTrail::register();
         }
 
-        Event::listen(TicketTransitioned::class, NotifyAutoClosure::class);
+        Event::listen([TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, SnapshotMirrored::class], NotifyFollowers::class);
         Event::listen(TimeEntryChanged::class, CheckAllowances::class);
         Event::listen(TimeEntryChanged::class, QueueAllowancesPush::class);
         Event::listen(AllowanceThresholdReached::class, NotifyAllowanceThreshold::class);
         Event::listen([
             TicketTransitioned::class, TaskTransitioned::class, EntryAdded::class, EntryChanged::class,
             TicketUpdated::class, TaskUpdated::class, TaskDeleted::class, AutoCloseWarned::class, TimeEntryChanged::class,
+            RecipientsChanged::class,
         ], QueuePush::class);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
@@ -134,6 +143,16 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 ->dailyAt((string) config('filament-tma.notifications.digest.at', '08:00'))
                 ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
                 ->withoutOverlapping();
+
+            if (config('filament-tma.notifications.stale.enabled', true)) {
+                $schedule->command('tma:notify --stale')
+                    ->days((array) config('filament-tma.notifications.digest.days', [1, 2, 3, 4, 5]))
+                    ->dailyAt((string) config('filament-tma.notifications.stale.at', '07:30'))
+                    ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
+                    ->withoutOverlapping();
+            }
+
+            $schedule->command('model:prune', ['--model' => [Notice::class]])->dailyAt('03:30');
 
             if (config('filament-tma.cleanup.schedule', false)) {
                 $schedule->command('tma:cleanup')->weeklyOn(0, '03:00')->withoutOverlapping();

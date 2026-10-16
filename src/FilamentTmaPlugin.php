@@ -11,6 +11,8 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ViewTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
+use CharlesStOlive\FilamentTma\Support\NoticeChannels;
+use Filament\Actions\Action;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
@@ -56,6 +58,15 @@ class FilamentTmaPlugin implements Plugin
 
         $panel->widgets([
             AllowanceOverview::class,
+        ]);
+
+        // « Mes notifications » : la fenêtre de la liste des tickets, ouverte d'ici (`NotificationActions::settings()`).
+        $panel->userMenuItems([
+            'tma-notifications' => Action::make('tmaNotificationsMenu')
+                ->label(fn (): string => __('Mes notifications du Support'))
+                ->icon('heroicon-o-bell')
+                ->url(fn (): string => TicketResource::getUrl('index', ['action' => 'tmaNotifications']))
+                ->visible(fn (): bool => NoticeChannels::userChoice() && TicketResource::canViewAny()),
         ]);
 
         // La visionneuse des images, une fois par fiche de ticket ou de tâche (voir `attachments.blade.php`).
