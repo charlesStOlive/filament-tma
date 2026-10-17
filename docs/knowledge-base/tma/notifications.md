@@ -39,15 +39,23 @@ Un destinataire **principal** du côté du client peut aussi **prendre la main**
 Chaque application prévient **ses propres utilisateurs** : quand le Support écrit sur un ticket de Desapp, c'est
 Desapp qui prévient ses destinataires, à la réception.
 
-## Courriel ou cloche
+## Courriel, cloche, bilan
 
 Un destinataire principal est prévenu par **courriel**, dans la **cloche** de l'application (les notifications en
-haut de l'écran), ou les deux. Chacun choisit : **Notifications › Mes notifications**, en tête de la liste des
-tickets, ou **Mes notifications du Support** dans le menu de son compte. Sans aucun des deux, tout attend son bilan.
+haut de l'écran), ou les deux. Sans aucun des deux, tout attend son bilan.
+
+Chacun choisit aussi s'il reçoit le **bilan** du matin. Sans le bilan, ce qui devait y aller ne lui parvient pas : ce
+qui se passe là où il est destinataire secondaire, et le rappel de ce qui ne bouge plus. Une relance et la clôture
+automatique arrivent toujours, par courriel.
+
+Ces trois choix se font dans **Notifications › Mes notifications**, en tête de la liste des tickets, ou **Mes
+notifications du Support** dans le menu de son compte (clic sur son avatar, en haut à droite). Tant qu'on n'a rien
+choisi, c'est le réglage de l'application qui s'applique (d'origine : les trois). L'application peut aussi fixer ce
+réglage pour tous ; « Mes notifications » n'apparaît alors pas.
 
 ## Le bilan
 
-Chaque jour ouvré à 8 h, chacun reçoit **un seul courriel** :
+Chaque jour ouvré à 8 h, chacun (sauf qui l'a refusé) reçoit **un seul courriel** :
 
 - **ce qui l'attend** : ses demandes qui attendent sa réponse ou sa confirmation, les demandes nouvelles sans contact, ce
   qu'il traite (tickets en cours, tâches projet qui lui sont confiées), ses pauses qui reprennent aujourd'hui. Ce qui

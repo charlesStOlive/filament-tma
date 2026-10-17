@@ -2,13 +2,16 @@
 
 namespace CharlesStOlive\FilamentTma\Support;
 
+use CharlesStOlive\FilamentTma\Enums\NoticeMode;
 use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Notifications\DailyDigest;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
  * Envoie les récapitulatifs : à chacun ce qui l'attend (`Digest`) et ce qui a été mis de côté pour lui depuis le
- * dernier envoi (`Notice::pending()`), qui part alors comme envoyé. Personne ne reçoit un courriel vide.
+ * dernier envoi (`Notice::pending()`), qui part alors comme envoyé. Personne ne reçoit un courriel vide, ni qui ne
+ * veut pas du bilan (`NoticeChannels::digest()`) : ce qui avait été gardé pour lui avant qu'il le refuse est
+ * seulement noté.
  *
  * Le matin (`tma:digest`), tout le monde ; à la demande (bouton « Envoyer maintenant », `tma:notify --grouped`),
  * seulement qui a des notifications en attente.
@@ -30,6 +33,14 @@ final class DigestSender
             : $model::query();
 
         $users->each(function (Authenticatable $user) use ($dryRun, $report, &$recipients, &$notices): void {
+            if (! NoticeChannels::digest($user)) {
+                if (! $dryRun) {
+                    Notice::query()->pending()->for($user)->update(['mode' => NoticeMode::Skipped->value, 'sent_at' => now()]);
+                }
+
+                return;
+            }
+
             $sections = Digest::for($user);
             $pending = Notice::query()->pending()->for($user)->with('subject')->orderBy('id')->get();
 

@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
 /**
  * Qui prévenir, ici, de ce qui arrive à un ticket ou à une tâche : ses destinataires (`Workflow\Recipients`). Un
  * principal l'apprend tout de suite, par courriel ou dans la cloche de l'application selon son choix
- * (`NoticeChannels`) ; un secondaire, dans son prochain bilan. Les autres, rien.
+ * (`NoticeChannels`) ; un secondaire, dans son prochain bilan, s'il le reçoit. Les autres, rien.
  *
  * Chaque application prévient ses propres utilisateurs (addendum §4) : ce qui est fait ici passe par les événements du
  * workflow (`Listeners\NotifyFollowers`), ce qui arrive de l'autre application par l'état recopié
@@ -186,8 +186,8 @@ final class Notifier
     }
 
     /**
-     * Rappelle à qui a la main un ticket ou une tâche qui ne bouge plus depuis `$days` jours, dans son bilan, une fois
-     * par période de `notifications.stale.after_days` jours.
+     * Rappelle à qui a la main un ticket ou une tâche qui ne bouge plus depuis `$days` jours, dans son bilan (pas à
+     * qui ne le reçoit pas), une fois par période de `notifications.stale.after_days` jours.
      *
      * @return int le nombre de personnes rappelées
      */
@@ -212,7 +212,7 @@ final class Notifier
                 ->where('created_at', '>', now()->subDays($period))
                 ->exists();
 
-            if ($recent) {
+            if ($recent || ! NoticeChannels::digest($user)) {
                 continue;
             }
 
@@ -285,8 +285,9 @@ final class Notifier
 
     /**
      * Écrit la notification d'une personne, puis l'envoie tout de suite (principal : par ses canaux) ou la garde pour
-     * son bilan (secondaire, ou principal qui n'a choisi aucun canal). Ce qui part toujours tout de suite (`$mode`
-     * imposé : relance, clôture automatique) passe par courriel à qui n'a choisi aucun canal.
+     * son bilan (secondaire, ou principal qui n'a choisi aucun canal) ; sans bilan, elle est seulement notée. Ce qui
+     * part toujours tout de suite (`$mode` imposé : relance, clôture automatique) passe par courriel à qui n'a choisi
+     * aucun canal.
      *
      * @param  (\Closure(Notice): Notification)|null  $notification  le courriel à envoyer tout de suite, s'il n'est pas le courriel commun
      */
@@ -304,6 +305,10 @@ final class Notifier
             [$mode, $channels] = $imposed ? [$mode, [NoticeChannels::MAIL]] : [NoticeMode::Grouped, []];
         }
 
+        if ($mode === NoticeMode::Grouped && ! NoticeChannels::digest($user)) {
+            $mode = NoticeMode::Skipped;
+        }
+
         $notice = Notice::query()->createOrFirst(
             ['user_id' => (string) $user->getAuthIdentifier(), 'key' => $key],
             [
@@ -319,7 +324,7 @@ final class Notifier
                     'line' => $line,
                     'excerpt' => $excerpt,
                 ],
-                'sent_at' => $mode === NoticeMode::Immediate ? now() : null,
+                'sent_at' => $mode === NoticeMode::Grouped ? null : now(),
                 'created_at' => now(),
             ],
         );

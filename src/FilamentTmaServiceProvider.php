@@ -81,6 +81,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_tma_tickets_tables',
                 'create_tma_time_and_allowances_tables',
                 'create_tma_notices_and_audits_tables',
+                'add_digest_to_tma_notification_preferences_table',
             ]);
     }
 

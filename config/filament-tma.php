@@ -174,8 +174,11 @@ return [
     | digest : le bilan du matin, ce qui attend chacun (CDC §12.1) puis ce qui a été mis de côté pour lui depuis le
     | dernier envoi — heure, jours (1 = lundi), fuseau, et `late_after_days` : au-delà, une attente est signalée en
     | retard.
-    | channels : comment un principal est prévenu, `mail` et/ou `database` (la cloche de Filament : le panel doit
-    | avoir `->databaseNotifications()`). user_choice : chacun le change pour lui (« Mes notifications »).
+    | defaults : ce qui est actif pour qui n'a rien choisi — `mail` (un principal reçoit un courriel tout de suite),
+    | `database` (un principal est prévenu dans la cloche de Filament : le panel doit avoir `->databaseNotifications()`),
+    | `digest` (le bilan du matin ; sans lui, ce qui devait y aller ne part pas). Sans courriel ni cloche, ce qui
+    | concerne un principal attend son bilan. user_choice : chacun change ces trois choix pour lui (« Mes
+    | notifications ») ; à false, `defaults` vaut pour tous.
     | stale : le rappel, à qui a la main, d'un ticket qui n'a pas changé d'état depuis `after_days` jours (ni brouillon,
     | ni en pause, ni terminé), ou d'une tâche en cours sans activité ; chaque matin à `at`, les jours du bilan, dans le
     | bilan, puis de nouveau tous les `after_days` jours tant que rien ne bouge.
@@ -191,7 +194,7 @@ return [
             'timezone' => env('TMA_TIMEZONE', env('APP_TIMEZONE', 'Europe/Paris')),
             'late_after_days' => 5,
         ],
-        'channels' => ['mail', 'database'],
+        'defaults' => ['mail', 'database', 'digest'],
         'user_choice' => true,
         'stale' => [
             'enabled' => true,

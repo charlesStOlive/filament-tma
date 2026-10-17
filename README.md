@@ -259,8 +259,10 @@ Le plugin déclare lui-même ses tâches planifiées :
 | `model:prune` (`Models\Notice`) | chaque nuit | Efface les notifications envoyées depuis plus de `notifications.keep_days` jours (90). |
 
 **Les destinataires** (`Workflow\Recipients`, table `tma_recipients`) : chaque ticket et chaque tâche a des
-principaux, prévenus tout de suite de ce qui s'y passe (courriel et/ou cloche de Filament, au choix de chacun :
-`notifications.channels`, « Mes notifications »), et des secondaires, prévenus dans le bilan. L'auteur est principal
+principaux, prévenus tout de suite de ce qui s'y passe (courriel et/ou cloche de Filament), et des secondaires,
+prévenus dans le bilan. Ce qui est actif pour qui n'a rien choisi se règle dans `notifications.defaults` (`mail`,
+`database`, `digest` : tous par défaut) ; chacun le change dans « Mes notifications » (sauf
+`notifications.user_choice` à false). Sans bilan, ce qui devait y aller est seulement noté. L'auteur est principal
 d'office, comme le contact au Support choisi à la transmission ; publier une tâche exige un principal chez le client. Le client nomme ses
 correspondants du Support (le droit `tma.ticket.correspond`) et le Support par son compte passerelle, que le maître
 traduit en
