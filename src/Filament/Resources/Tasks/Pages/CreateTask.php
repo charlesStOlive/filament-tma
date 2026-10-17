@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasOrthography;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskPublication;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -21,12 +22,13 @@ use Illuminate\Database\Eloquent\Model;
 class CreateTask extends CreateRecord
 {
     use HasOnDemand;
+    use HasOrthography;
 
     protected static string $resource = TaskResource::class;
 
     protected function getHeaderActions(): array
     {
-        return [OnDemandAction::make()];
+        return [...$this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]), OnDemandAction::make()];
     }
 
     protected function handleRecordCreation(array $data): Model

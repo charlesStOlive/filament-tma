@@ -272,6 +272,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Correction orthographique par l'IA (facultative)
+    |--------------------------------------------------------------------------
+    |
+    | Un bouton « Orthographe » sur le nouveau message et sur les formulaires des tickets et des tâches : la revue de
+    | charlesstolive/filament-prism (rien ne part avant « Envoyer », on choisit ce qu'on applique). Il ne s'affiche
+    | que si tout est là : filament-prism installé, la clé API de son fournisseur dans le .env (`OPENAI_API_KEY`…,
+    | lue par config/prism.php), ce réglage allumé et, pour l'utilisateur, le droit `tma.ticket.ai.orthography`
+    | (`tma.task.ai.orthography`). Sans clé, rien n'apparaît ; le droit se donne d'avance.
+    | task : la tâche de filament-prism qui corrige.
+    |
+    */
+
+    'ai' => [
+        'orthography' => (bool) env('TMA_AI_ORTHOGRAPHY', true),
+        'task' => 'orthography',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Navigation
     |--------------------------------------------------------------------------
     */

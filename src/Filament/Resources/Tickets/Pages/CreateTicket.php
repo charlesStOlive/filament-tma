@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
 use CharlesStOlive\FilamentTma\Enums\Priority;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasOrthography;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Models\Instance;
@@ -22,9 +23,13 @@ use Livewire\Attributes\Url;
  *
  * Depuis une tâche projet (`?task=…`, le bouton « Créer un ticket » de sa fiche), le ticket en reprend le titre, la
  * description et l'application, et reste lié à elle.
+ *
+ * « Orthographe » corrige le titre et la description, quand l'IA est là (`HasOrthography`).
  */
 class CreateTicket extends CreateRecord
 {
+    use HasOrthography;
+
     protected static string $resource = TicketResource::class;
 
     #[Url(as: 'task')]
@@ -52,6 +57,11 @@ class CreateTicket extends CreateRecord
             'priority' => Priority::Normal->value,
             'instance_uid' => Tma::isMaster() ? $task->target_instance_uid : null,
         ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return $this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]);
     }
 
     public function getSubheading(): ?string

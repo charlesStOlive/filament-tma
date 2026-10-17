@@ -28,6 +28,7 @@ Sur un ticket, les droits disent **qui est qui** et ouvrent ce qui est **à côt
 | `notify` | envoyer maintenant les notifications groupées en attente |
 | `time` | saisir et modifier du temps (Support) |
 | `sync` | renvoyer un ticket à son application (Support) |
+| `ai.orthography` | corriger l'orthographe avec l'IA, quand l'application a une clé (voir [Corriger l'orthographe](#modal-tma.chronologie.orthographe)) |
 
 Par exemple, chez Desapp : un rôle de correspondant (`correspond`, `note`, `remind`, la liste) ; chez Filbreeze, un rôle
 du Support (`handle`, `note`, `remind`, `time`…) et, pour les administrateurs, les forçages.
@@ -40,6 +41,7 @@ du Support (`handle`, `note`, `remind`, `time`…) et, pour les administrateurs,
 | `comment`, `note` | écrire des messages, des notes |
 | `time`, `sync` | saisir du temps, renvoyer une tâche (Support) |
 | `workflow.{passage}` | faire ce passage : `workflow.publish`, `workflow.complete`, `workflow.reopen`… |
+| `ai.orthography` | corriger l'orthographe avec l'IA, comme sur les tickets |
 
 ## Les autres écrans
 

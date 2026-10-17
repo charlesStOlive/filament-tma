@@ -32,9 +32,13 @@ use Illuminate\Validation\ValidationException;
  * renvoie au Support un ticket résolu ; le Support « Demande des précisions » ou « Marque comme résolu ». Il n'y a pas
  * de message à part : hors de son tour, ou pour un point d'étape, la zone renvoie aux notes. Sur une tâche projet, on
  * « Envoie le message ».
+ *
+ * À côté des boutons, « Orthographe » corrige le message avant l'envoi, quand l'IA est là (`HasOrthography`).
  */
 trait HasComposer
 {
+    use HasOrthography;
+
     /** @var array<string, mixed>|null */
     public ?array $composerData = [];
 
@@ -92,6 +96,7 @@ trait HasComposer
     protected function composerActions(): array
     {
         $actions = [
+            ...$this->orthographyActions('composer', ['body' => __('Message')]),
             Action::make('composerMessage')
                 ->label(__('Envoyer le message'))
                 ->icon('heroicon-m-paper-airplane')

@@ -20,6 +20,7 @@ use CharlesStOlive\FilamentTma\States\Task\TaskDraft;
 use CharlesStOlive\FilamentTma\Support\Dates;
 use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Html;
+use CharlesStOlive\FilamentTma\Support\Orthography;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Sync\TimeTotals;
@@ -50,7 +51,8 @@ use UnitEnum;
  * commenter, noter, joindre des images et répondre.
  *
  * Droits (filament-permission-manager) : `tma.task.*`, avec `comment`, `note`, `time`, `sync` et la
- * famille `workflow` (`tma.task.workflow.publish`…).
+ * famille `workflow` (`tma.task.workflow.publish`…) ; avec filament-prism installé, `ai.orthography` (voir
+ * `Support\Orthography`).
  */
 class TaskResource extends Resource implements HasKnowledgeBase
 {
@@ -68,7 +70,10 @@ class TaskResource extends Resource implements HasKnowledgeBase
     protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC];
 
     /** @var array<string, string> */
-    protected static array $permissionFamilies = [TmaGate::WORKFLOW_FAMILY => 'Passages de la tâche'];
+    protected static array $permissionFamilies = [
+        TmaGate::WORKFLOW_FAMILY => 'Passages de la tâche',
+        Orthography::FAMILY => Orthography::FAMILY_LABEL,
+    ];
 
     /** @var array<string, string> */
     protected static array $permissionLabels = [
@@ -81,9 +86,12 @@ class TaskResource extends Resource implements HasKnowledgeBase
     /** @return array<string, string> */
     public static function permissionActions(): array
     {
-        return collect(app(TaskWorkflow::class)->userMoves())
-            ->mapWithKeys(fn (TaskMove $move): array => [TmaGate::workflowAction($move->key()) => $move->label()])
-            ->all();
+        return [
+            ...collect(app(TaskWorkflow::class)->userMoves())
+                ->mapWithKeys(fn (TaskMove $move): array => [TmaGate::workflowAction($move->key()) => $move->label()])
+                ->all(),
+            ...Orthography::permissionActions(),
+        ];
     }
 
     public static function getModelLabel(): string

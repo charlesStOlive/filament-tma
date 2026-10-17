@@ -65,6 +65,9 @@ rappelle au-dessus du texte).
 
 Sur une tâche projet, **Envoyer le message** écrit un message, pour qui en a le droit.
 
+Quand l'application le permet, **Orthographe** fait relire le message par l'IA avant l'envoi (voir
+[Corriger l'orthographe](#modal-tma.chronologie.orthographe)).
+
 Seul le demandeur répond ; un collègue écrit une note, ou **prend la main** s'il est destinataire principal (voir
 [Prendre la main](#modal-tma.tickets.question-reponse)). Les notes s'écrivent à part, sous le message qu'elles
 commentent.
@@ -95,3 +98,4 @@ silence. Ce que le Support écrit arrive dans l'application cliente quelques ins
 - [Les notes](#modal-tma.chronologie.notes)
 - [Les pièces jointes](#modal-tma.chronologie.fichiers)
 - [La mise en forme du texte](#modal-tma.chronologie.mise-en-forme)
+- [Corriger l'orthographe](#modal-tma.chronologie.orthographe)

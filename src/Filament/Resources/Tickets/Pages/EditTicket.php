@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages;
 
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasOrthography;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -19,9 +20,12 @@ use Filament\Resources\Pages\EditRecord;
  * Modifier un ticket (addendum §3.2) : son auteur modifie la demande en brouillon, puis tant qu'aucun message ne l'a
  * suivie ; le Support, à son tour, retouche le titre et la priorité. Après la transmission, l'application cliente
  * envoie la demande au maître dans la même transaction : s'il la refuse ou ne répond pas, rien n'est gardé.
+ * « Orthographe » corrige ce qui reste modifiable (`HasOrthography`).
  */
 class EditTicket extends EditRecord
 {
+    use HasOrthography;
+
     protected static string $resource = TicketResource::class;
 
     protected ?bool $hasDatabaseTransactions = true;
@@ -29,6 +33,7 @@ class EditTicket extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]),
             ViewAction::make(),
             DeleteAction::make(),
         ];

@@ -19,6 +19,7 @@ use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use CharlesStOlive\FilamentTma\Support\Orthography;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -42,7 +43,8 @@ use UnitEnum;
  * - la liste : `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` (policy de repli du gestionnaire) ;
  * - qui est qui : `correspond` (correspondant du Support, dans une application cliente : faire une demande, la
  *   transmettre, en être le demandeur) et `handle` (membre du Support, dans le maître : traiter les demandes) ;
- * - à côté du workflow : `note`, `time`, `sync`, `remind`, `notify` ; les forçages `force-close` et `force-return`.
+ * - à côté du workflow : `note`, `time`, `sync`, `remind`, `notify` ; les forçages `force-close` et `force-return` ;
+ * - avec filament-prism installé : `ai.orthography`, corriger l'orthographe avec l'IA (voir `Support\Orthography`).
  *
  * Les passages normaux ne sont pas des droits : ils suivent le tour (`Workflow\TicketWorkflow`, addendum §3). De même,
  * on ne modifie la demande qu'en en étant l'auteur, tant qu'aucun message ne l'a suivie, et le Support ne retouche le
@@ -79,6 +81,15 @@ class TicketResource extends Resource implements HasKnowledgeBase
         TmaGate::REMIND => 'Relancer qui a la main',
         TmaGate::NOTIFY => 'Envoyer maintenant les notifications groupées',
     ];
+
+    /** @var array<string, string> */
+    protected static array $permissionFamilies = [Orthography::FAMILY => Orthography::FAMILY_LABEL];
+
+    /** @return array<string, string> */
+    public static function permissionActions(): array
+    {
+        return Orthography::permissionActions();
+    }
 
     public static function getModelLabel(): string
     {

@@ -20,7 +20,8 @@
         "spatie/laravel-package-tools": "^1.16"
     },
     "suggest": {
-        "charlesstolive/filament-permission-manager": "Crée les permissions déclarées par les Resources (tma.ticket.*) et les abilities qui les vérifient"
+        "charlesstolive/filament-permission-manager": "Crée les permissions déclarées par les Resources (tma.ticket.*) et les abilities qui les vérifient",
+        "charlesstolive/filament-prism": "La correction orthographique par l'IA du message, des tickets et des tâches (avec la clé API de son fournisseur)"
     },
     "autoload": {
         "psr-4": {

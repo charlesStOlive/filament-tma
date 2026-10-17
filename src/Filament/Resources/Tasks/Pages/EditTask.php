@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 
 use CharlesStOlive\FilamentTma\Events\TaskUpdated;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskDeleteActions;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasOrthography;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskPublication;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Models\Project;
@@ -21,6 +22,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditTask extends EditRecord
 {
     use HasOnDemand;
+    use HasOrthography;
 
     protected static string $resource = TaskResource::class;
 
@@ -29,7 +31,7 @@ class EditTask extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [OnDemandAction::make(), ViewAction::make(), TaskDeleteActions::make()];
+        return [...$this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]), OnDemandAction::make(), ViewAction::make(), TaskDeleteActions::make()];
     }
 
     protected function mutateFormDataBeforeFill(array $data): array

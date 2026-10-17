@@ -78,6 +78,7 @@ Dépendances : `charlesstolive/filament-state-fusion-enhanced` (les états), `fi
 | `TMA_CLI_TOKEN` | le jeton personnel utilisé par les commandes `tma:*` |
 | `TMA_ALLOWANCE_NOTIFY` | maître : adresses prévenues aux seuils des forfaits (séparées par des virgules) |
 | `TMA_ATTACHMENTS_DISK` | disque **privé** des fichiers (défaut `local`) |
+| `TMA_AI_ORTHOGRAPHY` | `false` éteint la correction orthographique par l'IA (défaut `true` ; sans clé API, elle ne s'affiche pas de toute façon) |
 
 `php artisan tma:install` écrit tout cela dans `.env` et génère l'identifiant ; dans le maître, « Applications
 clientes › Configuration de l'application » donne la commande complète à lancer dans une application cliente.
@@ -172,6 +173,27 @@ Le HTML est nettoyé côté serveur à l'enregistrement (`Support\Html`) :
 
 Les fichiers sont stockés sur un disque privé. Leur type est contrôlé sur leur contenu réel, avec une liste
 blanche. Ils ne se téléchargent que par `tma/media/{media}`, qui vérifie les droits à chaque fois.
+
+### La correction orthographique (facultative)
+
+Un bouton **Orthographe** relit par l'IA le nouveau message (`HasComposer`) et le titre et la description des
+formulaires de ticket et de tâche (`Filament\Concerns\HasOrthography`). Il passe par
+`charlesstolive/filament-prism`, que le plugin ne demande pas (`suggest`) : `CorrectionAction`, avec la revue de
+prism (brouillon, « Envoyer », corrections à appliquer). « Appliquer » remet le texte dans le champ, comme une frappe ;
+on l'envoie ou on l'enregistre ensuite.
+
+Le bouton ne s'affiche que si tout est là (`Support\Orthography::available()`) :
+
+- filament-prism installé et migré, avec sa tâche `orthography` (`filament-tma.ai.task`) ;
+- la clé API de son fournisseur (`prism.providers.<fournisseur>.api_key`, `OPENAI_API_KEY`…). Sans clé, rien ne
+  s'affiche : une application cliente sans IA ne voit rien ;
+- `filament-tma.ai.orthography` allumé (`TMA_AI_ORTHOGRAPHY`, défaut `true`) ;
+- le droit `tma.ticket.ai.orthography` (`tma.task.ai.orthography`), vérifié par prism (`AiPermissions`). Il est déclaré
+  dès que prism est installé, même sans clé : on le donne d'avance.
+
+La demande se rattache au ticket ou à la tâche, ou à l'utilisateur sur une page de création, avec la clé
+`tma:{tickets|tasks}:{composer|form}`. À l'application, la page relit le texte dans la demande en base, et seulement
+si elle est de l'utilisateur connecté.
 
 ## Les forfaits
 
@@ -288,9 +310,10 @@ Les droits suivent le format de `filament-permission-manager`, sans en dépendre
   - `tma.ticket.viewany`, `view`, `create`, `edit`, `delete` ;
   - qui est qui : `correspond` (correspondant du Support, client), `handle` (membre du Support, maître) ;
   - à côté du workflow : `note` (écrire des notes et les archiver), `remind`, `notify`, `time`, `sync` ;
-  - les forçages : `force-close`, `force-return`.
-- **tâches** : `tma.task.*`, avec `comment`, `note`, `time`, `sync` et la famille « Passages de la tâche »
-  (`tma.task.workflow.{mouvement}`).
+  - les forçages : `force-close`, `force-return` ;
+  - avec filament-prism : `ai.orthography` (famille « Intelligence artificielle »).
+- **tâches** : `tma.task.*`, avec `comment`, `note`, `time`, `sync`, la famille « Passages de la tâche »
+  (`tma.task.workflow.{mouvement}`) et, avec filament-prism, `ai.orthography`.
 - **applications clientes** : `tma.instance.*`.
 - **forfaits** : `tma.allowance.*`, plus `reset` ;
 - **journal d'audit** : `tma.audit.viewany`.
