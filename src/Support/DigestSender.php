@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Support;
 
+use CharlesStOlive\FilamentPermissionManager\UserOptions\Contracts\HasUserOptions;
 use CharlesStOlive\FilamentTma\Enums\NoticeMode;
 use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Notifications\DailyDigest;
@@ -31,6 +32,10 @@ final class DigestSender
         $users = $pendingOnly
             ? $model::query()->whereIn((new $model)->getKeyName(), Notice::query()->pending()->distinct()->pluck('user_id'))
             : $model::query();
+
+        if (is_subclass_of($model, HasUserOptions::class)) {
+            $users->with('optionGroups');
+        }
 
         $users->each(function (Authenticatable $user) use ($dryRun, $report, &$recipients, &$notices): void {
             if (! NoticeChannels::digest($user)) {

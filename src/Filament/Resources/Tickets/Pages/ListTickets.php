@@ -117,7 +117,7 @@ class ListTickets extends ListRecords
         return [
             CreateAction::make()->label(__('Nouvelle demande')),
             ActionGroup::make([
-                NotificationActions::settings(),
+                NotificationActions::profileLink(),
                 NotificationActions::sendNow(),
             ])
                 ->label(__('Notifications'))

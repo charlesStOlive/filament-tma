@@ -119,7 +119,7 @@ Support, `tma.ticket.handle` fait d'une personne un **membre du Support**. Les f
 | `allowances.thresholds` | 80, 90, 100, 110 | seuils des forfaits, en % |
 | `allowances.block_overage` | non | refuser une saisie qui dépasserait le forfait |
 | `notifications.digest.at` | 08:00 | heure du bilan quotidien |
-| `notifications.defaults` | courriel, cloche, bilan | ce qui est actif pour qui n'a rien choisi dans « Mes notifications » |
+| `notifications.defaults` | courriel, cloche, bilan | valeurs initiales de Mon profil › Notifications du Support (lien « Notifications › Mes notifications » dans les tickets) |
 | `notifications.stale.after_days` | 7 | rappel de ce qui ne bouge plus |
 | `recipients.support_defaults` | — | maître : qui reçoit ce qu'un client adresse « au Support » |
 | `attachments.accepted_types` | images, PDF, bureautique, CSV, ZIP | types de fichiers acceptés |

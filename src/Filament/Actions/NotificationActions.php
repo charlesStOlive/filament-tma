@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
+use CharlesStOlive\FilamentPermissionManager\UserOptions\Contracts\HasUserOptions;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Actor;
@@ -14,8 +15,6 @@ use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -23,9 +22,7 @@ use Livewire\Component;
 
 /**
  * Les notifications dans l'interface :
- * - « Mes notifications » : chacun choisit comment il est prévenu quand il est destinataire principal (courriel,
- *   cloche, les deux), et s'il reçoit le bilan du matin ; l'application dit ce qui est coché tant qu'il n'a rien
- *   choisi (`notifications.defaults`). Aussi dans le menu de l'utilisateur (`?action=tmaNotifications`) ;
+ * - « Mes notifications » : lien vers la section Notifications du Support de la page Profil ;
  * - « Envoyer maintenant » : les récapitulatifs de qui a des notifications en attente, sans attendre le matin
  *   (droit `notify`) ;
  * - « Relancer » : sur un ticket qui attend quelqu'un d'autre, un message marqué relance part dans l'historique, et
@@ -33,35 +30,16 @@ use Livewire\Component;
  */
 final class NotificationActions
 {
-    public static function settings(): Action
+    public static function profileLink(): Action
     {
         return Action::make('tmaNotifications')
             ->label(__('Mes notifications'))
             ->icon('heroicon-o-adjustments-horizontal')
-            ->visible(fn (): bool => NoticeChannels::userChoice() && auth()->check())
-            ->modalHeading(__('Mes notifications du Support'))
-            ->modalDescription(__('Destinataire principal d’un ticket ou d’une tâche, vous êtes prévenu tout de suite de ce qui s’y passe. Destinataire secondaire, vous l’apprenez dans le bilan du matin (:at).', [
-                'at' => config('filament-tma.notifications.digest.at', '08:00'),
-            ]))
-            ->fillForm(fn (): array => [
-                'channels' => NoticeChannels::for(auth()->user()),
-                'digest' => NoticeChannels::digest(auth()->user()),
-            ])
-            ->schema([
-                CheckboxList::make('channels')
-                    ->label(__('Quand je suis destinataire principal, me prévenir'))
-                    ->options(NoticeChannels::options())
-                    ->helperText(__('Sans aucun des deux, tout attend votre bilan. Une relance arrive toujours par courriel.')),
-                Checkbox::make('digest')
-                    ->label(__('Recevoir le bilan du matin'))
-                    ->helperText(__('Ce qui vous attend, et ce qui s’est passé là où vous êtes destinataire secondaire. Sans le bilan, rien de cela ne vous parvient.'))
-                    ->visible(fn (): bool => (bool) config('filament-tma.notifications.digest.enabled', true)),
-            ])
-            ->modalSubmitActionLabel(__('Enregistrer'))
-            ->action(function (array $data): void {
-                NoticeChannels::save(auth()->user(), (array) ($data['channels'] ?? []), array_key_exists('digest', $data) ? (bool) $data['digest'] : null);
-                Notification::make()->success()->title(__('Réglages enregistrés'))->send();
-            });
+            ->visible(fn (): bool => NoticeChannels::userChoice()
+                && auth()->user() instanceof HasUserOptions
+                && ! in_array('tma', config('filament-permission-manager.user_options.disabled', []), true)
+                && filament()->getProfileUrl() !== null)
+            ->url(fn (): string => filament()->getProfileUrl().'#user-options-tma');
     }
 
     public static function sendNow(): Action

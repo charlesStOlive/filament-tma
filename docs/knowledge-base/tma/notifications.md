@@ -48,10 +48,12 @@ Chacun choisit aussi s'il reçoit le **bilan** du matin. Sans le bilan, ce qui d
 qui se passe là où il est destinataire secondaire, et le rappel de ce qui ne bouge plus. Une relance et la clôture
 automatique arrivent toujours, par courriel.
 
-Ces trois choix se font dans **Notifications › Mes notifications**, en tête de la liste des tickets, ou **Mes
-notifications du Support** dans le menu de son compte (clic sur son avatar, en haut à droite). Tant qu'on n'a rien
+Ces trois choix se font dans le menu du compte › **Profil**, section **Notifications du Support**.
+Le lien **Notifications › Mes notifications**, en tête de la liste des tickets, ouvre directement cette section
+du profil (`#user-options-tma`). Il n'y a plus de fenêtre séparée ni d'entrée propre au Support dans le menu du compte. Tant qu'on n'a rien
 choisi, c'est le réglage de l'application qui s'applique (d'origine : les trois). L'application peut aussi fixer ce
-réglage pour tous ; « Mes notifications » n'apparaît alors pas.
+réglage pour tous ; « Mes notifications » n'apparaît alors pas. Sans le gestionnaire d'options utilisateur, les
+valeurs de l'application s'appliquent à tout le monde, sans choix personnel.
 
 ## Le bilan
 

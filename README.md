@@ -261,8 +261,11 @@ Le plugin déclare lui-même ses tâches planifiées :
 **Les destinataires** (`Workflow\Recipients`, table `tma_recipients`) : chaque ticket et chaque tâche a des
 principaux, prévenus tout de suite de ce qui s'y passe (courriel et/ou cloche de Filament), et des secondaires,
 prévenus dans le bilan. Ce qui est actif pour qui n'a rien choisi se règle dans `notifications.defaults` (`mail`,
-`database`, `digest` : tous par défaut) ; chacun le change dans « Mes notifications » (sauf
-`notifications.user_choice` à false). Sans bilan, ce qui devait y aller est seulement noté. L'auteur est principal
+`database`, `digest` : tous par défaut) ; chacun le change dans le menu du compte › Profil, section
+« Notifications du Support » (sauf `notifications.user_choice` à false). « Notifications › Mes notifications », dans
+la liste des tickets, renvoie vers `filament()->getProfileUrl().'#user-options-tma'` : plus de fenêtre séparée ni d'entrée
+TMA dans le menu du compte. Les choix sont le groupe `tma` de `user_options` ; sans l'interface `HasUserOptions`, les
+défauts s'appliquent à tous sans dépendance obligatoire à permission-manager. Sans bilan, ce qui devait y aller est seulement noté. L'auteur est principal
 d'office, comme le contact au Support choisi à la transmission ; publier une tâche exige un principal chez le client. Le client nomme ses
 correspondants du Support (le droit `tma.ticket.correspond`) et le Support par son compte passerelle, que le maître
 traduit en
