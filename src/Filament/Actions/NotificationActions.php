@@ -6,11 +6,13 @@ use CharlesStOlive\FilamentPermissionManager\UserOptions\Contracts\HasUserOption
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\Paused;
 use CharlesStOlive\FilamentTma\Support\DigestSender;
 use CharlesStOlive\FilamentTma\Support\NoticeChannels;
+use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
@@ -26,7 +28,10 @@ use Livewire\Component;
  * - « Envoyer maintenant » : les récapitulatifs de qui a des notifications en attente, sans attendre le matin
  *   (droit `notify`) ;
  * - « Relancer » : sur un ticket qui attend quelqu'un d'autre, un message marqué relance part dans l'historique, et
- *   qui a la main reçoit un courriel tout de suite (droit `remind`).
+ *   qui a la main reçoit un courriel tout de suite (droit `remind`) ;
+ * - « Informer par courriel » : sur une tâche publiée, dans le maître, un message marqué `notify` part dans
+ *   l'historique, et les destinataires principaux du client le reçoivent par courriel (sinon, une tâche ne leur
+ *   parvient que dans la cloche et le bilan de la semaine ; droit `comment` de la tâche).
  */
 final class NotificationActions
 {
@@ -80,7 +85,7 @@ final class NotificationActions
                 Side::Handler => $record->assignee?->name,
                 default => null,
             } ?? $record->waitingOn()]))
-            ->modalDescription(__('Un message marqué « Relance » part dans l’historique ; qui a la main reçoit un courriel tout de suite.'))
+            ->modalDescription(__('Un message marqué « Relance » part dans l’historique ; qui a la main reçoit un courriel tout de suite, même s’il n’a pas choisi l’e-mail direct.'))
             ->schema([
                 Textarea::make('message')
                     ->label(__('Votre mot (facultatif)'))
@@ -95,6 +100,37 @@ final class NotificationActions
                 $livewire->dispatch('tma-timeline-changed');
                 Notification::make()->success()->title(__('Relance envoyée'))->send();
             });
+    }
+
+    public static function informByMail(): Action
+    {
+        return Action::make('informByMail')
+            ->label(__('Informer par courriel'))
+            ->icon('heroicon-m-envelope')
+            ->color('gray')
+            ->visible(fn (ProjectTask $record): bool => self::canInform($record, Context::current()))
+            ->modalHeading(__('Informer le client par courriel'))
+            ->modalDescription(__('Votre message part dans l’historique de la tâche, et ses destinataires principaux chez le client le reçoivent par courriel. Sans cela, une tâche ne leur parvient que dans la cloche et le bilan de la semaine.'))
+            ->schema([
+                Textarea::make('message')
+                    ->label(__('Message'))
+                    ->required()
+                    ->rows(5),
+            ])
+            ->modalSubmitActionLabel(__('Envoyer'))
+            ->action(function (ProjectTask $record, array $data, Component $livewire): void {
+                app(Timeline::class)->add($record, EntryType::Comment, '<p>'.nl2br(e(trim((string) $data['message']))).'</p>', Context::current(), meta: ['notify' => true]);
+
+                $livewire->dispatch('tma-timeline-changed');
+                Notification::make()->success()->title(__('Message envoyé'))->body(__('Le client le reçoit par courriel.'))->send();
+            });
+    }
+
+    /** Informer par courriel : le Support, dans le maître, sur une tâche publiée chez le client où il peut écrire. */
+    public static function canInform(ProjectTask $task, Context $context): bool
+    {
+        return Tma::isMaster() && $task->isShared() && $task->published_at !== null
+            && app(Timeline::class)->canAdd($task, EntryType::Comment, $context);
     }
 
     /**

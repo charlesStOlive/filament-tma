@@ -10,7 +10,6 @@ use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Http\Middleware\AuthenticateInstance;
 use CharlesStOlive\FilamentTma\Models\Instance;
-use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
@@ -54,7 +53,7 @@ class TicketController
         $existing = Ticket::withTrashed()->where('ulid', $payload['ticket']['ulid'])->first();
         abort_if($existing !== null && $existing->source_instance_uid !== $instance->uid, 403);
 
-        $ticket = DB::transaction(function () use ($request, $instance, $existing): Ticket {
+        [$ticket, $transition] = DB::transaction(function () use ($request, $instance, $existing): array {
             $alreadyTransmitted = $existing !== null;
 
             $ticket = Mirror::ticket($request->input('ticket'), [
@@ -70,7 +69,7 @@ class TicketController
             }
 
             Mirror::files($ticket, $request->input('files', []));
-            Mirror::transition($ticket, [...$request->input('transition'), 'to_state' => 'submitted']);
+            $transition = Mirror::transition($ticket, [...$request->input('transition'), 'to_state' => 'submitted']);
 
             // Ses destinataires à elle, et le Support (nos destinataires par défaut) : toujours un principal chez nous.
             app(Recipients::class)->fromClient($ticket, $instance->uid, $request->input('recipients', []));
@@ -80,12 +79,12 @@ class TicketController
                 $ticket->forceFill(['assignee_actor_id' => $defaults->first()->getKey()])->save();
             }
 
-            return $ticket;
+            return [$ticket, $transition];
         });
 
-        $transition = StateTransition::query()->where('ulid', $request->input('transition.ulid'))->first();
-
-        if ($transition !== null && $transition->wasRecentlyCreated) {
+        // Le passage tel qu'écrit ici (relu par une requête, il ne dirait plus qu'il vient d'être créé) : une
+        // transmission rejouée ne prévient pas deux fois.
+        if ($transition->wasRecentlyCreated) {
             event(new TicketTransitioned($ticket, $transition, $this->context($request, $instance)));
         }
 

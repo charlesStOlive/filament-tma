@@ -6,7 +6,7 @@ use Filament\Support\Contracts\HasLabel;
 
 /**
  * Ce dont une notification parle (`Support\Notifier`). Qui la reçoit, et comment, dépend des destinataires du ticket
- * ou de la tâche (`Models\Recipient`), pas de la sorte : un principal tout de suite, un secondaire dans son bilan.
+ * ou de la tâche (`Models\Recipient`) et de ce qu’on attend de chacun (`NoticeTone`).
  */
 enum NoticeEvent: string implements HasLabel
 {
@@ -18,6 +18,7 @@ enum NoticeEvent: string implements HasLabel
     case Recipient = 'recipient';
     case Stale = 'stale';
     case Reminder = 'reminder';
+    case AutoCloseWarning = 'auto-close-warning';
     case AutoClosed = 'auto-closed';
 
     public function getLabel(): string
@@ -31,6 +32,7 @@ enum NoticeEvent: string implements HasLabel
             self::Recipient => __('Vous êtes destinataire'),
             self::Stale => __('Rappel : rien ne bouge'),
             self::Reminder => __('Relance'),
+            self::AutoCloseWarning => __('Avertissement de clôture'),
             self::AutoClosed => __('Clôture automatique'),
         };
     }

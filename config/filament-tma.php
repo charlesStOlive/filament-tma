@@ -169,16 +169,22 @@ return [
     | Rappels et notifications
     |--------------------------------------------------------------------------
     |
-    | Qui est prévenu : les destinataires d'un ticket ou d'une tâche. Un principal l'apprend tout de suite, un
-    | secondaire dans son bilan ; les autres, rien.
-    | digest : le bilan du matin, ce qui attend chacun (CDC §12.1) puis ce qui a été mis de côté pour lui depuis le
-    | dernier envoi — heure, jours (1 = lundi), fuseau, et `late_after_days` : au-delà, une attente est signalée en
-    | retard.
-    | defaults : ce qui est actif pour qui n'a rien choisi — `mail` (un principal reçoit un courriel tout de suite),
-    | `database` (un principal est prévenu dans la cloche de Filament : le panel doit avoir `->databaseNotifications()`),
-    | `digest` (le bilan du matin ; sans lui, ce qui devait y aller ne part pas). Sans courriel ni cloche, ce qui
-    | concerne un principal attend son bilan. user_choice : chacun change ces trois choix pour lui (« Mes
-    | notifications ») ; à false, `defaults` vaut pour tous.
+    | Qui est prévenu : les destinataires d'un ticket ou d'une tâche. Un ticket engage (on attend une action) ; une tâche
+    | informe (on n'attend rien du client).
+    | - Ticket : un principal est prévenu dans la cloche de tout ce qui s'y passe ; quand le ticket l'attend (création,
+    |   ou la main lui revient), il reçoit aussi un courriel s'il a choisi l'e-mail direct, sinon c'est dans son bilan du
+    |   matin. Les fins de ticket (clos, refusé, retiré) vont dans la cloche et le bilan ; une relance faite à la main
+    |   part toujours par courriel.
+    | - Tâche : chez le client, la cloche et le bilan de la semaine, jamais de courriel direct, sauf « Informer par
+    |   courriel » (le Support, à la main). Le Support n'apprend d'une tâche que ce que le client y écrit.
+    | - Un secondaire ne l'apprend que dans son bilan, en bas, sous « En copie » ; les autres, rien.
+    | bell : la cloche de Filament (le panel doit avoir `->databaseNotifications()`) ; personne ne la coupe.
+    | digest : le bilan du matin, ce qui attend chacun (CDC §12.1) puis ce qui a été mis de côté pour lui — heure, jours
+    | (1 = lundi), fuseau, et `late_after_days` : au-delà, une attente est signalée en retard.
+    | weekly : le bilan de la semaine des tâches projet, le jour `day` (1 = lundi) à `at`, dans le fuseau du bilan.
+    | defaults : ce qui est actif pour qui n'a rien choisi — `mail` (l'e-mail direct des tickets), `digest` (le bilan du
+    | matin), `weekly` (le bilan de la semaine). user_choice : chacun change ces choix pour lui (« Mes notifications »),
+    | avec au moins l'e-mail direct ou le bilan du matin ; à false, `defaults` vaut pour tous.
     | stale : le rappel, à qui a la main, d'un ticket qui n'a pas changé d'état depuis `after_days` jours (ni brouillon,
     | ni en pause, ni terminé), ou d'une tâche en cours sans activité ; chaque matin à `at`, les jours du bilan, dans le
     | bilan, puis de nouveau tous les `after_days` jours tant que rien ne bouge.
@@ -187,6 +193,7 @@ return [
     */
 
     'notifications' => [
+        'bell' => true,
         'digest' => [
             'enabled' => true,
             'at' => '08:00',
@@ -194,7 +201,12 @@ return [
             'timezone' => env('TMA_TIMEZONE', env('APP_TIMEZONE', 'Europe/Paris')),
             'late_after_days' => 5,
         ],
-        'defaults' => ['mail', 'database', 'digest'],
+        'weekly' => [
+            'enabled' => true,
+            'day' => 1,
+            'at' => '08:00',
+        ],
+        'defaults' => ['digest', 'weekly'],
         'user_choice' => true,
         'stale' => [
             'enabled' => true,
@@ -202,6 +214,27 @@ return [
             'at' => '07:30',
         ],
         'keep_days' => 90,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Courriels
+    |--------------------------------------------------------------------------
+    |
+    | logo : l'image en tête des courriels, un chemin sous public/ ou une adresse complète ; un PNG ou un JPEG (beaucoup
+    | de messageries n'affichent pas le SVG). Sans fichier, le nom de l'application. Le logo du panel est d'habitude
+    | public/images/logo.png.
+    | colors : la couleur d'un ticket (`ticket`) et celle d'une tâche (`task`), en hexadécimal ; null : la couleur
+    | primaire (ticket) et secondaire (tâche) de filament-ui, sinon un bleu et un gris ardoise.
+    |
+    */
+
+    'mail' => [
+        'logo' => env('TMA_MAIL_LOGO', 'images/logo.png'),
+        'colors' => [
+            'ticket' => null,
+            'task' => null,
+        ],
     ],
 
     /*

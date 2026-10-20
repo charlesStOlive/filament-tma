@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Pages;
 
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Filament\Actions\NotificationActions;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskDeleteActions;
 use CharlesStOlive\FilamentTma\Filament\Actions\TaskMoveAction;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
@@ -64,6 +65,7 @@ class ViewTask extends ViewRecord
     {
         return [
             ...TaskMoveAction::all(),
+            NotificationActions::informByMail(),
             Action::make('createTicket')
                 ->label(__('Créer un ticket'))
                 ->icon('heroicon-m-lifebuoy')

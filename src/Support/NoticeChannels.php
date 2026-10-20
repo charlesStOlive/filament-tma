@@ -6,12 +6,17 @@ use CharlesStOlive\FilamentPermissionManager\UserOptions\Contracts\HasUserOption
 use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
- * Comment une personne est prévenue : quand elle est destinataire principal, tout de suite par courriel, dans la
- * cloche de l'application (les notifications en base de Filament), ou les deux ; et si elle reçoit le bilan du matin
- * (ce qui l'attend, ce qui a été gardé pour elle). L'application dit ce qui est actif pour qui n'a rien choisi
- * (`notifications.defaults`) ; chacun le change pour lui dans son profil, sauf si l'application le fixe
- * (`notifications.user_choice`). Sans courriel ni cloche, ce qui le concerne attend son bilan ; sans bilan non plus,
- * il n'en reçoit rien.
+ * Comment une personne est prévenue (`Notifier`) :
+ *
+ * - la cloche de l'application (les notifications en base de Filament) : toujours, si l'application l'a
+ *   (`notifications.bell`) ; personne ne la coupe ;
+ * - l'e-mail direct : un courriel quand un ticket l'attend (création, la main lui revient) ;
+ * - le bilan du matin : ce qui l'attend, ce qui a été gardé pour elle sur ses tickets ;
+ * - le bilan de la semaine : ce qui s'est passé sur ses tâches projet.
+ *
+ * L'application dit ce qui est actif pour qui n'a rien choisi (`notifications.defaults`) ; chacun le change pour lui
+ * dans son profil, sauf si l'application le fixe (`notifications.user_choice`). L'e-mail direct est rangé, comme avant
+ * la cloche obligatoire, dans la liste `notifications.channels` (`mail`) : les choix déjà faits restent valables.
  */
 final class NoticeChannels
 {
@@ -21,31 +26,44 @@ final class NoticeChannels
 
     public const DIGEST = 'digest';
 
-    /** @return array<int, string> par où un principal est prévenu tout de suite (`mail`, `database`) */
-    public static function for(Authenticatable $user): array
+    public const WEEKLY = 'weekly';
+
+    /** La cloche : pour tout le monde, si l'application l'a. */
+    public static function bell(): bool
     {
-        return self::valid((array) self::chosen($user, 'notifications.channels', self::valid(self::defaults())));
+        return (bool) config('filament-tma.notifications.bell', true);
     }
 
-    /** S'il reçoit le bilan : sinon, ce qui devait l'attendre est seulement noté (`NoticeMode::Skipped`). */
+    /** L'e-mail direct : un courriel quand un ticket l'attend. */
+    public static function mail(Authenticatable $user): bool
+    {
+        return in_array(self::MAIL, (array) self::chosen($user, 'notifications.channels', self::defaultChannels()), true);
+    }
+
+    /** Le bilan du matin : sans lui, ce qui devait y aller est seulement noté (`NoticeMode::Skipped`). */
     public static function digest(Authenticatable $user): bool
     {
-        return (bool) self::chosen($user, 'notifications.digest', in_array(self::DIGEST, self::defaults(), true));
+        return (bool) config('filament-tma.notifications.digest.enabled', true)
+            && (bool) self::chosen($user, 'notifications.digest', in_array(self::DIGEST, self::defaults(), true));
     }
 
-    /** @return array<int, string> ce qui est actif pour qui n'a rien choisi : `mail`, `database`, `digest` */
+    /** Le bilan de la semaine des tâches projet. */
+    public static function weekly(Authenticatable $user): bool
+    {
+        return (bool) config('filament-tma.notifications.weekly.enabled', true)
+            && (bool) self::chosen($user, 'notifications.weekly', in_array(self::WEEKLY, self::defaults(), true));
+    }
+
+    /** @return array<int, string> ce qui est actif pour qui n'a rien choisi : `mail`, `digest`, `weekly` */
     public static function defaults(): array
     {
-        return (array) config('filament-tma.notifications.defaults', [self::MAIL, self::APP, self::DIGEST]);
+        return (array) config('filament-tma.notifications.defaults', [self::DIGEST, self::WEEKLY]);
     }
 
-    /** @return array<string, string> */
-    public static function options(): array
+    /** @return array<int, string> la valeur de `notifications.channels` pour qui n'a rien choisi */
+    public static function defaultChannels(): array
     {
-        return [
-            self::MAIL => __('Par courriel'),
-            self::APP => __('Dans l’application (la cloche)'),
-        ];
+        return in_array(self::MAIL, self::defaults(), true) ? [self::MAIL] : [];
     }
 
     public static function userChoice(): bool
@@ -58,14 +76,5 @@ final class NoticeChannels
         return self::userChoice() && $user instanceof HasUserOptions
             ? $user->userOption("tma.{$path}", $default)
             : $default;
-    }
-
-    /**
-     * @param  array<int, mixed>  $channels
-     * @return array<int, string>
-     */
-    private static function valid(array $channels): array
-    {
-        return array_values(array_intersect([self::MAIL, self::APP], $channels));
     }
 }

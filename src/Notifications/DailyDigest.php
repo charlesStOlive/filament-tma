@@ -3,19 +3,28 @@
 namespace CharlesStOlive\FilamentTma\Notifications;
 
 use CharlesStOlive\FilamentTma\Models\Notice;
+use CharlesStOlive\FilamentTma\Notifications\Concerns\GroupsNotices;
+use CharlesStOlive\FilamentTma\Support\Dates;
+use CharlesStOlive\FilamentTma\Support\MailBrand;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\HtmlString;
 
 /**
- * Le récapitulatif d'un utilisateur : ce qui l'attend (`Support\Digest`), puis ce qui s'est passé depuis le dernier
- * envoi (les notifications mises de côté pour lui, `Notice::pending()`), regroupé par ticket.
+ * Le bilan du matin d'un utilisateur (`resources/views/mail/digest.blade.php`) :
+ *
+ * - **À faire** : ce qui l'attend (`Support\Digest`), avec, sous chaque ticket, ce qui s'y est passé depuis le dernier
+ *   envoi ;
+ * - **Nouveautés** : ce qui a été mis de côté pour lui ailleurs (une fin de ticket, ce qu'on attend de lui sans
+ *   e-mail direct…) ;
+ * - **En copie**, en bas : là où il n'est que destinataire secondaire.
  */
 class DailyDigest extends Notification implements ShouldQueue
 {
+    use GroupsNotices;
     use Queueable;
 
     /**
@@ -34,20 +43,10 @@ class DailyDigest extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $pending = $this->pending ?? collect();
-        $count = collect($this->sections)->sum(fn (Collection $items): int => $items->count());
-        $late = collect($this->sections)->sum(fn (Collection $items): int => $items->where('late', true)->count());
-
-        $subject = $count > 0
-            ? __('Support : :count élément(s) vous attendent:late', ['count' => $count, 'late' => $late > 0 ? __(' (dont :n en retard)', ['n' => $late]) : ''])
-            : __('Support : :n nouveauté(s)', ['n' => $pending->count()]);
-
-        if ($count > 0 && $pending->isNotEmpty()) {
-            $subject .= __(', :n nouveauté(s)', ['n' => $pending->count()]);
-        }
-
-        $mail = (new MailMessage)->subject($subject)->greeting(__('Bonjour,'));
-
+        $user = $notifiable instanceof Authenticatable ? $notifiable : null;
+        [$own, $copies] = self::splitCopies($this->pending ?? collect());
+        $refs = collect($this->sections)->flatten(1)->pluck('ref')->all();
+        [$attached, $news] = $own->partition(fn (Notice $notice): bool => in_array($notice->data['ref'] ?? null, $refs, true));
         $titles = [
             'answer' => __('Vos demandes qui attendent votre réponse ou votre confirmation'),
             'take' => __('Nouvelles demandes sans contact'),
@@ -55,36 +54,38 @@ class DailyDigest extends Notification implements ShouldQueue
             'resume' => __('Reprennent aujourd’hui'),
         ];
 
-        foreach ($this->sections as $key => $items) {
-            $list = $items->map(function (array $item): string {
-                $label = e("{$item['ref']} — {$item['title']}").' <em>('.e($item['state']).')</em>'.($item['late'] ? ' <strong>'.e(__('en retard')).'</strong>' : '');
+        $todo = collect($this->sections)->map(fn (Collection $items, string $key): array => [
+            'title' => $titles[$key] ?? $key,
+            'items' => $items->map(fn (array $item): array => [
+                ...$item,
+                'since' => isset($item['since']) ? Dates::format($item['since'], 'd/m/Y', $user) : null,
+                'closes_on' => isset($item['closes_on']) ? Dates::format($item['closes_on'], 'd/m/Y', $user) : null,
+                'lines' => self::lines($attached->filter(fn (Notice $notice): bool => ($notice->data['ref'] ?? null) === $item['ref'])),
+            ])->values()->all(),
+        ])->values()->all();
 
-                return '<li>'.($item['url'] ? '<a href="'.e($item['url']).'">'.$label.'</a>' : $label).'</li>';
-            })->implode('');
+        $count = collect($this->sections)->sum(fn (Collection $items): int => $items->count());
+        $late = collect($this->sections)->sum(fn (Collection $items): int => $items->where('late', true)->count());
+        $newsGroups = self::groups($news);
+        $copyGroups = self::groups($copies);
 
-            $mail->line(new HtmlString('<strong>'.e($titles[$key] ?? $key).'</strong><ul>'.$list.'</ul>'));
-        }
+        $summary = collect([
+            $count > 0 ? trans_choice(':n à faire|:n à faire', $count, ['n' => $count]).($late > 0 ? __(' (dont :n en retard)', ['n' => $late]) : '') : null,
+            $newsGroups !== [] ? trans_choice(':n nouveauté|:n nouveautés', count($newsGroups), ['n' => count($newsGroups)]) : null,
+            $copyGroups !== [] ? trans_choice(':n en copie|:n en copie', count($copyGroups), ['n' => count($copyGroups)]) : null,
+        ])->filter()->implode(', ');
 
-        if ($pending->isNotEmpty()) {
-            $mail->line(new HtmlString('<strong>'.e(__('Depuis le dernier envoi')).'</strong>'.$this->pendingList($pending)));
-        }
-
-        return $mail;
-    }
-
-    /** Les notifications mises de côté, par ticket ou tâche, dans l'ordre où elles sont arrivées. */
-    private function pendingList(Collection $pending): string
-    {
-        return '<ul>'.$pending->sortBy('id')
-            ->groupBy(fn (Notice $notice): string => $notice->subject_type.':'.$notice->subject_id)
-            ->map(function (Collection $notices): string {
-                $first = $notices->first();
-                $url = $first->url();
-                $label = e("{$first->data['ref']} — {$first->data['title']}");
-                $lines = $notices->map(fn (Notice $notice): string => '<li>'.e($notice->data['line'])
-                    .(filled($notice->data['excerpt'] ?? null) ? ' <em>« '.e($notice->data['excerpt']).' »</em>' : '').'</li>')->implode('');
-
-                return '<li>'.($url ? '<a href="'.e($url).'">'.$label.'</a>' : $label).'<ul>'.$lines.'</ul></li>';
-            })->implode('').'</ul>';
+        return (new MailMessage)
+            ->subject(__('Bilan du matin : :summary', ['summary' => $summary]))
+            ->view(['filament-tma::mail.digest', 'filament-tma::mail.digest-text'], [
+                'brand' => MailBrand::for('ticket'),
+                'kicker' => __('Support · :date', ['date' => Dates::format(now(), 'd/m/Y', $user)]),
+                'heading' => __('Votre bilan du matin'),
+                'preheader' => ucfirst($summary).'.',
+                'todo' => $todo,
+                'news' => $newsGroups,
+                'copies' => $copyGroups,
+                'reason' => __('Vous recevez le bilan du matin des tickets du Support.'),
+            ]);
     }
 }

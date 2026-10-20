@@ -92,8 +92,9 @@ On arrive sur **Mes demandes** dans une application cliente, sur **Actifs** chez
 ## La clôture automatique
 
 Quand le ticket attend le demandeur (des précisions, ou sa confirmation) et que **rien ne se passe pendant 28
-jours**, il est clos automatiquement. Le demandeur reçoit un courriel **7 jours avant**, puis à la clôture. Sa
-réponse, ou une simple note, remet le compte à zéro. Voir [Rappels et notifications](#modal-tma.notifications).
+jours**, il est clos automatiquement. Le demandeur est averti **7 jours avant** (un courriel s'il a choisi l'e-mail
+direct, sinon son bilan du matin), puis la clôture arrive dans sa cloche et son bilan. Sa réponse, ou une simple note,
+remet le compte à zéro. Voir [Rappels et notifications](#modal-tma.notifications).
 
 ## Les tickets préparés par le Support
 

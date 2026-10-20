@@ -134,6 +134,13 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
                 ->withoutOverlapping();
 
+            if (config('filament-tma.notifications.weekly.enabled', true)) {
+                $schedule->command('tma:digest --weekly')
+                    ->weeklyOn((int) config('filament-tma.notifications.weekly.day', 1), (string) config('filament-tma.notifications.weekly.at', '08:00'))
+                    ->timezone((string) config('filament-tma.notifications.digest.timezone', config('app.timezone')))
+                    ->withoutOverlapping();
+            }
+
             if (config('filament-tma.notifications.stale.enabled', true)) {
                 $schedule->command('tma:notify --stale')
                     ->days((array) config('filament-tma.notifications.digest.days', [1, 2, 3, 4, 5]))

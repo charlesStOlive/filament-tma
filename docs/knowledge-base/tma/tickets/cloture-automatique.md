@@ -9,8 +9,10 @@ order: 80
 Un ticket qui **attend le demandeur** (des précisions, ou sa confirmation d'un ticket résolu) et où **rien ne se passe
 pendant 28 jours** est clos automatiquement.
 
-1. **7 jours avant**, le demandeur reçoit un courriel : sans activité, le ticket sera clos à telle date.
-2. À la date, le ticket est **Clos**, avec le passage « Clos automatiquement (sans réponse) », et le demandeur en est prévenu.
+1. **7 jours avant**, le demandeur est averti : sans activité, le ticket sera clos à telle date. C'est un ticket qui
+   l'attend : un courriel s'il a choisi l'e-mail direct, sinon son bilan du matin.
+2. À la date, le ticket est **Clos**, avec le passage « Clos automatiquement (sans réponse) », et le demandeur le voit
+   dans sa cloche et son bilan.
 
 ## Ce qui compte comme activité
 

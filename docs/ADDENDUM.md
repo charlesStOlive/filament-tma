@@ -208,6 +208,30 @@ Décidé avec l'utilisateur :
   ticket sans changement d'état depuis 7 jours à qui a la main, dans le bilan. **À la main** : « Envoyer maintenant »
   (`notify`), « Relancer » (`remind`, toujours tout de suite, par courriel au moins), `tma:notify --stale|--grouped`.
 
+
+### Courriels : un ticket engage, une tâche informe (20/10)
+
+Décidé avec l'utilisateur (son tableau du 20/10), remplace « principal : courriel, cloche ou les deux » :
+
+- **Ticket** (on attend une action) : un principal voit tout dans la **cloche**, qu'on ne coupe pas. Quand le ticket
+  l'attend (création : le Support si le client crée, au moins un client si le Support crée ; puis à chaque fois que la
+  main lui revient), c'est une **action** : un courriel s'il a choisi l'**e-mail direct**, sinon son **bilan du
+  matin**. Il garde au moins l'un des deux. D'origine : cloche + bilan du matin, sans e-mail direct.
+- Les **fins de ticket** (clos, refusé, retiré, clos d'office ou automatiquement) : cloche + bilan du matin. Le reste
+  (note, pause, prise de main…) : la cloche.
+- **Relance faite à la main** : toujours un courriel. **Relances automatiques** (rappel de ce qui ne bouge plus) :
+  le bilan seulement. L'avertissement de clôture est une action (e-mail direct, sinon bilan).
+- **Tâche** (on n'attend rien du client) : chez le client, la cloche et le **bilan de la semaine** (le lundi, option
+  oui/non, oui d'origine) pour la publication, une modification, le temps passé (une tâche a un temps, pas de prix),
+  un message, la fin. Jamais de courriel, sauf **Informer par courriel** (le Support, à la main ; message marqué
+  `meta.notify`). Le Support n'apprend d'une tâche que ce que le client y écrit, comme une action.
+- **Secondaire** : seulement le bilan, en bas, sous « En copie ».
+- Courriels : gabarits propres (logo de l'application, couleur primaire et « À faire » pour un ticket, secondaire et
+  « Pour information » pour une tâche ; tableaux et styles en ligne pour les messageries), objet qui dit ce qui se
+  passe. Code : `Support\Notifier`, `Enums\NoticeTone`, `Support\NoticeChannels`, `Support\MailBrand`,
+  `resources/views/mail`, `Notifications\DailyDigest` / `WeeklyDigest`, `tma:digest --weekly`.
+- Corrigé le même jour : le maître ne prévenait pas le Support d'une demande transmise (`Api\Master\TicketController`).
+
 ---
 
 ## 5. Utilisateurs entre applications

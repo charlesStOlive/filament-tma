@@ -8,7 +8,6 @@ use CharlesStOlive\FilamentTma\Events\TicketSynced;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\Notifications\AutoCloseWarning;
 use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
@@ -117,8 +116,6 @@ class SyncController
         $closesOn = $ticket->last_activity_at->copy()->addDays((int) config('filament-tma.auto_close.after_days', 28));
         $closesOn = max($closesOn, $ticket->auto_close_warned_at->copy()->addDays((int) config('filament-tma.auto_close.warn_days_before', 7)));
 
-        foreach (Notifier::requesterSide($ticket) as $user) {
-            $user->notify(new AutoCloseWarning($ticket, $closesOn));
-        }
+        Notifier::autoCloseWarning($ticket, $closesOn);
     }
 }

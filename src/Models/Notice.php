@@ -16,8 +16,9 @@ use Illuminate\Support\Carbon;
 
 /**
  * Ce qui a été dit à une personne d'ici (`Support\Notifier`) : envoyé tout de suite (`sent_at` posé à l'écriture),
- * ou mis de côté pour son prochain récapitulatif (`sent_at` vide, `pending()`). Le texte est écrit à l'événement
- * (`data` : `ref`, `title`, `line`, `excerpt`), pour rester lisible si le ticket change ou disparaît.
+ * ou mis de côté pour son prochain bilan (`sent_at` vide, `pending()`) — celui du matin (`daily()`) ou celui de la
+ * semaine (`weekly()`, les tâches). Le texte est écrit à l'événement (`data` : `ref`, `title`, `line`, `excerpt`, et
+ * `role`, `tone`, `digest`, `headline`, `action`…), pour rester lisible si le ticket change ou disparaît.
  *
  * @property string $user_id
  * @property NoticeEvent $event
@@ -54,6 +55,18 @@ class Notice extends Model
     public function scopePending(Builder $query): Builder
     {
         return $query->whereNull('sent_at');
+    }
+
+    /** Pour le bilan du matin (les notifications écrites avant les deux bilans y vont aussi). */
+    public function scopeDaily(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q): Builder => $q->where('data->digest', 'digest')->orWhereNull('data->digest'));
+    }
+
+    /** Pour le bilan de la semaine : ce qui arrive aux tâches projet. */
+    public function scopeWeekly(Builder $query): Builder
+    {
+        return $query->where('data->digest', 'weekly');
     }
 
     public function scopeFor(Builder $query, Authenticatable $user): Builder

@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentTma\Commands;
 
 use CharlesStOlive\FilamentTma\Events\AutoCloseWarned;
 use CharlesStOlive\FilamentTma\Models\Ticket;
-use CharlesStOlive\FilamentTma\Notifications\AutoCloseWarning;
+use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Illuminate\Console\Command;
@@ -74,9 +74,8 @@ class CloseStaleTicketsCommand extends Command
 
                     $ticket->forceFill(['auto_close_warned_at' => now()])->saveQuietly();
 
-                    if ($ticket->requester?->isLocal()) {
-                        $ticket->requester->user?->notify(new AutoCloseWarning($ticket, $closesOn));
-                    }
+                    // Le demandeur d'ici l'apprend d'ici ; celui d'une application cliente, d'elle (`AutoCloseWarned`).
+                    Notifier::autoCloseWarning($ticket, $closesOn);
 
                     event(new AutoCloseWarned($ticket, $closesOn));
                 });

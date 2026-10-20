@@ -118,8 +118,10 @@ Support, `tma.ticket.handle` fait d'une personne un **membre du Support**. Les f
 | `auto_close.warn_days_before` | 7 | avertissement avant la clôture |
 | `allowances.thresholds` | 80, 90, 100, 110 | seuils des forfaits, en % |
 | `allowances.block_overage` | non | refuser une saisie qui dépasserait le forfait |
-| `notifications.digest.at` | 08:00 | heure du bilan quotidien |
-| `notifications.defaults` | courriel, cloche, bilan | valeurs initiales de Mon profil › Notifications du Support (lien « Notifications › Mes notifications » dans les tickets) |
+| `notifications.digest.at` | 08:00 | heure du bilan du matin (les tickets) |
+| `notifications.weekly.day`, `.at` | lundi, 08:00 | jour et heure du bilan de la semaine (les tâches projet) |
+| `notifications.defaults` | bilan du matin, bilan de la semaine | valeurs initiales de Mon profil › Notifications du Support (lien « Notifications › Mes notifications » dans les tickets) ; `mail` y ajoute l'e-mail direct |
+| `mail.logo`, `mail.colors` | `images/logo.png`, couleurs de filament-ui | le logo et les couleurs des courriels |
 | `notifications.stale.after_days` | 7 | rappel de ce qui ne bouge plus |
 | `recipients.support_defaults` | — | maître : qui reçoit ce qu'un client adresse « au Support » |
 | `attachments.accepted_types` | images, PDF, bureautique, CSV, ZIP | types de fichiers acceptés |

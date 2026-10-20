@@ -20,6 +20,9 @@
     @if (! empty($entry->meta['reminder']))
         <x-filament::badge color="warning" size="sm" icon="heroicon-m-bell-alert">{{ __('Relance') }}</x-filament::badge>
     @endif
+    @if (! empty($entry->meta['notify']))
+        <x-filament::badge color="info" size="sm" icon="heroicon-m-envelope">{{ __('Envoyé par courriel') }}</x-filament::badge>
+    @endif
     @if ($entry->edited_at)
         <span class="fi-tma-entry-edited" title="{{ $entry->edited_at->timezone($timezone)->format('d/m/Y H:i') }}">{{ __('modifié') }}</span>
     @endif

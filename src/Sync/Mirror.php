@@ -317,7 +317,11 @@ final class Mirror
      */
     public static function snapshot(array $snapshot, array $overrides = []): array
     {
-        $ticket = ($snapshot['kind'] ?? 'ticket') === 'task'
+        $isTask = ($snapshot['kind'] ?? 'ticket') === 'task';
+        $before = $isTask ? ProjectTask::query()->where('ulid', $snapshot['task']['ulid'] ?? null)->first() : null;
+        $before = $before !== null ? self::taskFacts($before) : null;
+
+        $ticket = $isTask
             ? self::task($snapshot['task'], $overrides)
             : self::ticket($snapshot['ticket'], $overrides);
 
@@ -355,6 +359,14 @@ final class Mirror
             event(new SnapshotMirrored($ticket->refresh(), $newTransitions, $newEntries));
         } elseif ($newRecipients !== []) {
             Notifier::recipientsAdded($ticket, $newRecipients);
+        } elseif ($before !== null && $ticket instanceof ProjectTask) {
+            // Une tâche modifiée par le Support, ou du temps saisi dessus, sans passage ni message.
+            $after = self::taskFacts($ticket->refresh());
+            $fields = array_keys(array_diff_assoc(Arr::except($after, 'minutes'), Arr::except($before, 'minutes')));
+
+            if ($fields !== [] || $after['minutes'] !== $before['minutes']) {
+                Notifier::taskChanged($ticket, $fields, $before['minutes']);
+            }
         }
 
         return ['ticket' => $ticket, 'missing_media' => $missing];
@@ -401,6 +413,19 @@ final class Mirror
             ->map(fn ($media): string => Uploads::uuidOf($media))
             ->reject(fn (string $uuid): bool => in_array($uuid, $uuids, true))
             ->values()->all());
+    }
+
+    /** @return array<string, mixed> ce qu'on dit d'une tâche quand elle change : ses champs, et le temps passé (`minutes`) */
+    private static function taskFacts(ProjectTask $task): array
+    {
+        return [
+            'title' => (string) $task->title,
+            'description' => (string) $task->description,
+            'starts_on' => $task->starts_on?->toDateString(),
+            'due_on' => $task->due_on?->toDateString(),
+            'project_id' => $task->project_id === null ? null : (int) $task->project_id,
+            'minutes' => (int) $task->time_total_minutes,
+        ];
     }
 
     /** @return array<string, Carbon|null> */
