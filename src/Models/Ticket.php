@@ -214,16 +214,16 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     }
 
     /**
-     * Qui doit agir, pour une personne donnée : « Vous » si c'est elle le demandeur attendu, le demandeur par son nom
-     * sinon, ou le Support.
+     * Qui doit agir, pour une personne donnée : « Vous » si c'est elle qu'on attend (le demandeur, ou le contact au
+     * Support), le demandeur par son nom sinon, ou le Support.
      */
     public function waitingOnFor(?Authenticatable $user): ?string
     {
-        if ($this->sideInCharge() !== Side::Requester) {
-            return $this->waitingOn();
-        }
-
-        return $this->requester?->isUser($user) ? __('Vous') : ($this->requester?->name ?? $this->waitingOn());
+        return match ($this->sideInCharge()) {
+            Side::Requester => $this->requester?->isUser($user) ? __('Vous') : ($this->requester?->name ?? $this->waitingOn()),
+            Side::Handler => $this->assignee?->isUser($user) ? __('Vous') : $this->waitingOn(),
+            null => null,
+        };
     }
 
     /**

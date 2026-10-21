@@ -89,6 +89,13 @@ On arrive sur **Mes demandes** dans une application cliente, sur **Actifs** chez
 - **Le titre et la priorité** : le Support aussi, à son tour (jamais la description).
 - Ensuite, on ajoute : des notes, des fichiers ; et on modifie son dernier message, tant qu'il est le dernier.
 
+## Sur le tableau de bord
+
+Le widget **Mes tickets en cours** reprend les tickets en cours (ceux de **Actifs**) dont vous êtes destinataire,
+principal ou secondaire : ceux qui vous attendent d'abord, puis les plus récemment actifs, dix au plus. Pour chacun :
+votre place parmi les destinataires, son état, qui il attend (**Vous**, en orange, quand c'est vous), et **Ouvrir**.
+**Tous les tickets** mène à la liste. Il s'affiche à qui voit les tickets.
+
 ## La clôture automatique
 
 Quand le ticket attend le demandeur (des précisions, ou sa confirmation) et que **rien ne se passe pendant 28

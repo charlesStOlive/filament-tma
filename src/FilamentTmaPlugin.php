@@ -12,6 +12,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ViewTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
+use CharlesStOlive\FilamentTma\Filament\Widgets\OngoingTicketsWidget;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\NoticeChannels;
@@ -124,6 +125,7 @@ class FilamentTmaPlugin implements Plugin
 
         $panel->widgets([
             AllowanceOverview::class,
+            OngoingTicketsWidget::class,
         ]);
 
         // La visionneuse des images, une fois par fiche de ticket ou de tâche (voir `attachments.blade.php`).
