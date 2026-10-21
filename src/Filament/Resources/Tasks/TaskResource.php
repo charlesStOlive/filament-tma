@@ -67,7 +67,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
     protected static ?string $permissionPrefix = 'tma.task';
 
     /** @var array<int, string> */
-    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC];
+    protected static array $specificPermissions = [TmaGate::COMMENT, TmaGate::NOTE, TmaGate::TIME, TmaGate::SYNC, TmaGate::TIME_REPORT];
 
     /** @var array<string, string> */
     protected static array $permissionFamilies = [
@@ -81,6 +81,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
         TmaGate::NOTE => 'Écrire des notes et les archiver',
         TmaGate::TIME => 'Saisir et modifier du temps (maître)',
         TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
+        TmaGate::TIME_REPORT => 'Voir le suivi des temps (tableau de bord)',
     ];
 
     /** @return array<string, string> */

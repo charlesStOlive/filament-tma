@@ -38,6 +38,9 @@ final class TmaGate
 
     public const TIME = 'time';
 
+    /** Voir les temps passés sur les tâches, dans le tableau de bord (`ProjectTasksWidget`). */
+    public const TIME_REPORT = 'time-report';
+
     public const SYNC = 'sync';
 
     public const REMIND = 'remind';

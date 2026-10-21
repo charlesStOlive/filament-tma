@@ -91,6 +91,21 @@ l'application de la tâche ; on les ajuste avant d'enregistrer. Le ticket suit e
 [Les tickets](#modal-tma.tickets)) et reste lié à la tâche : la fiche du ticket la cite, le volet de la tâche liste
 ses tickets.
 
+## Sur le tableau de bord
+
+Le widget des tâches projet montre **toutes** les tâches, en trois onglets :
+
+- **Tâches en cours** : chaque tâche en cours, son projet en petit, son échéance (en rouge si elle est passée), et
+  **Ouvrir** ; **Toutes les tâches** mène à la liste ;
+- **Suivi des temps** : le temps passé, tâche par tâche, sur le mois en cours, et le total du mois. Les flèches passent
+  au mois précédent (s'il y a du temps avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en
+  cours ;
+- **Temps par tâche** : les 5 dernières tâches où du temps a été passé, avec leur temps cumulé, tous mois confondus.
+
+Le widget s'affiche à qui voit les tâches ; les deux onglets de temps demandent en plus le droit « Voir le suivi des
+temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des saisies ; chez le client,
+les totaux que le Support lui envoie.
+
 ## En détail
 
 - [Les projets](#modal-tma.projets)
