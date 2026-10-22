@@ -61,13 +61,30 @@ final class Payload
             'created_at' => self::date($ticket->created_at),
             'version' => $ticket->sync_version,
             'time' => TimeTotals::for($ticket),
+            ...self::fileList($ticket),
+        ];
+    }
+
+    /**
+     * Les pièces jointes d'un ticket ou d'une tâche, sans leur contenu : combien, et lesquelles (`Uploads::uuidOf()`).
+     * Celles qui manquent de l'autre côté partent ensuite à part (`Mirror::snapshot()`, `missing_media`).
+     *
+     * @return array{files_count: int, file_uuids: array<int, string>}
+     */
+    private static function fileList(HasMedia $subject): array
+    {
+        $media = $subject->getMedia(Entry::ATTACHMENTS_COLLECTION);
+
+        return [
+            'files_count' => $media->count(),
+            'file_uuids' => $media->map(fn (Media $file): string => Uploads::uuidOf($file))->values()->all(),
         ];
     }
 
     /** @return array<string, mixed> */
     public static function task(ProjectTask $task): array
     {
-        $task->loadMissing(['assignee', 'createdBy', 'project']);
+        $task->loadMissing(['assignee', 'createdBy', 'project.members']);
 
         return [
             'ulid' => $task->ulid,
@@ -77,6 +94,9 @@ final class Payload
                 'ulid' => $task->project->ulid,
                 'title' => $task->project->title,
                 'description' => $task->project->description,
+                'estimate_min_days' => $task->project->estimate_min_days,
+                'estimate_max_days' => $task->project->estimate_max_days,
+                'members' => $task->project->members->map(fn (Actor $actor): array => self::actor($actor))->values()->all(),
             ],
             'title' => $task->title,
             'description' => $task->description,
@@ -94,6 +114,7 @@ final class Payload
             'deleted_at' => self::date($task->deleted_at),
             'version' => $task->sync_version,
             'time' => TimeTotals::for($task),
+            ...self::fileList($task),
         ];
     }
 

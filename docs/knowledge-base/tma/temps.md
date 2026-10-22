@@ -9,25 +9,29 @@ order: 50
 Le temps se saisit **chez le Support seulement**, sur un ticket ou une tâche projet. Les applications
 clientes en voient le total, et le détail par mois.
 
+Il s'affiche en **jours et heures** : « 1 j 3 h », « 3 h 30 », « 45 min ». Une journée vaut 7 heures (réglable :
+`time.day_minutes` ; `time.display_unit` pour un autre affichage).
+
 ## Le bloc « Temps passé »
 
 Dans le volet de droite de la fiche, un seul bloc : les **totaux** en tête (« Cette tâche : 6 h 01 · Tout le projet :
-12 h », « Ce ticket : 2 h »), puis, chez le Support, **une ligne par saisie** : qui, le jour (jour/mois), la durée, et
+1 j 5 h », « Ce ticket : 2 h »), puis, chez le Support, **une ligne par saisie** : qui, le jour (jour/mois), la durée, et
 les icônes **Modifier** et **Supprimer** ; dessous, en petit, le message ou la note sur lequel porte le temps.
 
 - Chez le Support, il vient **en tête** du volet.
 - Pour qui n'a pas le droit de saisir du temps, et dans l'application cliente, il est **en lecture** : les totaux
-  seuls, en bas du volet. Un membre du Support y trouve quand même **Saisir du temps** (voir
-  [Les membres du Support](#modal-tma.agents)).
+  seuls, en bas du volet. Un membre du Support y a le même bloc que chez le Support, lu chez lui : le détail, **Saisir
+  du temps**, modifier, supprimer (voir [Les membres du Support](#modal-tma.agents)).
 
 ## Saisir du temps
 
 Dans ce bloc : **Saisir du temps** :
 
 - les **raccourcis** (10 min, 15 min, 20 min, 30 min, 45 min, 1 h, 2 h, 3 h, ½ j, 1 j) remplissent la durée d'un
-  clic ;
+  clic (½ j donne 3 h 30) ;
 - **Le** : le jour de l'intervention ; c'est lui qui range le temps dans son mois ;
-- **Durée**, en minutes, heures ou jours (une journée vaut 7 heures, réglable) ;
+- **Durée** : des **jours**, des **heures** et des **minutes** (« 2 j 2 h 5 min », chacun facultatif) ; le total
+  s'affiche dessous (« Soit 2 j 2 h 05 » ; une journée vaut 7 heures, réglable) ;
 - **Sur** : un message ou une note de la fiche ; sur une tâche projet, aussi **un nouveau message** ;
 - **Ce qui a été fait** (tâche projet, pour un nouveau message) : écrit dans l'historique de la tâche, avec le temps ;
 - **Facturable** ou non.

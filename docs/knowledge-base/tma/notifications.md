@@ -27,17 +27,18 @@ Chaque ticket et chaque tâche a ses **destinataires**, visibles dans le bloc **
 - les autres ne reçoivent rien.
 
 On en choisit un ou plusieurs de chaque sorte, et on les change tout au long de la vie du ticket (**Modifier**) ;
-**Tout le monde** coche d'un clic toutes les personnes possibles. Une personne ajoutée aux principaux en est prévenue
-dans la cloche.
+**Tout le monde** coche d'un clic toutes les personnes possibles ; sur une tâche, **Toute l'équipe projet** ajoute
+l'équipe de son projet ; **Vider** retire tout (l'auteur reste principal). Une personne ajoutée aux principaux en est
+prévenue dans la cloche.
 
 ### Qui devient destinataire tout seul
 
 | Moment | Qui devient principal |
 | --- | --- |
-| Création d'un ticket ou d'une tâche | son auteur, qui le reste toujours (et le demandeur d'un ticket préparé par le Support) |
+| Création d'un ticket ou d'une tâche | son auteur, qui le reste toujours (et le demandeur d'un ticket préparé par le Support) ; pour une tâche, proposée d'office : l'équipe de son projet |
 | **Transmettre au Support** | qui transmet, et le Support (qui décide lui-même qui le reçoit) |
 | **Transmettre au Support** (le contact) | le contact au Support choisi par le demandeur (d'office s'il n'y en a qu'un) |
-| Publication d'une tâche | au moins une personne du client, à choisir (ou **Tout le monde**) |
+| Publication d'une tâche | au moins une personne du client, à choisir (ou **Toute l'équipe projet**, **Tout le monde**) |
 
 ### Qui peut être destinataire
 

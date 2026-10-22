@@ -21,8 +21,12 @@ dans leur bilan de la semaine) et des **secondaires** (dans leur bilan de la sem
 personnes du client qui peuvent faire une demande, et les membres du Support. Son auteur est principal d'office. Une
 tâche ne part jamais par courriel, sauf **Informer par courriel**.
 
-Pour l'enregistrer avant sa publication, il faut **au moins un principal chez le client** ; **Tout le monde** les
-coche tous. **Publier chez EDM** le demande aussi s'il manque. Ils se changent ensuite à tout moment, dans le bloc
+À la création, les principaux sont d'office **toute l'équipe du projet** : ses participants et les destinataires de
+ses autres tâches (voir [Fourchette et participants](#modal-tma.projets.fourchette)) ; un autre projet choisi apporte
+la sienne, tant qu'on n'a pas changé la liste à la main. Au-dessus de chaque liste : **Toute l'équipe projet**, **Tout
+le monde** (toutes les personnes possibles) et **Vider**.
+
+Pour l'enregistrer avant sa publication, il faut **au moins un principal chez le client**. **Publier chez EDM** le demande aussi s'il manque. Ils se changent ensuite à tout moment, dans le bloc
 **Destinataires** du volet. Voir [Rappels et notifications](#modal-tma.notifications).
 
 ## La publication programmée

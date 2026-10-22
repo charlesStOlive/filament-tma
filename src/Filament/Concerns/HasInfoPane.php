@@ -4,7 +4,9 @@ namespace CharlesStOlive\FilamentTma\Filament\Concerns;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Filament\Livewire\AgentTimeEntries;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\RelationManagers\TimeEntriesRelationManager;
+use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use CharlesStOlive\FilamentUi\Split\HasSidePane;
 use CharlesStOlive\FilamentUi\Split\SidePane;
@@ -46,19 +48,24 @@ trait HasInfoPane
 
     /**
      * Le temps passé, en un seul bloc : dans le maître, pour qui peut saisir du temps, les totaux et le détail des
-     * saisies (`TimeEntriesRelationManager`) ; pour tous les autres, les totaux seuls, en lecture. Un membre du Support,
-     * dans une application cliente, y saisit aussi le sien (dans le maître).
+     * saisies (`TimeEntriesRelationManager`) ; un membre du Support, dans une application cliente, le même détail, lu
+     * dans le maître (`AgentTimeEntries`) ; pour tous les autres, les totaux seuls, en lecture.
      */
     protected function timeBlock(): Component
     {
         $canLog = fn (Model $record): bool => TimeEntriesRelationManager::canViewForRecord($record, static::class);
+        $isAgent = fn (Model $record): bool => $record instanceof Trackable && Context::current()->forSubject($record)->isAgent();
 
         return Group::make([
             Livewire::make(TimeEntriesRelationManager::class, fn (): array => ['ownerRecord' => $this->getRecord(), 'pageClass' => static::class])
                 ->key('time-entries')
                 ->visible($canLog),
+            // Un membre du Support dans une application cliente : le détail, lu dans le maître.
+            Livewire::make(AgentTimeEntries::class, fn (): array => ['record' => $this->getRecord()])
+                ->key('agent-time-entries')
+                ->visible(fn (Model $record): bool => ! $canLog($record) && $isAgent($record)),
             Section::make(__('Temps passé'))->key('time')->compact()->columnSpanFull()
-                ->visible(fn (Model $record): bool => ! $canLog($record))
+                ->visible(fn (Model $record): bool => ! $canLog($record) && ! $isAgent($record))
                 ->headerActions([TimelineActions::agentTime()->size(Size::Small)])
                 ->schema([
                     TextEntry::make('time_totals')->hiddenLabel()

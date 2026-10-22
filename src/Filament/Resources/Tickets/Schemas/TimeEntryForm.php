@@ -21,14 +21,16 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Enums\Size;
 use Illuminate\Support\Str;
 
 /**
  * Le formulaire d'une saisie de temps, chez le Support (`TimeEntriesRelationManager`) comme pour un membre du Support
- * dans une application cliente (`TimelineActions::agentTime()`) : le jour, la durée (les raccourcis la remplissent),
- * et ce sur quoi porte le temps. Le temps ne dit pas lui-même ce qui a été fait : il porte sur un message ou une note
+ * dans une application cliente (`TimelineActions::agentTime()`) : le jour, la durée en jours, heures et minutes (« 2 j
+ * 2 h 5 min » ; les raccourcis la remplissent, le total s'affiche dessous), et ce sur quoi porte le temps. Le temps ne dit pas lui-même ce qui a été fait : il porte sur un message ou une note
  * de la fiche, ou, sans l'un ni l'autre, sur la fiche entière ; sur une tâche, aussi sur le message écrit ici
  * (`message`). Sur un ticket, pas de texte : un message y va avec un passage.
  */
@@ -48,6 +50,16 @@ final class TimeEntryForm
         '1d' => ['1 j', 1, Duration::DAYS],
     ];
 
+    /** Les trois champs de la durée. */
+    public const DAYS = 'duration_days';
+
+    public const HOURS = 'duration_hours';
+
+    public const MINUTES = 'duration_minutes';
+
+    /** Au plus 24 heures par saisie (`Workflow\TimeLog`). */
+    public const MAX_MINUTES = 24 * 60;
+
     /**
      * @param  Closure(): Trackable  $subject  le ticket ou la tâche
      * @return array<int, Component>
@@ -56,13 +68,32 @@ final class TimeEntryForm
     {
         return [
             self::presets(),
-            Grid::make(3)->columnSpanFull()->schema([
+            Grid::make(['default' => 3, 'sm' => 4])->columnSpanFull()->schema([
                 DatePicker::make('worked_on')->label(__('Le'))->required()->default(now())->maxDate(now()->addDay())
-                    ->hintAction(Help::action('tma.temps.saisie', __('Quel jour ?'))),
-                TextInput::make('duration')->label(__('Durée'))->required()->numeric()->minValue(0.01)->step('any')
-                    ->hintAction(Help::action('tma.temps.saisie', __('Minutes, heures ou jours'))),
-                Select::make('unit')->label(__('En'))->options(Duration::units())->required()
-                    ->default(config('filament-tma.time.display_unit', Duration::HOURS)),
+                    ->hintAction(Help::action('tma.temps.saisie', __('Quel jour ?')))
+                    ->columnSpan(['default' => 3, 'sm' => 1]),
+                self::part(self::DAYS, __('Jours'), __('j')),
+                self::part(self::HOURS, __('Heures'), __('h')),
+                self::part(self::MINUTES, __('Minutes'), __('min'))
+                    // Une seule règle pour les trois : il faut une durée (les minutes, sans jours ni heures).
+                    ->required(fn (Get $get): bool => self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS)]) <= 0)
+                    ->markAsRequired(false)
+                    ->validationMessages(['required' => __('Saisissez une durée.')])
+                    ->rule(fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+                        $minutes = self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $value]);
+
+                        if ($minutes <= 0) {
+                            $fail(__('Saisissez une durée.'));
+                        } elseif ($minutes > self::MAX_MINUTES) {
+                            // Une saisie, une intervention d'un jour (`TimeLog`).
+                            $fail(__('Une saisie va jusqu’à 24 heures (:max) : saisissez les autres jours à part.', ['max' => Duration::format(self::MAX_MINUTES)]));
+                        }
+                    }),
+                // Le total, tel qu'il s'affichera (« Soit 1 j 2 h », une journée de 7 h).
+                Text::make(fn (Get $get): string => __('Soit :total (une journée : :day).', [
+                    'total' => Duration::format(self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $get(self::MINUTES)])),
+                    'day' => Duration::format(Duration::dayMinutes(), Duration::HOURS),
+                ]))->color('gray')->columnSpanFull(),
             ]),
             Select::make('entry_id')->label(__('Sur'))
                 ->options(fn (): array => self::entryOptions($subject()))
@@ -92,10 +123,40 @@ final class TimeEntryForm
         ];
     }
 
-    /** La durée saisie, en minutes. */
+    /** La durée saisie, en minutes : les jours (de `time.day_minutes`), les heures et les minutes. */
     public static function minutes(array $data): int
     {
-        return Duration::toMinutes($data['duration'], $data['unit']);
+        $number = fn (mixed $value): float => blank($value) ? 0.0 : (float) str_replace(',', '.', (string) $value);
+
+        return (int) round($number($data[self::DAYS] ?? null) * Duration::dayMinutes()
+            + $number($data[self::HOURS] ?? null) * 60
+            + $number($data[self::MINUTES] ?? null));
+    }
+
+    /**
+     * Une durée en minutes, dans les trois champs : 2 j 2 h 5 min ; vide plutôt que 0.
+     *
+     * @return array<string, int|null>
+     */
+    public static function fill(int $minutes): array
+    {
+        $rest = $minutes % Duration::dayMinutes();
+
+        return [
+            self::DAYS => intdiv($minutes, Duration::dayMinutes()) ?: null,
+            self::HOURS => intdiv($rest, 60) ?: null,
+            self::MINUTES => $rest % 60 ?: null,
+        ];
+    }
+
+    /** Un des trois champs de la durée : un nombre, son unité à droite ; le total se refait quand on le quitte. */
+    private static function part(string $name, string $label, string $suffix): TextInput
+    {
+        return TextInput::make($name)->label($label)
+            ->numeric()->minValue(0)->step('any')
+            ->suffix($suffix)
+            ->placeholder('0')
+            ->live(onBlur: true);
     }
 
     /** Le nouveau message à écrire avec le temps, s'il y en a un (pas de message choisi, et un texte). */
@@ -104,7 +165,7 @@ final class TimeEntryForm
         return blank($data['entry_id'] ?? null) && ! Html::isBlank($data['message'] ?? null) ? (string) $data['message'] : null;
     }
 
-    /** Une ligne de boutons au-dessus de la durée : un clic la remplit (valeur et unité). */
+    /** Une ligne de boutons au-dessus de la durée : un clic la remplit (jours, heures, minutes). */
     private static function presets(): Actions
     {
         return Actions::make(collect(self::PRESETS)
@@ -114,8 +175,9 @@ final class TimeEntryForm
                 ->color('gray')
                 ->size(Size::ExtraSmall)
                 ->action(function (Set $set) use ($preset): void {
-                    $set('duration', $preset[1]);
-                    $set('unit', $preset[2]);
+                    foreach (self::fill(Duration::toMinutes($preset[1], $preset[2])) as $field => $value) {
+                        $set($field, $value);
+                    }
                 }))
             ->values()
             ->all())

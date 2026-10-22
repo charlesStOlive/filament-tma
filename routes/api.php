@@ -42,6 +42,8 @@ Route::prefix('api/tma/v1')
             Route::get('tickets', [AgentController::class, 'index'])->name('tickets.index');
             Route::get('tickets/{ref}', [AgentController::class, 'show'])->name('tickets.show');
             Route::post('tickets/{ref}/time', [AgentController::class, 'time'])->name('tickets.time');
+            Route::get('tickets/{ref}/time', [AgentController::class, 'timeEntries'])->name('tickets.time.index');
+            Route::patch('tickets/{ref}/time/{ulid}', [AgentController::class, 'changeTime'])->name('tickets.time.change');
             Route::post('tickets/{ref}/entries', [AgentController::class, 'entry'])->name('tickets.entry');
             Route::patch('tickets/{ref}/entries/{ulid}', [AgentController::class, 'changeEntry'])->name('tickets.entry.change');
             Route::post('tickets/{ref}/moves', [AgentController::class, 'move'])->name('tickets.move');

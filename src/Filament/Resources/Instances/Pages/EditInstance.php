@@ -17,6 +17,7 @@ class EditInstance extends EditRecord
             InstanceResource::setupClientAction(),
             InstanceResource::pingAction(),
             InstanceResource::usersAction(),
+            InstanceResource::resyncAction(),
             DeleteAction::make(),
         ];
     }

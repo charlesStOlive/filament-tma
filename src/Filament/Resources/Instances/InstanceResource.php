@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Instances\Pages\ListInstances;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Support\EnvFile;
 use CharlesStOlive\FilamentTma\Support\Help;
+use CharlesStOlive\FilamentTma\Support\Resync;
 use CharlesStOlive\FilamentTma\Support\ServiceAccount;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\InstanceClient;
@@ -251,6 +252,34 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 Notification::make()
                     ->{$sameUid ? 'success' : 'warning'}()
                     ->title($sameUid ? __('Connexion réussie : :name', ['name' => $answer['name'] ?? $record->name]) : __('L’application répond, mais son identifiant n’est pas celui enregistré ici.'))
+                    ->send();
+            });
+    }
+
+    /**
+     * « Tout renvoyer » : les noms à jour (ceux du Support, ceux des correspondants de l'application), puis tous ses
+     * tickets et ses tâches publiées, par la file (`Support\Resync`, comme `tma:resync --instance`).
+     */
+    public static function resyncAction(): Action
+    {
+        return Action::make('resyncAll')
+            ->label(__('Tout renvoyer'))
+            ->icon('heroicon-m-arrow-path')
+            ->color('gray')
+            ->visible(fn (Instance $record): bool => Tma::isMaster() && static::canEdit($record))
+            ->requiresConfirmation()
+            ->modalHeading(fn (Instance $record): string => __('Tout renvoyer à :name ?', ['name' => $record->name]))
+            ->modalDescription(fn (Instance $record): string => __('Les noms sont remis à jour des deux côtés, puis ses :n tickets et tâches publiées repartent, avec leurs projets, leurs messages et leurs fichiers. Rien n’est perdu ni dédoublé.', [
+                'n' => Resync::subjects($record)->filter->isShared()->count(),
+            ]))
+            ->modalSubmitActionLabel(__('Tout renvoyer'))
+            ->action(function (Instance $record): void {
+                $names = Resync::refreshNames($record);
+                $sent = Resync::push(Resync::subjects($record));
+
+                Notification::make()->success()
+                    ->title(__('Envoi demandé'))
+                    ->body(__(':sent ticket(s) et tâche(s) repartent ; :names nom(s) mis à jour.', ['sent' => $sent, 'names' => $names]))
                     ->send();
             });
     }

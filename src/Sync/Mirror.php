@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
 use CharlesStOlive\FilamentTma\Events\SnapshotMirrored;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Agent;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
@@ -38,13 +39,29 @@ final class Mirror
 
         $here = Tma::isHere($payload['instance_uid'] ?? null);
 
-        return Actor::fromInstance(
+        // Une personne d'ici garde son nom d'ici : la copie de l'autre application peut dater d'avant un changement.
+        if ($here && ($user = Tma::userModel()::query()->find($payload['id'])) !== null) {
+            return Actor::forUser($user);
+        }
+
+        $actor = Actor::fromInstance(
             (string) $payload['instance_uid'],
             (string) $payload['id'],
             (string) ($payload['name'] ?? $payload['email'] ?? $payload['id']),
             $payload['email'] ?? null,
             $here ? $payload['id'] : null,
         );
+
+        // Client : un membre du Support relié ici prend aussi son nom à jour (« Contact au Support »…).
+        $agent = Tma::isClient() && ! $here
+            ? Agent::query()->where('master_uid', $actor->instance_uid)->where('master_user_id', $actor->remote_id)->first()
+            : null;
+
+        if ($agent?->fill(['name' => $actor->name, 'email' => $actor->email ?? $agent->email])->isDirty()) {
+            $agent->save();
+        }
+
+        return $actor;
     }
 
     /**
@@ -278,8 +295,16 @@ final class Mirror
             'target_instance_uid' => $targetInstanceUid,
             'title' => (string) $payload['title'],
             'description' => $payload['description'] ?? null,
+            // Un maître d'avant les fourchettes et les participants ne les envoie pas : ce qu'on sait ici reste.
+            ...Arr::only($payload, ['estimate_min_days', 'estimate_max_days']),
             'deleted_at' => null,
         ])->save();
+
+        if (array_key_exists('members', $payload)) {
+            $project->members()->sync(collect((array) $payload['members'])
+                ->map(fn (array $member): ?int => self::actor($member)?->getKey())
+                ->filter()->unique()->values()->all());
+        }
 
         return $project;
     }
@@ -325,6 +350,9 @@ final class Mirror
             ? self::task($snapshot['task'], $overrides)
             : self::ticket($snapshot['ticket'], $overrides);
 
+        // Ses pièces jointes : celles retirées là-bas partent d'ici ; s'il en manque, son ulid les réclame.
+        $missing = self::subjectFiles($ticket, (array) ($isTask ? $snapshot['task'] : $snapshot['ticket']));
+
         $newTransitions = [];
 
         foreach ($snapshot['transitions'] ?? [] as $payload) {
@@ -337,7 +365,6 @@ final class Mirror
 
         // Les réponses après leur message : le parent doit exister.
         $entries = collect($snapshot['entries'] ?? [])->sortBy(fn (array $entry): int => filled($entry['parent_ulid'] ?? null) ? 1 : 0);
-        $missing = [];
         $newEntries = [];
 
         foreach ($entries as $payload) {
@@ -400,6 +427,25 @@ final class Mirror
                 ->withCustomProperties(['remote_uuid' => $file['uuid'] ?? null])
                 ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
         }
+    }
+
+    /**
+     * Les pièces jointes d'un ticket ou d'une tâche reçus (`Payload::fileList()`) : on retire celles qui n'y sont plus ;
+     * s'il en manque, l'ulid du ticket ou de la tâche s'ajoute aux fichiers réclamés (`missing_media`), et l'envoyeur les
+     * pousse à part (`media/task/{ulid}`). Une application d'avant cet envoi ne dit rien : rien ne change.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<int, string>
+     */
+    private static function subjectFiles(Trackable $subject, array $payload): array
+    {
+        if (! $subject instanceof HasMedia || ! array_key_exists('file_uuids', $payload)) {
+            return [];
+        }
+
+        self::keepFiles($subject, (array) $payload['file_uuids']);
+
+        return (int) ($payload['files_count'] ?? 0) > $subject->getMedia(Entry::ATTACHMENTS_COLLECTION)->count() ? [$subject->ulid] : [];
     }
 
     /**

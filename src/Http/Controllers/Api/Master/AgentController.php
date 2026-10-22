@@ -9,6 +9,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use LogicException;
 
 /** L'API « agent » du maître : ce que font les commandes `tma:*`, au nom de l'utilisateur du jeton. */
 class AgentController
@@ -54,6 +55,36 @@ class AgentController
 
             return [...$result, 'snapshot' => Payload::snapshot($backend->find($ref))];
         }, 201);
+    }
+
+    /** Les saisies de temps de la fiche, pour un membre du Support qui les voit depuis une application cliente. */
+    public function timeEntries(Request $request, string $ref): JsonResponse
+    {
+        return $this->respond(fn () => ['time_entries' => $this->backend($request)->timeEntries($ref)]);
+    }
+
+    /**
+     * Une saisie de temps modifiée (`minutes`, `worked_on`, `billable`, `entry_ulid`, `summary`) ou supprimée
+     * (`delete`) ; la réponse donne l'état à recopier. Une saisie facturée ne bouge plus (422).
+     */
+    public function changeTime(Request $request, string $ref, string $ulid): JsonResponse
+    {
+        $data = $request->validate([
+            'minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'worked_on' => ['nullable', 'date'],
+            'billable' => ['boolean'],
+            'entry_ulid' => ['nullable', 'string', 'max:26'],
+            'summary' => ['nullable', 'string', 'max:500000'],
+            'delete' => ['boolean'],
+        ]);
+
+        return $this->respond(function () use ($request, $ref, $ulid, $data): array {
+            try {
+                return ['snapshot' => Payload::snapshot($this->backend($request)->changeTime($ref, $ulid, $data))];
+            } catch (LogicException $e) {
+                abort(422, $e->getMessage());
+            }
+        });
     }
 
     /**

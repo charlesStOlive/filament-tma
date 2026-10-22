@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Models\TimeEntry;
 use CharlesStOlive\FilamentTma\Support\Auditor;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -215,6 +216,74 @@ final class LocalBackend implements Backend
                 'time_total_minutes' => (int) $ticket->timeEntries()->sum('minutes'),
             ];
         });
+    }
+
+    /**
+     * Les saisies de temps d'un ticket ou d'une tâche, pour qui peut y saisir du temps : un membre du Support les voit
+     * depuis une application cliente (`Filament\Livewire\AgentTimeEntries`), qui n'a que les totaux.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function timeEntries(string $ref): array
+    {
+        $ticket = $this->find($ref);
+        $this->assertCanLog($ticket);
+
+        return $ticket->timeEntries()->with(['actor', 'entry'])->orderByDesc('worked_on')->orderByDesc('id')->get()
+            ->map(fn (TimeEntry $time): array => [
+                'ulid' => $time->ulid,
+                'actor' => $time->actor?->name,
+                'worked_on' => $time->worked_on->toDateString(),
+                'minutes' => $time->minutes,
+                'billable' => $time->billable,
+                'invoiced' => $time->isInvoiced(),
+                'entry_ulid' => $time->entry?->ulid,
+            ])
+            ->all();
+    }
+
+    /**
+     * Modifie une saisie de temps (`minutes`, `worked_on`, `billable`, `entry_ulid` ; `summary` écrit un nouveau message
+     * sur lequel elle porte désormais), ou la supprime (`delete`). Une saisie facturée ne bouge plus (`TimeEntry`).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function changeTime(string $ref, string $ulid, array $data): Ticket|ProjectTask
+    {
+        $ticket = $this->find($ref);
+        $this->assertCanLog($ticket);
+        $context = $this->context();
+        $time = $ticket->timeEntries()->where('ulid', strtolower($ulid))->first()
+            ?? throw new InvalidArgumentException(__('Saisie de temps introuvable sur :ref : :time', ['ref' => $ticket->number, 'time' => $ulid]));
+
+        Auditor::as($context, function () use ($ticket, $time, $data, $context): void {
+            if (! empty($data['delete'])) {
+                $time->delete();
+
+                return;
+            }
+
+            $entry = match (true) {
+                filled($data['summary'] ?? null) => app(Timeline::class)->add($ticket, EntryType::Comment, self::toHtml((string) $data['summary']), $context),
+                ! array_key_exists('entry_ulid', $data) => $time->entry,
+                filled($data['entry_ulid']) => $this->entryOf($ticket, (string) $data['entry_ulid']),
+                default => null,
+            };
+
+            $time->update([
+                ...collect($data)->only(['minutes', 'worked_on', 'billable'])->filter(fn (mixed $value): bool => $value !== null)->all(),
+                'entry_id' => $entry?->getKey(),
+            ]);
+        });
+
+        return $ticket->refresh();
+    }
+
+    private function assertCanLog(Ticket|ProjectTask $ticket): void
+    {
+        if (! app(TimeLog::class)->canLog($ticket, $this->context())) {
+            throw new AuthorizationException(__('Vous ne pouvez pas saisir de temps sur ce ticket.'));
+        }
     }
 
     /** Un message ou une note de la fiche, par son ulid, que l'utilisateur peut lire. */

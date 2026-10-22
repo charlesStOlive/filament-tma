@@ -14,6 +14,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Jobs\PushToInstance;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Support\MasterLinks;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentUi\OnDemand\HasOnDemand;
@@ -72,6 +73,13 @@ class ViewTask extends ViewRecord
                 ->color('gray')
                 ->url(fn (ProjectTask $record): string => TicketResource::getUrl('create', ['task' => $record->getKey()]))
                 ->visible(fn (ProjectTask $record): bool => $record->isShared() && TicketResource::canCreate()),
+            // Un membre du Support, dans l'application cliente : le ticket se prépare chez le Support, lié à la tâche.
+            Action::make('createTicketAtSupport')
+                ->label(__('Créer un ticket chez le Support'))
+                ->icon('heroicon-m-arrow-top-right-on-square')
+                ->color('gray')
+                ->url(fn (ProjectTask $record): ?string => MasterLinks::createTicket($record), shouldOpenInNewTab: true)
+                ->visible(fn (ProjectTask $record): bool => $record->isShared() && ! TicketResource::canCreate() && MasterLinks::forAgent()),
             OnDemandAction::make(),
             ActionGroup::make([
                 EditAction::make(),

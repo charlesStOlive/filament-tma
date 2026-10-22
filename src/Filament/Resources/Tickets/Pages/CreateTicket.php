@@ -22,7 +22,8 @@ use Livewire\Attributes\Url;
  * c'est un ticket préparé pour un client, au nom de l'un de ses utilisateurs (`createForClient()`).
  *
  * Depuis une tâche projet (`?task=…`, le bouton « Créer un ticket » de sa fiche), le ticket en reprend le titre, la
- * description et l'application, et reste lié à elle.
+ * description et l'application, et reste lié à elle. Dans le maître, `?instance=…` choisit d'avance l'application : un
+ * membre du Support y arrive depuis l'application cliente (`Support\MasterLinks`).
  *
  * « Orthographe » corrige le titre et la description, quand l'IA est là (`HasOrthography`).
  */
@@ -35,10 +36,18 @@ class CreateTicket extends CreateRecord
     #[Url(as: 'task')]
     public ?string $taskId = null;
 
-    /** La tâche dont part le ticket, si l'utilisateur la voit. */
+    /** Maître : l'application du client, choisie d'avance (le lien « Nouvelle demande » d'un membre du Support chez lui). */
+    #[Url(as: 'instance')]
+    public ?string $instanceUid = null;
+
+    /** La tâche dont part le ticket (par son id, ou son ulid depuis une application cliente), si l'utilisateur la voit. */
     public function sourceTask(): ?ProjectTask
     {
-        $task = filled($this->taskId) ? ProjectTask::query()->find($this->taskId) : null;
+        $task = match (true) {
+            blank($this->taskId) => null,
+            ctype_digit((string) $this->taskId) => ProjectTask::query()->find($this->taskId),
+            default => ProjectTask::query()->where('ulid', strtolower((string) $this->taskId))->first(),
+        };
 
         return $task !== null && TaskResource::canView($task) ? $task : null;
     }
@@ -48,6 +57,10 @@ class CreateTicket extends CreateRecord
         $task = $this->sourceTask();
 
         if ($task === null) {
+            if (Tma::isMaster() && filled($this->instanceUid) && Instance::forUid($this->instanceUid) !== null) {
+                $this->form->fill([...$this->form->getRawState(), 'instance_uid' => $this->instanceUid]);
+            }
+
             return;
         }
 

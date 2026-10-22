@@ -69,7 +69,7 @@ class Publish extends TaskMove
         }
 
         return [
-            RecipientsFields::primaries('recipients', fn (): array => array_diff_key(Addressables::options($task->target_instance_uid), [Terms::support() => true]))
+            RecipientsFields::primaries('recipients', fn (): array => array_diff_key(Addressables::options($task->target_instance_uid), [Terms::support() => true]), fn () => $task->project)
                 ->label(__('Destinataires principaux chez le client'))
                 ->helperText(__('Prévenus de la publication, puis de tout ce qui arrive à la tâche.'))
                 ->required(),

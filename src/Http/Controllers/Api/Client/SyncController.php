@@ -90,18 +90,26 @@ class SyncController
         return response()->json(['missing_media' => $result['missing_media']]);
     }
 
-    /** `POST media/entry/{ulid}` */
+    /**
+     * `POST media/{entry|task|ticket}/{ulid}` : les fichiers d'une entrée, ou les pièces jointes d'une tâche ou d'un
+     * ticket, que l'état reçu disait manquer (`missing_media`).
+     */
     public function media(Request $request, string $owner, string $ulid): JsonResponse
     {
-        abort_unless($owner === 'entry', 404);
+        $model = match ($owner) {
+            'entry' => Entry::query()->where('ulid', $ulid)->firstOrFail(),
+            'task' => ProjectTask::query()->where('ulid', $ulid)->firstOrFail(),
+            'ticket' => Ticket::query()->where('ulid', $ulid)->firstOrFail(),
+            default => abort(404),
+        };
         $request->validate(['files' => ['required', 'array']]);
 
-        $entry = Entry::query()->where('ulid', $ulid)->firstOrFail();
-        abort_unless($entry->subject instanceof Trackable && Tma::isHere($entry->subject->clientInstanceUid()), 403);
+        $subject = $model instanceof Entry ? $model->subject : $model;
+        abort_unless($subject instanceof Trackable && Tma::isHere($subject->clientInstanceUid()), 403);
 
-        Mirror::files($entry, $request->input('files'));
+        Mirror::files($model, $request->input('files'));
 
-        return response()->json(['files_count' => $entry->refresh()->getMedia(Entry::ATTACHMENTS_COLLECTION)->count()]);
+        return response()->json(['files_count' => $model->refresh()->getMedia(Entry::ATTACHMENTS_COLLECTION)->count()]);
     }
 
     /**

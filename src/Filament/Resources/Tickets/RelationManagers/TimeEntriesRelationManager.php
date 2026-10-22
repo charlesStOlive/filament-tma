@@ -115,7 +115,7 @@ class TimeEntriesRelationManager extends RelationManager
                     ->iconButton()
                     ->tooltip(__('Modifier'))
                     ->hidden(fn (TimeEntry $record): bool => $record->isInvoiced())
-                    ->mutateRecordDataUsing(fn (array $data): array => [...$data, 'duration' => round($data['minutes'] / 60, 2), 'unit' => Duration::HOURS])
+                    ->mutateRecordDataUsing(fn (array $data): array => [...$data, ...TimeEntryForm::fill((int) $data['minutes'])])
                     ->mutateDataUsing(function (array $data): array {
                         $ticket = $this->getTicket();
                         $message = TimeEntryForm::message($data);
@@ -128,7 +128,7 @@ class TimeEntriesRelationManager extends RelationManager
                         TimeLog::assertEntryOf($ticket, filled($data['entry_id'] ?? null) ? Entry::query()->find($data['entry_id']) : null);
 
                         return [
-                            ...collect($data)->except(['duration', 'unit', 'message'])->all(),
+                            ...collect($data)->except([TimeEntryForm::DAYS, TimeEntryForm::HOURS, TimeEntryForm::MINUTES, 'message'])->all(),
                             'entry_id' => filled($data['entry_id'] ?? null) ? $data['entry_id'] : null,
                             'minutes' => TimeEntryForm::minutes($data),
                         ];

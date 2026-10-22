@@ -19,8 +19,14 @@ Sur un ticket **traité par le Support** (ou une tâche projet), elle agit **pou
   elle ne s'écrit jamais à elle-même ;
 - ses messages, réponses et notes sont écrits **chez le Support, en son nom de là-bas**, puis reviennent dans
   l'application cliente ; de même quand elle modifie son message ou archive une note ;
-- elle saisit son temps (**Saisir du temps**), enregistré chez le Support ;
-- elle ne fait pas de demande au Support : elle en fait partie.
+- elle voit le **détail du temps passé** (qui, quel jour, combien, sur quel message), lu chez le Support, et y saisit,
+  modifie ou supprime le sien comme chez le Support (une saisie facturée ne bouge plus) ; les autres utilisateurs de
+  l'application n'en voient que les totaux ;
+- elle ne fait pas de demande au Support : elle en fait partie. **Nouvelle demande chez le Support** (liste des
+  tickets) et **Créer un ticket chez le Support** (fiche d'une tâche) ouvrent la création d'un ticket dans
+  l'application du Support, l'application cliente déjà choisie, pour l'un de ses correspondants. L'adresse de
+  l'application du Support, telle que le navigateur la joint : `TMA_MASTER_PANEL_URL` (sinon `TMA_MASTER_URL` suivi de
+  `/admin`).
 
 Un bandeau le rappelle sur la fiche : « Vous intervenez ici au nom du Support ». Tout ce qu'elle fait apparaît dans
 les deux applications comme fait par elle, avec la mention **Support**.

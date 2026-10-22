@@ -28,7 +28,8 @@ dernière erreur sur la fiche). **Renvoyer à l'application** (menu de la fiche)
 
 | Partagé | Jamais partagé |
 | --- | --- |
-| les champs du ticket ou de la tâche | le détail des lignes de temps |
+| les champs du ticket ou de la tâche, et leurs pièces jointes | le détail des lignes de temps |
+| un projet (fourchette, participants), avec ses tâches publiées | |
 | les changements d'état | les brouillons du Support |
 | les messages, réponses, notes et leurs fichiers (modifiés, archivés, supprimés compris) | |
 | les totaux de temps (global et par mois) | |
@@ -40,7 +41,25 @@ Le Support ne garde pas de copie des utilisateurs d'une application cliente. Il 
 besoin, la liste de ceux qui ont accès au Support (gardée une heure) : **Applications clientes ›
 Utilisateurs**. Chaque message garde le nom et l'e-mail de son auteur, même si cet utilisateur disparaît ensuite.
 
+Un nom est une **copie**, rafraîchie quand la personne agit : quelqu'un qui change de nom n'apparaît sous le nouveau
+qu'à sa prochaine action, ou après un renvoi (ci-dessous).
+
 Pour relier deux applications : [Configuration de départ](#modal-tma.demarrer).
+
+## Tout renvoyer
+
+Chez le Support, pour remettre d'accord les deux applications (après une panne, une mise à jour, un changement de
+nom) :
+
+- un ticket ou une tâche : **Renvoyer à l'application**, dans le menu de sa fiche ;
+- un projet : **Renvoyer à l'application** sur sa fiche (ses tâches publiées repartent, avec lui) ;
+- une application entière : **Applications clientes › (l'application) › Tout renvoyer** ; les noms sont d'abord
+  remis à jour (ceux du Support, et ceux des correspondants de l'application) ;
+- en ligne de commande, dans le maître : `php artisan tma:resync --all` (ou `--instance=`, `--project=`, `--ticket=`,
+  `--task=` ; `--names` pour les noms seulement ; `--dry-run` pour voir ce qui partirait).
+
+Les envois passent par la file d'attente. Rien n'est perdu ni dédoublé : ce qui est déjà là est mis à jour. Il faut le
+droit de relancer une synchronisation (`sync`) ; « Tout renvoyer », celui de modifier l'application.
 
 ## En détail
 

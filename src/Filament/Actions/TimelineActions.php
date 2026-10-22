@@ -36,20 +36,8 @@ final class TimelineActions
             ->visible(fn (Trackable $record): bool => Context::current()->forSubject($record)->isAgent())
             ->schema(fn (Trackable $record): array => TimeEntryForm::components(fn (): Trackable => $record))
             ->action(function (Trackable $record, array $data, Action $action): void {
-                $context = Context::current()->forSubject($record);
-                $on = filled($data['entry_id'] ?? null) ? $record->entries()->find($data['entry_id']) : null;
-
                 try {
-                    $snapshot = app(MasterClient::class)->agentTime(
-                        $context->agent,
-                        $record,
-                        TimeEntryForm::minutes($data),
-                        Carbon::parse($data['worked_on'])->toDateString(),
-                        (bool) ($data['billable'] ?? true),
-                        TimeEntryForm::message($data),
-                        $on?->ulid,
-                    );
-                    DB::transaction(fn () => Mirror::snapshot($snapshot));
+                    DB::transaction(fn () => Mirror::snapshot(self::logAgentTime($record, $data)));
                     $record->refresh(); // l'historique montre le nouveau message
                 } catch (SyncException|AuthorizationException|ValidationException $e) {
                     Notification::make()->danger()->title($e->getMessage())->send();
@@ -58,6 +46,29 @@ final class TimelineActions
 
                 Notification::make()->success()->title(__('Temps enregistré chez le Support'))->send();
             });
+    }
+
+    /**
+     * Envoie au maître le temps d'un membre du Support (le formulaire `TimeEntryForm`) ; renvoie l'état à recopier.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function logAgentTime(Trackable $record, array $data): array
+    {
+        $agent = Context::current()->forSubject($record)->agent
+            ?? throw new AuthorizationException(__('Réservé aux membres du Support.'));
+        $on = filled($data['entry_id'] ?? null) ? $record->entries()->find($data['entry_id']) : null;
+
+        return app(MasterClient::class)->agentTime(
+            $agent,
+            $record,
+            TimeEntryForm::minutes($data),
+            Carbon::parse($data['worked_on'])->toDateString(),
+            (bool) ($data['billable'] ?? true),
+            TimeEntryForm::message($data),
+            $on?->ulid,
+        );
     }
 
     public static function attachmentsField(): FileUpload

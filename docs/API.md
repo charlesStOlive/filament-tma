@@ -98,9 +98,14 @@ Une personne, dans l'application où elle existe.
   "validation_requested_at": "…", "closed_at": "…", "cancelled_at": "…",
   "last_activity_at": "…", "auto_close_warned_at": "…", "created_at": "…",
   "version": 3,
-  "time": { "total_minutes": 240, "by_month": { "2026-01": 120, "2026-02": 120 } }
+  "time": { "total_minutes": 240, "by_month": { "2026-01": 120, "2026-02": 120 } },
+  "files_count": 1, "file_uuids": [ "…" ]
 }
 ```
+
+`files_count`, `file_uuids` : les pièces jointes du ticket, sans leur contenu. Dans un état complet, celle qui reçoit
+retire celles qui n'y sont plus ; s'il lui en manque, elle réclame le ticket par son ulid dans `missing_media`, et les
+reçoit par `POST media/ticket/{ulid}`. Absents (application d'avant), rien ne change.
 
 `task_ulid` : la tâche projet dont le ticket est parti (« Créer un ticket » sur sa fiche), ou null. Celle qui reçoit
 le relie à sa copie de la tâche si elle la connaît ; absent, le lien qu'elle sait reste.
@@ -151,7 +156,11 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 ```json
 {
   "ulid": "01k…", "number": "T-0007", "target_instance_uid": "01K…",
-  "project": { "ulid": "01k…", "title": "Portail parrain", "description": null },
+  "project": {
+    "ulid": "01k…", "title": "Portail parrain", "description": null,
+    "estimate_min_days": 1.0, "estimate_max_days": 3.0,
+    "members": [ { "…acteur" } ]
+  },
   "title": "Refonte de la page parrain", "description": "<p>…</p>",
   "state": "in_progress|done|cancelled",
   "starts_on": "2026-10-01", "due_on": "2026-11-15",
@@ -159,13 +168,16 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
   "published_at": "…", "done_at": null, "cancelled_at": null, "last_activity_at": "…", "created_at": "…",
   "deleted_at": null,
   "version": 2,
-  "time": { "total_minutes": 630, "by_month": { "2026-09": 420, "2026-10": 210 } }
+  "time": { "total_minutes": 630, "by_month": { "2026-09": 420, "2026-10": 210 } },
+  "files_count": 2, "file_uuids": [ "…" ]
 }
 ```
 
 Une tâche en brouillon (`draft`) n'est jamais envoyée. `project` : son projet (null pour une tâche d'avant les
-projets) ; celle qui reçoit le crée ou met son titre à jour, par son `ulid`. Le temps d'un projet est la somme de
-celui de ses tâches : il ne voyage pas à part. `deleted_at` : la tâche a été supprimée dans le maître (avec ses
+projets) ; celle qui reçoit le crée ou met son titre à jour, par son `ulid`, avec sa fourchette (en jours, null sans
+borne) et ses participants nommés (`members`, des acteurs) ; absents (maître d'avant), ce qu'elle sait reste. Le temps
+d'un projet est la somme de celui de ses tâches : il ne voyage pas à part. `files_count`, `file_uuids` : ses pièces
+jointes, comme pour un ticket (`POST media/task/{ulid}`). `deleted_at` : la tâche a été supprimée dans le maître (avec ses
 entrées, envoyées supprimées elles aussi) ; celle qui reçoit la retire, et n'en crée pas une qu'elle ne connaissait pas.
 
 ### État complet (snapshot)
@@ -349,9 +361,10 @@ relances, tâche publiée (`Events\SnapshotMirrored`, `Support\Notifier`), avert
 { "missing_media": [ "01k…" ] }
 ```
 
-les entrées dont le client attend encore les fichiers.
+les entrées dont le client attend encore les fichiers, et l'ulid du ticket ou de la tâche s'il lui manque de leurs
+pièces jointes.
 
-### `POST media/entry/{ulid}`
+### `POST media/{entry|task|ticket}/{ulid}`
 
 ```json
 { "files": [ "…fichiers en base64" ] }

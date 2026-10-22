@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -17,6 +18,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\Size;
 
 class TaskInfolist
 {
@@ -34,8 +36,8 @@ class TaskInfolist
     }
 
     /**
-     * Le volet latéral de la fiche (voir `ViewTask`) : où en est la tâche et dans quel projet, son calendrier, les tickets
-     * qui en sont partis, son temps (et celui du projet). Pas de « qui doit agir » : c'est le Support qui fait la tâche.
+     * Le volet latéral de la fiche (voir `ViewTask`) : où en est la tâche et dans quel projet (sa fourchette, son temps ;
+     * le maître le modifie dans un volet glissant), son calendrier, les tickets qui en sont partis, son temps. Pas de « qui doit agir » : c'est le Support qui fait la tâche.
      *
      * Le temps passé (`$time`, un seul bloc : voir `HasInfoPane::timeBlock()`) vient en tête dans le maître ; chez le
      * client, il ferme le volet, en lecture. Le calendrier et l'application ne s'affichent qu'à la demande (« Tout
@@ -59,11 +61,20 @@ class TaskInfolist
                 ->schema([
                     TextEntry::make('state')->label(__('État'))->badge()
                         ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
+                    // Le projet : un lien vers sa fiche ; « Modifier le projet » l'ouvre dans un volet glissant (maître).
                     TextEntry::make('project.title')->label(__('Projet'))->placeholder(__('Sans projet'))
                         ->weight(FontWeight::SemiBold)
                         ->url(fn (ProjectTask $record): ?string => $record->project !== null && ProjectResource::canView($record->project)
                             ? ProjectResource::getUrl('view', ['record' => $record->project])
-                            : null),
+                            : null)
+                        ->hintAction(ProjectResource::editAction()->label(__('Modifier'))->link()->size(Size::Small)),
+                    TextEntry::make('project_estimate')->label(__('Fourchette du projet'))
+                        ->state(fn (ProjectTask $record): ?string => $record->project?->estimateLabel())
+                        ->visible(fn (ProjectTask $record): bool => $record->project?->estimateLabel() !== null),
+                    TextEntry::make('project_time')->label(__('Temps du projet'))
+                        ->state(fn (ProjectTask $record): ?string => $record->project !== null ? Duration::format($record->project->timeTotals()['total_minutes']) : null)
+                        ->color(fn (ProjectTask $record): ?string => $record->project?->isOverEstimate($record->project->timeTotals()['total_minutes']) ? 'danger' : null)
+                        ->visible(fn (ProjectTask $record): bool => $record->project !== null),
                     TextEntry::make('targetInstance.name')->label(__('Application'))
                         ->visible(fn (): bool => Tma::isMaster())
                         ->onDemand(),

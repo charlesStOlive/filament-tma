@@ -6,7 +6,9 @@ use CharlesStOlive\FilamentTma\Filament\Actions\NotificationActions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Filament\Widgets\AllowanceOverview;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use CharlesStOlive\FilamentTma\Support\MasterLinks;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
@@ -115,7 +117,14 @@ class ListTickets extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label(__('Nouvelle demande')),
+            // La permission seule ne suffit pas : il faut pouvoir faire une demande (`TicketResource::canCreate()`).
+            CreateAction::make()->label(__('Nouvelle demande'))->visible(fn (): bool => TicketResource::canCreate()),
+            // Un membre du Support ne fait pas de demande ici : il la prépare chez le Support, pour un correspondant.
+            Action::make('createAtSupport')
+                ->label(__('Nouvelle demande chez le Support'))
+                ->icon('heroicon-m-arrow-top-right-on-square')
+                ->url(fn (): ?string => MasterLinks::createTicket(), shouldOpenInNewTab: true)
+                ->visible(fn (): bool => MasterLinks::forAgent()),
             ActionGroup::make([
                 NotificationActions::profileLink(),
                 NotificationActions::sendNow(),

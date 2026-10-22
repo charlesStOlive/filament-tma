@@ -40,7 +40,7 @@ du Support (`handle`, `note`, `remind`, `time`…) et, pour les administrateurs,
 | `viewany`, `view`, `create`, `edit`, `delete` | la liste, la fiche ; créer, modifier, supprimer (Support) |
 | `comment`, `note` | écrire des messages, des notes |
 | `time`, `sync` | saisir du temps, renvoyer une tâche (Support) |
-| `time-report` | voir le suivi des temps dans le tableau de bord (onglets **Suivi des temps** et **Temps par tâche**) |
+| `time-report` | voir le **Suivi des temps** du tableau de bord : tous les temps, TMA et projets |
 | `workflow.{passage}` | faire ce passage : `workflow.publish`, `workflow.complete`, `workflow.reopen`… |
 | `ai.orthography` | corriger l'orthographe avec l'IA, comme sur les tickets |
 

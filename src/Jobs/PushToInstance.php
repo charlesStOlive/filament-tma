@@ -19,7 +19,7 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Le maître envoie l'état d'un ticket du Support, ou d'une tâche publiée, à son application cliente, puis
- * les fichiers qui lui manquent. Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
+ * les fichiers qui lui manquent (ceux des entrées, et les pièces jointes du ticket ou de la tâche). Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
  * travail du Support. Un seul envoi en attente par objet : il part avec l'état du moment.
  */
 class PushToInstance implements ShouldBeUnique, ShouldQueue
@@ -57,6 +57,13 @@ class PushToInstance implements ShouldBeUnique, ShouldQueue
         $missing = $client->pushTicket(Payload::snapshot($ticket));
 
         foreach ($missing as $ulid) {
+            // Les pièces jointes du ticket ou de la tâche même.
+            if ($ulid === $ticket->ulid) {
+                $client->pushMedia($ticket->kind(), $ulid, Payload::files($ticket));
+
+                continue;
+            }
+
             $entry = $ticket->entries()->where('ulid', $ulid)->first();
 
             if ($entry instanceof Entry) {

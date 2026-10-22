@@ -4,6 +4,8 @@ namespace CharlesStOlive\FilamentTma\Filament\Schemas;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\RecipientRole;
+use CharlesStOlive\FilamentTma\Models\Project;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Recipient;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Addressables;
@@ -52,7 +54,10 @@ final class RecipientsSection
             ->modalHeading(__('Destinataires'))
             ->modalDescription(__('Les principaux sont prévenus tout de suite de ce qui arrive ; les secondaires, dans leur bilan. L’auteur reste principal.'))
             ->fillForm(fn (Trackable $record): array => app(Recipients::class)->keys($record))
-            ->schema(fn (Trackable $record): array => RecipientsFields::make(fn (): ?string => $record->clientInstanceUid()))
+            ->schema(fn (Trackable $record): array => RecipientsFields::make(
+                fn (): ?string => $record->clientInstanceUid(),
+                project: $record instanceof ProjectTask ? fn (): ?Project => $record->project : null,
+            ))
             ->modalSubmitActionLabel(__('Enregistrer'))
             ->action(function (Trackable $record, array $data, Action $action, Component $livewire): void {
                 try {

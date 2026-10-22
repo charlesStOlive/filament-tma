@@ -187,6 +187,30 @@ final class MasterClient
         ], fn (mixed $value): bool => $value !== null)))->json('data.snapshot');
     }
 
+    /**
+     * Les saisies de temps d'une fiche, lues dans le maître pour un membre du Support (le client n'en a que les totaux).
+     *
+     * @return array<int, array{ulid: string, actor: string|null, worked_on: string, minutes: int, billable: bool, invoiced: bool, entry_ulid: string|null}>
+     */
+    public function agentTimeEntries(Agent $agent, Trackable $subject): array
+    {
+        return (array) Http::call(__('Support'), fn () => $this->agentHttp($agent)->get($this->url("agent/tickets/{$subject->ulid}/time")))
+            ->json('data.time_entries', []);
+    }
+
+    /**
+     * Un membre du Support modifie (`minutes`, `worked_on`, `billable`, `entry_ulid`, `summary`) ou supprime (`delete`)
+     * une saisie de temps, dans le maître, en son nom.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed> l'état du ticket ou de la tâche à recopier
+     */
+    public function agentChangeTime(Agent $agent, Trackable $subject, string $timeUlid, array $data): array
+    {
+        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/time/{$timeUlid}"), $data))
+            ->json('data.snapshot');
+    }
+
     private function agentHttp(Agent $agent): PendingRequest
     {
         if (blank(config('filament-tma.master.url'))) {

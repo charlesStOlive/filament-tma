@@ -93,18 +93,17 @@ ses tickets.
 
 ## Sur le tableau de bord
 
-Le widget des tâches projet montre **toutes** les tâches, en trois onglets :
+- Les **projets** où vous participez, avec leurs tâches en cours : l'onglet **Projets** du premier tableau (voir
+  [Les projets](#modal-tma.projets)).
+- **Suivi des temps** : le temps passé sur un mois (le mois en cours d'abord), en jours et heures. Une ligne pour la
+  **TMA** (chez le Support, une par application cliente), puis une par **projet** ; sous chacune, en petit, ses
+  tickets ou ses tâches et leur temps du mois. Pour un projet, en plus, son temps cumulé et sa fourchette (en rouge
+  au-delà). Les flèches passent au mois précédent (s'il y a du temps avant) et au suivant (jusqu'au mois en cours) ; le
+  nom du mois ramène au mois en cours.
 
-- **Tâches en cours** : chaque tâche en cours, son projet en petit, son échéance (en rouge si elle est passée), et
-  **Ouvrir** ; **Toutes les tâches** mène à la liste ;
-- **Suivi des temps** : le temps passé, tâche par tâche, sur le mois en cours, et le total du mois. Les flèches passent
-  au mois précédent (s'il y a du temps avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en
-  cours ;
-- **Temps par tâche** : les 5 dernières tâches où du temps a été passé, avec leur temps cumulé, tous mois confondus.
-
-Le widget s'affiche à qui voit les tâches ; les deux onglets de temps demandent en plus le droit « Voir le suivi des
-temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des saisies ; chez le client,
-les totaux que le Support lui envoie.
+Le suivi des temps montre **tous** les temps, quels que soient les destinataires : il ne s'affiche qu'avec le droit
+« Voir le suivi des temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des
+saisies ; chez le client, les totaux que le Support lui envoie.
 
 ## En détail
 

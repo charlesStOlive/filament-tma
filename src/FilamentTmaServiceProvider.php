@@ -13,6 +13,7 @@ use CharlesStOlive\FilamentTma\Commands\NotifyCommand;
 use CharlesStOlive\FilamentTma\Commands\PublishScheduledTasksCommand;
 use CharlesStOlive\FilamentTma\Commands\ResetSchemaCommand;
 use CharlesStOlive\FilamentTma\Commands\ResumePausedTicketsCommand;
+use CharlesStOlive\FilamentTma\Commands\ResyncCommand;
 use CharlesStOlive\FilamentTma\Commands\SendDigestCommand;
 use CharlesStOlive\FilamentTma\Commands\ShowTicketCommand;
 use CharlesStOlive\FilamentTma\Events\AllowanceThresholdReached;
@@ -27,6 +28,7 @@ use CharlesStOlive\FilamentTma\Events\TaskUpdated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Events\TicketUpdated;
 use CharlesStOlive\FilamentTma\Events\TimeEntryChanged;
+use CharlesStOlive\FilamentTma\Filament\Livewire\AgentTimeEntries;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Listeners\AuditTrail;
@@ -47,6 +49,7 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -74,6 +77,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 InstallCommand::class,
                 DemoCommand::class,
                 ResetSchemaCommand::class,
+                ResyncCommand::class,
             ])
             ->hasMigrations([
                 'create_tma_actors_and_instances_tables',
@@ -82,6 +86,7 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
                 'create_tma_time_and_allowances_tables',
                 'create_tma_notices_and_audits_tables',
                 'move_tma_notification_preferences_to_user_options',
+                'add_estimate_and_members_to_tma_projects',
             ]);
     }
 
@@ -109,6 +114,9 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
 
         TmaGate::registerResource(Ticket::class, TicketResource::class);
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
+
+        // Le temps passé d'un membre du Support, dans le volet d'une fiche (`HasInfoPane::timeBlock()`).
+        Livewire::component('filament-tma.agent-time-entries', AgentTimeEntries::class);
 
         if (config('filament-tma.audit.enabled', true)) {
             AuditTrail::register();

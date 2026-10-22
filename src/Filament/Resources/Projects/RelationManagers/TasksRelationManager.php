@@ -12,7 +12,10 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
-/** Les tâches d'un projet ; une ligne ouvre la tâche, « Nouvelle tâche » en crée une dans ce projet (maître). */
+/**
+ * Les tâches d'un projet, leur temps en jours et heures ; une ligne ouvre la tâche, « Nouvelle tâche » en crée une dans
+ * ce projet (maître).
+ */
 class TasksRelationManager extends RelationManager
 {
     protected static string $relationship = 'tasks';

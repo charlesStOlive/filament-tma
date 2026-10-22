@@ -91,10 +91,12 @@ On arrive sur **Mes demandes** dans une application cliente, sur **Actifs** chez
 
 ## Sur le tableau de bord
 
-Le widget **Mes tickets en cours** reprend les tickets en cours (ceux de **Actifs**) dont vous êtes destinataire,
-principal ou secondaire : ceux qui vous attendent d'abord, puis les plus récemment actifs, dix au plus. Pour chacun :
-votre place parmi les destinataires, son état, qui il attend (**Vous**, en orange, quand c'est vous), et **Ouvrir**.
-**Tous les tickets** mène à la liste. Il s'affiche à qui voit les tickets.
+Le premier tableau a deux onglets, **Tickets** et **Projets** (un groupe de boutons dans son en-tête). **Tickets**
+(« Mes tickets en cours ») reprend les tickets en cours (ceux de **Actifs**) dont vous êtes destinataire, principal ou
+secondaire : ceux qui vous attendent d'abord, puis les plus récemment actifs, dix au plus (au-delà, la dernière ligne dit combien il en reste : « + 3 autres tickets »). Pour chacun : votre place
+parmi les destinataires, son état, qui il attend (**Vous**, en orange, quand c'est vous), et **Ouvrir**. **Tous les
+tickets** mène à la liste. Le petit nombre orange sur l'onglet : les tickets qui vous attendent. L'onglet s'affiche à
+qui voit les tickets ; **Projets**, voir [Les projets](#modal-tma.projets).
 
 ## La clôture automatique
 
