@@ -44,6 +44,7 @@ final class Payload
             'title' => $ticket->title,
             'description' => $ticket->description,
             'priority' => $ticket->priority->value,
+            'opening' => $ticket->opening->value,
             'state' => $ticket->state::getMorphClass(),
             'task_ulid' => $ticket->task?->ulid,
             'requester' => self::actor($ticket->requester),

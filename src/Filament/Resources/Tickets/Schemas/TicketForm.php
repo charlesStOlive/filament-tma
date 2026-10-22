@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
 use CharlesStOlive\FilamentTma\Enums\Priority;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Help;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -30,7 +32,19 @@ class TicketForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            // Maître : un ticket préparé pour une application cliente, au nom de l'un de ses utilisateurs.
+            // Maître : comment le Support écrit au client (au nom de l'un de ses correspondants, pour lui demander ou
+            // proposer quelque chose, pour l'informer) ; puis l'application et la personne.
+            ToggleButtons::make('opening')->hiddenLabel()
+                ->options(collect(TicketOpening::forSupport())->mapWithKeys(fn (TicketOpening $opening): array => [$opening->value => $opening->getLabel()])->all())
+                ->icons(collect(TicketOpening::forSupport())->mapWithKeys(fn (TicketOpening $opening): array => [$opening->value => $opening->getIcon()])->all())
+                ->default(TicketOpening::OnBehalf->value)
+                ->inline()
+                ->required()
+                ->live()
+                ->helperText(fn (Get $get): ?string => TicketOpening::tryFrom((string) $get('opening'))?->getDescription())
+                ->hintAction(Help::action('tma.tickets.prepares', __('Trois façons d’écrire au client')))
+                ->visible(fn (string $operation): bool => Tma::isMaster() && $operation === 'create')
+                ->columnSpanFull(),
             Grid::make(3)->columnSpanFull()
                 ->visible(fn (string $operation): bool => Tma::isMaster() && $operation === 'create')
                 ->schema([
@@ -39,7 +53,7 @@ class TicketForm
                         ->required()
                         ->live()
                         ->hintAction(Help::action('tma.tickets.prepares', __('Préparer un ticket pour un client'))),
-                    Select::make('requester_id')->label(__('Demandeur'))
+                    Select::make('requester_id')->label(fn (Get $get): string => (TicketOpening::tryFrom((string) $get('opening')) ?? TicketOpening::OnBehalf)->requesterLabel())
                         ->options(function (Get $get): array {
                             $instance = Instance::forUid($get('instance_uid'));
 
@@ -51,9 +65,9 @@ class TicketForm
                         ->helperText(__('Les utilisateurs de l’application qui ont accès au Support.'))
                         ->searchable()
                         ->required()
-                        ->hintAction(Help::action('tma.tickets.prepares', __('Qui peut être demandeur ?'))),
+                        ->hintAction(Help::action('tma.tickets.prepares', __('Qui peut-on choisir ?'))),
                     DateTimePicker::make('publish_at')->label(__('Publication programmée'))
-                        ->helperText(__('Vide : vous publierez à la main.'))
+                        ->helperText(__('Pour « Enregistrer le brouillon » ; vide, vous publierez à la main.'))
                         ->minDate(now())->seconds(false)
                         ->hintAction(Help::action('tma.tickets.prepares', __('Quand le client le verra-t-il ?'))),
                 ]),

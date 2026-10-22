@@ -91,6 +91,7 @@ Une personne, dans l'application où elle existe.
   "source_instance_uid": "01K…", "created_on_instance_uid": "01K…",
   "title": "Export des parrains", "description": "<p>…</p>",
   "priority": "low|normal|high|urgent",
+  "opening": "request|on_behalf|outreach|notice",
   "state": "draft|submitted|in_progress|awaiting_requester|paused|pending_validation|closed|cancelled",
   "task_ulid": null,
   "requester": { "…acteur" }, "assignee": { "…acteur" } , "created_by": { "…acteur" },
@@ -106,6 +107,10 @@ Une personne, dans l'application où elle existe.
 `files_count`, `file_uuids` : les pièces jointes du ticket, sans leur contenu. Dans un état complet, celle qui reçoit
 retire celles qui n'y sont plus ; s'il lui en manque, elle réclame le ticket par son ulid dans `missing_media`, et les
 reçoit par `POST media/ticket/{ulid}`. Absents (application d'avant), rien ne change.
+
+`opening` : comment le ticket s'est ouvert — une demande du client (`request`), le Support au nom d'un client
+(`on_behalf`), le Support qui s'adresse au client et attend sa réponse (`outreach`), ou qui l'informe (`notice`, clos dès
+sa publication). Absent (application d'avant), ce qu'on sait reste.
 
 `task_ulid` : la tâche projet dont le ticket est parti (« Créer un ticket » sur sa fiche), ou null. Celle qui reçoit
 le relie à sa copie de la tâche si elle la connaît ; absent, le lien qu'elle sait reste.

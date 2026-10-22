@@ -18,6 +18,6 @@ brouillon, il ne quitte pas cette application.
 - tout ce qui est partagé est copié d'une application à l'autre (voir [La synchronisation](#modal-tma.synchronisation)).
 
 Le Support peut aussi **préparer** un ticket pour un client, au nom de l'un de ses correspondants, et le publier tout
-de suite ou à une date (voir [Les tickets préparés](#modal-tma.tickets.prepares)).
+de suite ou à une date (voir [Les tickets écrits par le Support](#modal-tma.tickets.prepares)).
 
 Si le Support ne répond pas au moment de la transmission, elle est annulée et un message le dit : réessayez plus tard.

@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas;
 
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -71,7 +72,13 @@ class TicketInfolist
                         ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
                         ->placeholder('—'),
                     TextEntry::make('priority')->label(__('Priorité'))->badge(),
-                    TextEntry::make('requester.name')->label(__('Demandeur')),
+                    // « Demandeur », ou « Adressé à » quand le Support écrit au client ; au nom d'un client, qui l'a écrit.
+                    TextEntry::make('requester.name')->label(fn (Ticket $record): string => $record->opening->requesterLabel())
+                        ->helperText(fn (Ticket $record): ?string => match (true) {
+                            $record->opening === TicketOpening::OnBehalf && $record->createdBy !== null => __('Créé par :author en son nom.', ['author' => $record->createdBy->name]),
+                            $record->opening === TicketOpening::Notice => __('Pour information : pas de réponse attendue.'),
+                            default => null,
+                        }),
                     TextEntry::make('assignee.name')->label(__('Contact au Support'))->placeholder('—'),
                     TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
                         ->visible(fn (Ticket $record): bool => $record->paused_until !== null),

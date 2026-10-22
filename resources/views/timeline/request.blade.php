@@ -2,8 +2,8 @@
     use CharlesStOlive\FilamentTma\Models\ProjectTask;
 
     /**
-     * La demande d'un ticket (ou la description d'une tâche), en tête de l'historique : qui l'a écrite, pour qui,
-     * quand, son texte et ses fichiers. Une tâche s'y lit comme le premier message : son auteur, l'heure de sa
+     * La demande d'un ticket (ou la description d'une tâche), en tête de l'historique : qui l'a écrite, pour qui (au nom
+     * de qui, ou à qui quand le Support écrit au client), quand, son texte et ses fichiers. Une tâche s'y lit comme le premier message : son auteur, l'heure de sa
      * publication (prévue, tant qu'elle est en brouillon), sa description.
      *
      * Le premier passage hors du brouillon (`$opening` : transmettre, publier) s'affiche avec elle.
@@ -21,7 +21,7 @@
 @endphp
 <header class="fi-tma-entry-header">
     @unless ($isTask)
-        <x-filament::badge color="gray" size="sm" icon="heroicon-m-lifebuoy">{{ __('Demande') }}</x-filament::badge>
+        <x-filament::badge color="gray" size="sm" :icon="$subject->opening->fromSupport() ? $subject->opening->getIcon() : 'heroicon-m-lifebuoy'">{{ $subject->opening->badge() }}</x-filament::badge>
     @endunless
     @if ($author)
         <strong>{{ $author->name }}</strong>
@@ -30,7 +30,12 @@
         @endif
     @endif
     @if ($for)
-        <span class="fi-tma-entry-instance">{{ __('pour :name', ['name' => $for->name]) }}</span>
+        {{-- Au nom d'un client (un courriel recopié par le Support), adressé à quelqu'un du client, ou pour lui. --}}
+        <span class="fi-tma-entry-instance">{{ match (true) {
+            $subject->opening === \CharlesStOlive\FilamentTma\Enums\TicketOpening::OnBehalf => __('au nom de :name', ['name' => $for->name]),
+            $subject->opening->fromSupport() => __('à :name', ['name' => $for->name]),
+            default => __('pour :name', ['name' => $for->name]),
+        } }}</span>
     @endif
     @if ($opening ?? null)
         @include('filament-tma::timeline.move', ['transition' => $opening, 'author' => $author, 'moveLabels' => $moveLabels, 'states' => $states])

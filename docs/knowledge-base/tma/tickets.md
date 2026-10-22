@@ -105,12 +105,13 @@ jours**, il est clos automatiquement. Le demandeur est averti **7 jours avant** 
 direct, sinon son bilan du matin), puis la clôture arrive dans sa cloche et son bilan. Sa réponse, ou une simple note,
 remet le compte à zéro. Voir [Rappels et notifications](#modal-tma.notifications).
 
-## Les tickets préparés par le Support
+## Les tickets écrits par le Support
 
-Le Support peut ouvrir un ticket **pour** un client, au nom de l'un de ses correspondants : il choisit l'application,
-puis le demandeur parmi ses correspondants du Support. Le ticket reste **invisible** chez le client tant
-qu'il est en brouillon ; **Publier chez EDM** l'y fait apparaître, tout de suite ou à la date de **publication
-programmée**.
+Le Support peut ouvrir un ticket pour un client de trois façons : **au nom** de l'un de ses correspondants (sa demande,
+reçue par courriel…), en **s'adressant** à lui (une idée, une question : il attend sa réponse), ou pour l'**informer**
+(le ticket est clos aussitôt). La personne du client est alors **Demandeur**, ou **Adressé à** quand le Support lui
+écrit. Il le publie tout de suite, ou le garde en brouillon. Voir
+[Les tickets écrits par le Support](#modal-tma.tickets.prepares).
 
 ## En détail
 
@@ -122,4 +123,4 @@ programmée**.
 - [Retirer, refuser](#modal-tma.tickets.annuler)
 - [Les forçages](#modal-tma.tickets.forcages)
 - [La clôture automatique](#modal-tma.tickets.cloture-automatique)
-- [Les tickets préparés par le Support](#modal-tma.tickets.prepares)
+- [Les tickets écrits par le Support](#modal-tma.tickets.prepares)

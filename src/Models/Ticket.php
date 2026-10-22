@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Models\Concerns\HasAttachments;
 use CharlesStOlive\FilamentTma\Models\Concerns\IsTrackable;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
@@ -43,6 +44,7 @@ use Spatie\ModelStates\HasStates;
  * @property string $title
  * @property string|null $description
  * @property Priority $priority
+ * @property TicketOpening $opening comment il s'est ouvert : demande du client, ou écrit par le Support
  * @property TicketState $state
  * @property SyncStatus $sync_status
  */
@@ -61,6 +63,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
 
     protected $attributes = [
         'priority' => 'normal',
+        'opening' => 'request',
         'sync_status' => 'local',
     ];
 
@@ -69,6 +72,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
         return [
             'state' => TicketState::class,
             'priority' => Priority::class,
+            'opening' => TicketOpening::class,
             'sync_status' => SyncStatus::class,
             'publish_at' => 'datetime',
             'submitted_at' => 'datetime',

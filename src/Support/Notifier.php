@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Enums\NoticeMode;
 use CharlesStOlive\FilamentTma\Enums\NoticeTone;
 use CharlesStOlive\FilamentTma\Enums\RecipientRole;
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Notice;
@@ -104,7 +105,7 @@ final class Notifier
         $side = rescue(fn (): ?Side => TicketState::make($transition->to_state, $subject)->inHandsOf(), null, false);
         $requesterSide = self::requesterSide($subject);
         // Le Support ouvre un ticket pour le client : chez le client, il attend ses destinataires.
-        $opened = in_array($move, ['publish', 'auto-publish'], true) && Tma::isClient();
+        $opened = in_array($move, ['publish', 'auto-publish'], true) && Tma::isClient() && $subject->opening !== TicketOpening::Notice;
         // Une demande qui arrive, ou un ticket ouvert pour soi : on cite ce qui est demandé.
         $excerpt = in_array($move, ['transmit', 'publish', 'auto-publish'], true)
             ? self::excerpt($subject->description)
@@ -126,7 +127,8 @@ final class Notifier
             $target = $holds || $opened;
             $tone = match (true) {
                 $target => NoticeTone::Action,
-                in_array($move, self::OUTCOMES, true) => NoticeTone::Outcome,
+                // Une information du Support se lit comme une fin de ticket : la cloche et le bilan.
+                in_array($move, self::OUTCOMES, true), $opened === false && $subject->opening === TicketOpening::Notice && in_array($move, ['publish', 'auto-publish'], true) => NoticeTone::Outcome,
                 default => NoticeTone::Info,
             };
 
@@ -533,11 +535,22 @@ final class Notifier
                 'action' => __('Reprendre le traitement de la demande.'),
                 'button' => __('Ouvrir le ticket'),
             ],
-            'publish', 'auto-publish' => [
-                'headline' => __('Le Support a ouvert un ticket pour vous'),
-                'action' => __('En prendre connaissance.'),
-                'button' => __('Voir le ticket'),
-            ],
+            'publish', 'auto-publish' => match ($ticket->opening) {
+                TicketOpening::Outreach => [
+                    'headline' => __('Le Support vous écrit et attend votre réponse'),
+                    ...self::expectedNow($ticket, $user, AwaitingRequester::class),
+                ],
+                TicketOpening::OnBehalf => [
+                    'headline' => __('Le Support a ouvert un ticket en votre nom'),
+                    'action' => __('En prendre connaissance : le Support y répond.'),
+                    'button' => __('Voir le ticket'),
+                ],
+                default => [
+                    'headline' => __('Le Support a ouvert un ticket pour vous'),
+                    'action' => __('En prendre connaissance.'),
+                    'button' => __('Voir le ticket'),
+                ],
+            },
             'request-answer', 'submit-for-validation' => [
                 'headline' => $move === 'request-answer' ? __('Le Support attend votre réponse') : __('Votre demande est résolue : à confirmer'),
                 ...self::expectedNow($ticket, $user, $move === 'request-answer' ? AwaitingRequester::class : PendingValidation::class),
@@ -627,7 +640,12 @@ final class Notifier
             $transition->move === 'cancel' => __(':who a retiré la demande.', $replace),
             $transition->move === 'refuse' => __(':who a refusé la demande.', $replace),
             $transition->move === 'auto-close' => __('Restée sans réponse, la demande a été close automatiquement.'),
-            in_array($transition->move, ['publish', 'auto-publish'], true) => __('Le Support a ouvert ce ticket pour vous.'),
+            in_array($transition->move, ['publish', 'auto-publish'], true) => match ($ticket->opening) {
+                TicketOpening::OnBehalf => __('Le Support a ouvert ce ticket en votre nom : il y répond.'),
+                TicketOpening::Outreach => __(':who vous écrit et attend votre réponse.', $replace),
+                TicketOpening::Notice => __(':who vous informe : pas de réponse attendue.', $replace),
+                default => __('Le Support a ouvert ce ticket pour vous.'),
+            },
             default => __(':who : « :move ».', [...$replace, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($transition->move)->labelFor($ticket), $transition->move, false)]),
         };
     }

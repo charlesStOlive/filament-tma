@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentTma\Workflow;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Events\TicketCreated;
 use CharlesStOlive\FilamentTma\Events\TicketTransitioned;
 use CharlesStOlive\FilamentTma\Models\Actor;
@@ -302,6 +303,8 @@ class TicketWorkflow
 
         $ticket = Ticket::create([
             ...collect($attributes)->only(['title', 'description', 'priority', 'publish_at', 'task_id'])->all(),
+            // Au nom d'un client, ou le Support qui s'adresse à lui, ou qui l'informe.
+            'opening' => in_array($opening = TicketOpening::tryFrom((string) ($attributes['opening'] ?? '')), TicketOpening::forSupport(), true) ? $opening : TicketOpening::OnBehalf,
             'source_instance_uid' => $instance->uid,
             'created_on_instance_uid' => Tma::instanceUid(),
             'client_type' => $instance->client_type,

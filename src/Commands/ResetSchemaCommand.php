@@ -40,6 +40,7 @@ class ResetSchemaCommand extends Command
         'create_tma_notices_and_audits_tables',
         'move_tma_notification_preferences_to_user_options',
         'add_estimate_and_members_to_tma_projects',
+        'add_opening_to_tma_tickets_table',
     ];
 
     /** Les migrations d'avant la remise à plat du 16/10/2026. */

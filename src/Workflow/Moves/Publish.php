@@ -3,9 +3,9 @@
 namespace CharlesStOlive\FilamentTma\Workflow\Moves;
 
 use CharlesStOlive\FilamentTma\Enums\Side;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
-use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -13,7 +13,9 @@ use CharlesStOlive\FilamentTma\Workflow\Move;
 
 /**
  * Le maître publie un ticket qu'il a préparé pour un client (addendum §3) : invisible jusque-là, il part chez le
- * client, au nom de son demandeur ; son auteur en est le contact au Support.
+ * client ; son auteur en est le contact au Support. Où il en est ensuite dépend de comment il s'est ouvert
+ * (`Enums\TicketOpening`) : au nom d'un client, c'est au Support d'y répondre ; quand le Support s'adresse au client,
+ * il attend sa réponse ; une information est close aussitôt.
  */
 class Publish extends Move
 {
@@ -49,7 +51,7 @@ class Publish extends Move
 
     public function to(Ticket $ticket): string
     {
-        return Submitted::class;
+        return $ticket->opening->publishedState();
     }
 
     public function sides(): array
@@ -76,5 +78,11 @@ class Publish extends Move
     {
         $ticket->submitted_at = now();
         $ticket->publish_at = null;
+
+        match ($ticket->opening) {
+            TicketOpening::Outreach => $ticket->waiting_since = now(),
+            TicketOpening::Notice => $ticket->closed_at = now(),
+            default => null,
+        };
     }
 }

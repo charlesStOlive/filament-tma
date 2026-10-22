@@ -8,10 +8,13 @@ use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
+use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +22,8 @@ use Livewire\Attributes\Url;
 
 /**
  * Une demande commence en brouillon, au nom de l'utilisateur connecté (`TicketWorkflow::create()`). Dans le maître,
- * c'est un ticket préparé pour un client, au nom de l'un de ses utilisateurs (`createForClient()`).
+ * c'est un ticket préparé pour un client (`createForClient()`) : au nom de l'un de ses correspondants, ou le Support
+ * qui s'adresse à lui, ou qui l'informe (`Enums\TicketOpening`) ; publié tout de suite, ou gardé en brouillon.
  *
  * Depuis une tâche projet (`?task=…`, le bouton « Créer un ticket » de sa fiche), le ticket en reprend le titre, la
  * description et l'application, et reste lié à elle. Dans le maître, `?instance=…` choisit d'avance l'application : un
@@ -72,9 +76,45 @@ class CreateTicket extends CreateRecord
         ]);
     }
 
+    /** « Publier chez EDM » plutôt qu'« Enregistrer le brouillon » (maître). */
+    public bool $publishNow = false;
+
     protected function getHeaderActions(): array
     {
         return $this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]);
+    }
+
+    /**
+     * Dans le maître, deux façons d'enregistrer : « Publier chez EDM » (le client le voit tout de suite) ou
+     * « Enregistrer le brouillon » (invisible du client, publié à la main ou à la date programmée).
+     */
+    protected function getFormActions(): array
+    {
+        if (! Tma::isMaster()) {
+            return parent::getFormActions();
+        }
+
+        return [
+            Action::make('createAndPublish')
+                ->label(fn (): string => Terms::publish($this->data['instance_uid'] ?? null))
+                ->icon('heroicon-m-megaphone')
+                ->action(function (): void {
+                    $this->publishNow = true;
+                    $this->create();
+                }),
+            $this->getCreateFormAction()->label(__('Enregistrer le brouillon'))->color('gray'),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function afterCreate(): void
+    {
+        /** @var Ticket $ticket */
+        $ticket = $this->getRecord();
+
+        if ($this->publishNow && Tma::isMaster()) {
+            app(TicketWorkflow::class)->run($ticket, 'publish', [], Context::current());
+        }
     }
 
     public function getSubheading(): ?string

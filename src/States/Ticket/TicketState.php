@@ -61,6 +61,9 @@ abstract class TicketState extends State implements HasFilamentState, HasFilamen
             ->registerState([Draft::class, Submitted::class, InProgress::class, AwaitingRequester::class, Paused::class, PendingValidation::class, Closed::class, Cancelled::class])
             // Transmettre, publier ; retirer sa demande, la refuser.
             ->allowTransition(Draft::class, Submitted::class)
+            // Un ticket préparé par le Support qui s'adresse au client, ou qui l'informe (`Enums\TicketOpening`).
+            ->allowTransition(Draft::class, AwaitingRequester::class)
+            ->allowTransition(Draft::class, Closed::class)
             ->allowTransition([Draft::class, Submitted::class], Cancelled::class)
             ->allowTransition([AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
             // Le Support répond dès qu'une demande arrive : plus de « prise en charge ».

@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentStateFusionEnhanced\Tables\Filters\StateFusionSelectF
 use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\Side;
 use CharlesStOlive\FilamentTma\Enums\SyncStatus;
+use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\CreateTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\EditTicket;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Pages\ListTickets;
@@ -174,7 +175,13 @@ class TicketResource extends Resource implements HasKnowledgeBase
                         default => 'gray',
                     }),
                 TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
-                TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable(),
+                // Quand le Support écrit au client, sa personne n'est pas demandeur : on le dit dessous.
+                TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable()
+                    ->description(fn (Ticket $record): ?string => match (true) {
+                        $record->opening->fromSupport() => __('adressé par le Support'),
+                        $record->opening === TicketOpening::OnBehalf => __('en son nom, par le Support'),
+                        default => null,
+                    }),
                 TextColumn::make('assignee.name')->label(__('Contact au Support'))->placeholder('—')->toggleable(),
                 TextColumn::make('sync_status')->label(__('Synchro'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
