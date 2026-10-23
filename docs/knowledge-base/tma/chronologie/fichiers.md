@@ -11,17 +11,30 @@ On joint des fichiers à un ticket, à une tâche projet ou à un message : jusq
 
 ## Les types acceptés
 
-Images (PNG, JPEG, GIF, WebP), PDF, texte et CSV, ZIP, documents Word, Excel, PowerPoint et OpenDocument.
+Images (PNG, JPEG, GIF, WebP), PDF, texte et CSV, **Markdown** (`.md`), ZIP, documents Word (`.docx`), Excel
+(`.xlsx`), PowerPoint (`.pptx`) et OpenDocument.
 
-Le type est vérifié sur le **contenu réel** du fichier, pas seulement sur son nom. Un script, un exécutable, un SVG
-sont refusés.
+Le type est vérifié sur le **contenu réel** du fichier, et l'extension doit aller avec : un faux PDF, une page HTML,
+un script, un exécutable, un SVG sont refusés.
+
+## Pas de macro
+
+Un document Word, Excel, PowerPoint ou OpenDocument est **refusé s'il contient des macros** ou du contenu actif
+(contrôle ActiveX, objet incorporé, modèle chargé depuis Internet), même renommé (un `.xlsm` rebaptisé `.xlsx`). Un
+message dit pourquoi : enregistrez le document sans macro (`.docx`, `.xlsx`, `.pptx`) et joignez-le de nouveau. Les
+anciens formats (`.doc`, `.xls`, `.ppt`) et les documents protégés par un mot de passe ne sont pas acceptés : on ne
+peut pas vérifier ce qu'ils contiennent.
+
+Un fichier **Markdown** reste du texte, même s'il contient des balises : il se télécharge et s'ouvre dans votre
+éditeur, il ne s'affiche jamais comme une page.
 
 ## Qui peut les ouvrir
 
 Les fichiers sont rangés à part, jamais accessibles par une adresse publique : chaque ouverture vérifie que vous
 pouvez voir le ticket ; le fichier d'une note supprimée ne s'ouvre plus.
 
-Une image s'affiche en vignette ; les autres fichiers se téléchargent.
+Une image s'affiche en vignette ; les autres fichiers (PDF compris) se téléchargent, sans jamais s'exécuter dans
+l'application.
 
 ## Voir une image
 
@@ -38,4 +51,4 @@ Un clic du milieu (ou Ctrl + clic) sur la vignette ouvre l'image dans un nouvel 
 
 ## Entre les applications
 
-Les fichiers d'un message partagé suivent le message chez l'autre application.
+Les fichiers d'un message partagé suivent le message chez l'autre application, qui les contrôle de la même façon.

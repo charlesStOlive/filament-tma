@@ -20,6 +20,7 @@ use CharlesStOlive\FilamentTma\States\Ticket\AwaitingRequester;
 use CharlesStOlive\FilamentTma\States\Ticket\PendingValidation;
 use CharlesStOlive\FilamentTma\States\Ticket\Submitted;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use CharlesStOlive\FilamentTma\Workflow\Questions;
 use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
@@ -35,7 +36,8 @@ use Illuminate\Support\Str;
  *   direct, sinon son bilan du matin. Une fin de ticket (`NoticeTone::Outcome`) va dans la cloche et le bilan. Une
  *   relance faite à la main part toujours par courriel ; le rappel de ce qui ne bouge plus, seulement dans le bilan.
  * - **Tâche.** Chez le client, la cloche et le bilan de la semaine, jamais de courriel, sauf « Informer par courriel »
- *   (un message marqué `meta.notify`). Dans le maître, le Support n'apprend que ce que le client écrit sur une tâche,
+ *   (un message marqué `meta.notify`). Une question du Support (`Workflow\Questions`) engage, elle : à qui elle est
+ *   posée, comme un ticket qui l'attend. Dans le maître, le Support n'apprend que ce que le client écrit sur une tâche,
  *   comme une action.
  * - Un secondaire ne l'apprend que dans son bilan (« En copie ») ; les autres, rien.
  *
@@ -361,7 +363,8 @@ final class Notifier
 
         $who = self::who($transition->actor);
         $line = match ($transition->move) {
-            'publish', 'auto-publish' => __('Le Support a publié une tâche pour vous.'),
+            // La tâche est le travail du Support : le client la suit, il n'a rien à en faire.
+            'publish', 'auto-publish' => $task->project_id !== null ? __('Le Support a ajouté cette tâche au projet.') : __('Le Support a ouvert cette tâche.'),
             'complete' => __(':who a terminé la tâche.', ['who' => $who]),
             'cancel' => __(':who a annulé la tâche.', ['who' => $who]),
             'reopen' => __(':who a rouvert la tâche.', ['who' => $who]),
@@ -391,10 +394,18 @@ final class Notifier
                 return;
             }
 
+            $answers = ! $entry->isNote() && $entry->parent?->isQuestion();
+
             foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
                 self::send($user, $entry->isNote() ? NoticeEvent::Note : NoticeEvent::Message, $task, $key, [
-                    'line' => $entry->isNote() ? __(':who a écrit une note sur la tâche.', ['who' => $who]) : __(':who a commenté la tâche.', ['who' => $who]),
-                    'headline' => __(':who a commenté la tâche', ['who' => self::who($author, short: true)]),
+                    'line' => match (true) {
+                        $entry->isNote() => __(':who a écrit une note sur la tâche.', ['who' => $who]),
+                        $answers => __(':who a répondu à la question du Support.', ['who' => $who]),
+                        default => __(':who a commenté la tâche.', ['who' => $who]),
+                    },
+                    'headline' => $answers
+                        ? __(':who a répondu à votre question', ['who' => self::who($author, short: true)])
+                        : __(':who a commenté la tâche', ['who' => self::who($author, short: true)]),
                     'excerpt' => $excerpt,
                     'action' => __('Lui répondre dans la tâche, si besoin.'),
                     'button' => __('Ouvrir la tâche'),
@@ -404,10 +415,18 @@ final class Notifier
             return;
         }
 
+        if ($entry->isQuestion()) {
+            self::question($task, $entry);
+
+            return;
+        }
+
         $informed = ! empty($entry->meta['notify']);
         $line = match (true) {
             $informed => __(':who vous informe :', ['who' => $who]),
             $entry->isNote() => __(':who a écrit une note.', ['who' => $who]),
+            $entry->parent?->isQuestion() && $author?->instance_uid === $task->clientInstanceUid() => __(':who a répondu à la question du Support.', ['who' => $who]),
+            $entry->parent?->isQuestion() => __(':who a ajouté un message à la question du Support.', ['who' => $who]),
             default => __(':who a écrit un message.', ['who' => $who]),
         };
 
@@ -420,6 +439,53 @@ final class Notifier
                     'headline' => $informed ? __('Le Support vous informe') : null,
                 ], $role, NoticeTone::Info, forceMail: $informed && $role === RecipientRole::Primary);
             }
+        }
+    }
+
+    /**
+     * Client : une question du Support sur une tâche. À qui elle est posée, c'est une action, comme un ticket qui
+     * l'attend (même s'il n'est qu'en copie de la tâche) ; les autres destinataires le lisent pour information.
+     */
+    private static function question(ProjectTask $task, Entry $question): void
+    {
+        $who = self::who($question->author);
+        $key = "entry:{$question->ulid}";
+        $excerpt = self::excerpt($question->body);
+        $addressees = self::keyed(Questions::addressees($question));
+
+        foreach ($addressees as $user) {
+            self::send($user, NoticeEvent::Question, $task, $key, [
+                'line' => __(':who vous pose une question.', ['who' => $who]),
+                'headline' => __('Le Support vous pose une question'),
+                'excerpt' => $excerpt,
+                'action' => __('Répondre à la question, dans la tâche.'),
+                'button' => __('Répondre'),
+            ], RecipientRole::Primary, NoticeTone::Action);
+        }
+
+        $line = __(':who a posé une question à :names.', ['who' => $who, 'names' => implode(', ', Questions::names($question))]);
+
+        foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
+            if (! $addressees->has((string) $user->getAuthIdentifier()) && ! $question->author?->isUser($user)) {
+                self::send($user, NoticeEvent::Message, $task, $key, ['line' => $line, 'excerpt' => $excerpt], $role, NoticeTone::Info);
+            }
+        }
+    }
+
+    /** Client : le Support a retiré sa question ; qui devait y répondre l'apprend dans la cloche. */
+    public static function questionWithdrawn(Entry $question): void
+    {
+        $task = $question->subject;
+
+        if (self::$muted || ! $task instanceof ProjectTask || Tma::isMaster()) {
+            return;
+        }
+
+        foreach (Questions::addressees($question) as $user) {
+            self::send($user, NoticeEvent::Question, $task, "question-withdrawn:{$question->ulid}", [
+                'line' => __('Le Support a retiré sa question : plus besoin d’y répondre.'),
+                'excerpt' => self::excerpt($question->body),
+            ], RecipientRole::Primary, NoticeTone::Info);
         }
     }
 

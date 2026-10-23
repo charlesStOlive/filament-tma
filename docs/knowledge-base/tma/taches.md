@@ -36,6 +36,9 @@ de droite (voir [Le temps passé](#modal-tma.temps)).
 En tête de l'historique, la tâche se lit comme un premier message : son auteur, l'heure de sa publication, sa
 description.
 
+Un message sur une tâche est **pour information**. Pour attendre une réponse du client, **Poser une question**, à côté
+d'**Envoyer le message** (voir [Poser une question au client](#modal-tma.taches.questions)).
+
 Le Support **modifie** une tâche (titre, description, dates, projet) à tout moment, même terminée : **⋮ ›
 Modifier**. L'échéance, facultative, n'apparaît (à la création comme à la modification) qu'avec **Tout afficher** ;
 cachée, elle ne change pas. Une tâche publiée ne change plus d'application : son projet se choisit parmi ceux de la
@@ -69,6 +72,9 @@ participe par l'[historique](#modal-tma.chronologie) : messages (dans **Nouveau 
 images, réponses. Une tâche **terminée** se commente encore ; une tâche **annulée** n'accepte plus que des notes. On
 ne crée pas de tâche et on ne change pas son état, sauf un membre du Support, qui y travaille au nom du Support
 (Terminer, Annuler, Rouvrir). Y écrire demande les droits des tâches (`tma.task.comment`, `tma.task.note`).
+
+Une **question du Support** attend votre réponse : **Répondre**, sous elle (voir
+[Poser une question au client](#modal-tma.taches.questions)).
 
 ## Le volet de la tâche
 
@@ -109,4 +115,5 @@ saisies ; chez le client, les totaux que le Support lui envoie.
 
 - [Les projets](#modal-tma.projets)
 - [Publier une tâche](#modal-tma.taches.publication)
+- [Poser une question au client](#modal-tma.taches.questions)
 - [Début et échéance d'une tâche](#modal-tma.taches.periode)

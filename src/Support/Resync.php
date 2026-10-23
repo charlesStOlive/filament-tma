@@ -22,6 +22,7 @@ use Illuminate\Support\Collection;
  *   application (`GET users`, sans le cache).
  * - Les tickets et les tâches publiées : `push()` les renvoie (`PushToInstance`, par la file), avec leurs projets,
  *   leurs entrées, leurs fichiers et les noms à jour.
+ * - Les projets, même sans tâche publiée : `pushProjects()` (`PushProjectToInstance`, par la file).
  */
 final class Resync
 {
@@ -109,6 +110,40 @@ final class Resync
 
             $subject->forceFill(['sync_status' => SyncStatus::Pending])->saveQuietly();
             rescue(fn () => PushToInstance::dispatch($subject));
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Les projets que le maître envoie à une application (ou à toutes).
+     *
+     * @return Collection<int, Project>
+     */
+    public static function projects(?Instance $instance = null): Collection
+    {
+        return Project::query()
+            ->when($instance, fn ($query) => $query->where('target_instance_uid', $instance->uid))
+            ->get();
+    }
+
+    /**
+     * Renvoie des projets à leur application (dans le maître seulement).
+     *
+     * @param  iterable<Project>  $projects
+     * @return int le nombre d'envois demandés
+     */
+    public static function pushProjects(iterable $projects): int
+    {
+        if (! Tma::isMaster()) {
+            return 0;
+        }
+
+        $count = 0;
+
+        foreach ($projects as $project) {
+            $project->pushToClient();
             $count++;
         }
 

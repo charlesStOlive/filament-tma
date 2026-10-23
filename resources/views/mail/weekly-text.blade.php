@@ -2,7 +2,7 @@
 
 {!! $heading !!}
 
-{!! mb_strtoupper(__('Pour information')) !!} : {!! __('Aucune action n’est attendue de votre part.') !!}
+{!! mb_strtoupper(__('Pour information')) !!} : {!! $boxText !!}
 @foreach ($projects as $project)
 
 === {!! $project['title'] !!} ===

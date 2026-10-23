@@ -263,7 +263,11 @@ return [
     | Pièces jointes
     |--------------------------------------------------------------------------
     |
-    | Disque privé (jamais servi directement par le serveur web) ; liste blanche des types ; taille en Ko.
+    | Disque privé (jamais servi directement par le serveur web) ; liste blanche des types, contrôlée sur le contenu
+    | réel avec une extension qui va avec (`Support\Attachments`) ; taille en Ko. Un Markdown (`.md`) est du texte,
+    | enregistré en `text/markdown`. Un document Office ou OpenDocument est refusé s'il contient des macros, des
+    | contrôles ActiveX ou des objets OLE, ou s'il dépasse `max_unpacked_mb` une fois décompressé. Tout se télécharge,
+    | sans être interprété ; seules les images s'affichent.
     |
     */
 
@@ -271,6 +275,7 @@ return [
         'disk' => env('TMA_ATTACHMENTS_DISK', 'local'),
         'max_size_kb' => 10240,
         'max_files' => 10,
+        'max_unpacked_mb' => 250,
         'accepted_types' => [
             'image/png',
             'image/jpeg',
@@ -279,6 +284,7 @@ return [
             'application/pdf',
             'text/plain',
             'text/csv',
+            'text/markdown',
             'application/zip',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

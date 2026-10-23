@@ -40,6 +40,7 @@ use CharlesStOlive\FilamentTma\Listeners\QueuePush;
 use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
 use CharlesStOlive\FilamentTma\Workflow\TaskWorkflow;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
@@ -52,6 +53,7 @@ use Illuminate\Support\Facades\Event;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class FilamentTmaServiceProvider extends PackageServiceProvider
 {
@@ -115,6 +117,9 @@ class FilamentTmaServiceProvider extends PackageServiceProvider
 
         TmaGate::registerResource(Ticket::class, TicketResource::class);
         TmaGate::registerResource(ProjectTask::class, TaskResource::class);
+
+        // Une pièce jointe s'enregistre sous son type contrôlé (un Markdown reste `text/markdown`, même balisé).
+        config('media-library.media_model', Media::class)::creating(fn (Media $media) => Attachments::normalize($media));
 
         // Le temps passé d'un membre du Support, dans le volet d'une fiche (`HasInfoPane::timeBlock()`).
         Livewire::component('filament-tma.agent-time-entries', AgentTimeEntries::class);

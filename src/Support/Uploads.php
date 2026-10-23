@@ -3,14 +3,22 @@
 namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentTma\Models\Entry;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Filesystem;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Range des fichiers envoyés (par un formulaire Filament, sur le disque des pièces jointes) dans la collection
- * `attachments` d'un ticket ou d'une entrée. medialibrary les déplace et contrôle leur type réel.
+ * `attachments` d'un ticket ou d'une entrée, une fois contrôlés (`Attachments::problem()` : type réel, extension,
+ * macros). medialibrary les déplace.
+ *
+ * medialibrary ne tient pas à jour la liste des fichiers déjà chargée sur le modèle quand on en ajoute ou en retire :
+ * après chaque changement, `fresh()` la relit, sinon ce qui part ensuite vers l'autre application (`Payload`) ou
+ * ce qu'on y compare (`Mirror`) serait l'ancienne liste.
  */
 final class Uploads
 {
@@ -21,11 +29,22 @@ final class Uploads
 
         foreach ($uploads as $upload) {
             $original = $upload['name'] ?? basename($upload['path']);
+            Attachments::assertAcceptable(Attachments::problemOnDisk($upload['path'], $disk, $original));
 
             $model->addMediaFromDisk($upload['path'], $disk)
                 ->usingName(pathinfo($original, PATHINFO_FILENAME))
                 ->usingFileName(self::safeFileName($original))
                 ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
+        }
+
+        self::fresh($model);
+    }
+
+    /** Relit la liste des fichiers du modèle, après un ajout ou un retrait. */
+    public static function fresh(HasMedia $model): void
+    {
+        if ($model instanceof Model && $model->exists) {
+            $model->load('media');
         }
     }
 
@@ -39,7 +58,8 @@ final class Uploads
     }
 
     /**
-     * Retire des fichiers joints, par identifiant (`uuidOf()`).
+     * Retire des fichiers joints, par identifiant (`uuidOf()`). Dans une transaction, le fichier ne quitte le disque
+     * qu'une fois elle validée : annulée (le maître n'a pas répondu…), la pièce jointe reste entière.
      *
      * @param  array<int, string>  $uuids
      */
@@ -51,7 +71,12 @@ final class Uploads
 
         $model->getMedia(Entry::ATTACHMENTS_COLLECTION)
             ->filter(fn (Media $media): bool => in_array(self::uuidOf($media), $uuids, true))
-            ->each(fn (Media $media) => $media->delete());
+            ->each(function (Media $media): void {
+                $media::withoutEvents(fn () => $media->delete());
+                DB::afterCommit(fn () => app(Filesystem::class)->removeAllFiles($media));
+            });
+
+        self::fresh($model);
     }
 
     /**

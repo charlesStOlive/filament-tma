@@ -17,7 +17,7 @@ dit. On réessaie plus tard ; rien ne part en double.
 
 ## Du Support vers l'application cliente
 
-Ce que fait le Support (question, résolu, note, temps saisi, clôture…) part vers
+Ce que fait le Support (question, résolu, note, temps saisi, clôture, projet créé ou modifié…) part vers
 l'application cliente **par la file d'attente**, en général en quelques secondes. Si elle est indisponible, l'envoi
 est retenté plusieurs fois, de plus en plus espacé ; le travail du Support n'est jamais bloqué.
 
@@ -29,7 +29,7 @@ dernière erreur sur la fiche). **Renvoyer à l'application** (menu de la fiche)
 | Partagé | Jamais partagé |
 | --- | --- |
 | les champs du ticket ou de la tâche, et leurs pièces jointes | le détail des lignes de temps |
-| un projet (fourchette, participants), avec ses tâches publiées | |
+| les projets (fourchette, participants), dès leur création, même sans tâche publiée | |
 | les changements d'état | les brouillons du Support |
 | les messages, réponses, notes et leurs fichiers (modifiés, archivés, supprimés compris) | |
 | les totaux de temps (global et par mois) | |
@@ -52,9 +52,10 @@ Chez le Support, pour remettre d'accord les deux applications (après une panne,
 nom) :
 
 - un ticket ou une tâche : **Renvoyer à l'application**, dans le menu de sa fiche ;
-- un projet : **Renvoyer à l'application** sur sa fiche (ses tâches publiées repartent, avec lui) ;
-- une application entière : **Applications clientes › (l'application) › Tout renvoyer** ; les noms sont d'abord
-  remis à jour (ceux du Support, et ceux des correspondants de l'application) ;
+- un projet : **Renvoyer à l'application** sur sa fiche (il repart, avec ses tâches publiées) ;
+- une application entière : **Applications clientes › (l'application) › Tout renvoyer** (ses projets, ses tickets,
+  ses tâches publiées) ; les noms sont d'abord remis à jour (ceux du Support, et ceux des correspondants de
+  l'application) ;
 - en ligne de commande, dans le maître : `php artisan tma:resync --all` (ou `--instance=`, `--project=`, `--ticket=`,
   `--task=` ; `--names` pour les noms seulement ; `--dry-run` pour voir ce qui partirait).
 

@@ -11,7 +11,7 @@ use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Sync\InstanceClient;
 use CharlesStOlive\FilamentTma\Sync\Payload;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -20,9 +20,10 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Le maître envoie l'état d'un ticket du Support, ou d'une tâche publiée, à son application cliente, puis
  * les fichiers qui lui manquent (ceux des entrées, et les pièces jointes du ticket ou de la tâche). Par la file, avec des tentatives espacées (`api.sync`) : une application indisponible ne bloque pas le
- * travail du Support. Un seul envoi en attente par objet : il part avec l'état du moment.
+ * travail du Support. Un seul envoi en attente par objet : il part avec l'état du moment. L'attente se libère dès
+ * que l'envoi commence : un changement fait pendant qu'il part en demande un autre, au lieu de se perdre.
  */
-class PushToInstance implements ShouldBeUnique, ShouldQueue
+class PushToInstance implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;

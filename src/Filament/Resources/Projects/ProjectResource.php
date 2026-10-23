@@ -209,7 +209,7 @@ class ProjectResource extends Resource implements HasKnowledgeBase
 
     /**
      * Un projet modifié (son application ne change que s'il n'a pas encore de tâche) ; un changement part chez le client
-     * avec ses tâches publiées (`Project::pushToClient()`).
+     * (`Project::pushToClient()`).
      *
      * @param  array<string, mixed>  $data
      */
@@ -288,8 +288,8 @@ class ProjectResource extends Resource implements HasKnowledgeBase
     }
 
     /**
-     * Maître : « Renvoyer à l'application » — les tâches publiées du projet repartent, avec lui (sa fourchette, ses
-     * participants), par la file. Pour qui peut relancer une synchronisation (`tma.task.sync`).
+     * Maître : « Renvoyer à l'application » — le projet (sa fourchette, ses participants) et ses tâches publiées
+     * repartent, par la file. Pour qui peut relancer une synchronisation (`tma.task.sync`).
      */
     public static function resyncAction(): Action
     {
@@ -299,11 +299,14 @@ class ProjectResource extends Resource implements HasKnowledgeBase
             ->color('gray')
             ->visible(fn (Project $record): bool => Tma::isMaster() && TmaGate::allows(auth()->user(), TmaGate::SYNC, new ProjectTask))
             ->action(function (Project $record): void {
+                Resync::pushProjects([$record]);
                 $sent = Resync::push(Resync::subjects(project: $record));
 
                 Notification::make()->success()
-                    ->title($sent > 0 ? __('Envoi demandé') : __('Rien à envoyer'))
-                    ->body($sent > 0 ? trans_choice(':n tâche publiée repart.|:n tâches publiées repartent.', $sent, ['n' => $sent]) : __('Le projet n’a pas de tâche publiée : il ne part chez le client qu’avec elles.'))
+                    ->title(__('Envoi demandé'))
+                    ->body($sent > 0
+                        ? trans_choice('Le projet repart, avec :n tâche publiée.|Le projet repart, avec ses :n tâches publiées.', $sent, ['n' => $sent])
+                        : __('Le projet repart (il n’a pas de tâche publiée).'))
                     ->send();
             });
     }

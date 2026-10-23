@@ -16,6 +16,7 @@ use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Notifier;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Workflow\Recipients;
 use Illuminate\Support\Arr;
@@ -270,8 +271,9 @@ final class Mirror
     }
 
     /**
-     * Le projet d'une tâche reçue : créé au besoin, son titre mis à jour. Une application d'avant les projets
-     * envoyait un simple libellé : il devient un projet, retrouvé par son titre.
+     * Un projet reçu, seul (`POST sync`, `kind` = `project`) ou avec une de ses tâches : créé au besoin, mis à jour,
+     * supprimé ici s'il l'a été dans le maître (`deleted_at`). Une application d'avant les projets envoyait un simple
+     * libellé : il devient un projet, retrouvé par son titre.
      *
      * @param  array<string, mixed>|string|null  $payload
      */
@@ -297,7 +299,7 @@ final class Mirror
             'description' => $payload['description'] ?? null,
             // Un maître d'avant les fourchettes et les participants ne les envoie pas : ce qu'on sait ici reste.
             ...Arr::only($payload, ['estimate_min_days', 'estimate_max_days']),
-            'deleted_at' => null,
+            'deleted_at' => self::date($payload['deleted_at'] ?? null),
         ])->save();
 
         if (array_key_exists('members', $payload)) {
@@ -366,15 +368,22 @@ final class Mirror
         // Les réponses après leur message : le parent doit exister.
         $entries = collect($snapshot['entries'] ?? [])->sortBy(fn (array $entry): int => filled($entry['parent_ulid'] ?? null) ? 1 : 0);
         $newEntries = [];
+        $withdrawn = [];
 
         foreach ($entries as $payload) {
+            // Une question qu'on connaissait ouverte, et que le Support a retirée.
+            $known = filled($payload['meta']['question']['withdrawn_at'] ?? null) ? Entry::query()->where('ulid', $payload['ulid'])->first() : null;
             $entry = self::entry($ticket, $payload);
 
             if ($entry->wasRecentlyCreated) {
                 $newEntries[] = $entry;
             }
 
-            if (($payload['files_count'] ?? 0) > $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)->count() && empty($payload['files'])) {
+            if ($known !== null && blank($known->meta['question']['withdrawn_at'] ?? null)) {
+                $withdrawn[] = $entry;
+            }
+
+            if (empty($payload['files']) && self::lacksFiles($entry, $payload)) {
                 $missing[] = $entry->ulid;
             }
         }
@@ -394,6 +403,10 @@ final class Mirror
             if ($fields !== [] || $after['minutes'] !== $before['minutes']) {
                 Notifier::taskChanged($ticket, $fields, $before['minutes']);
             }
+        }
+
+        foreach ($withdrawn as $question) {
+            Notifier::questionWithdrawn($question);
         }
 
         return ['ticket' => $ticket, 'missing_media' => $missing];
@@ -421,12 +434,18 @@ final class Mirror
                 throw ValidationException::withMessages(['files' => __('Fichier illisible ou trop gros : :name', ['name' => $file['file_name'] ?? '?'])]);
             }
 
+            // Les mêmes contrôles que pour un fichier joint ici : type réel, extension, macros.
+            $fileName = Uploads::safeFileName(basename((string) ($file['file_name'] ?? 'fichier')));
+            Attachments::assertAcceptable(Attachments::problemInContent($content, $fileName), 'files');
+
             $model->addMediaFromString($content)
                 ->usingName((string) ($file['name'] ?? 'fichier'))
-                ->usingFileName(basename((string) ($file['file_name'] ?? 'fichier')))
+                ->usingFileName($fileName)
                 ->withCustomProperties(['remote_uuid' => $file['uuid'] ?? null])
                 ->toMediaCollection(Entry::ATTACHMENTS_COLLECTION);
         }
+
+        Uploads::fresh($model);
     }
 
     /**
@@ -445,7 +464,22 @@ final class Mirror
 
         self::keepFiles($subject, (array) $payload['file_uuids']);
 
-        return (int) ($payload['files_count'] ?? 0) > $subject->getMedia(Entry::ATTACHMENTS_COLLECTION)->count() ? [$subject->ulid] : [];
+        return self::lacksFiles($subject, $payload) ? [$subject->ulid] : [];
+    }
+
+    /**
+     * Il manque ici des fichiers de la liste reçue (`file_uuids`) ; d'une application d'avant cette liste, on n'a que
+     * leur nombre (`files_count`).
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private static function lacksFiles(HasMedia $model, array $payload): bool
+    {
+        $here = $model->getMedia(Entry::ATTACHMENTS_COLLECTION)->map(fn ($media): string => Uploads::uuidOf($media))->all();
+
+        return array_key_exists('file_uuids', $payload)
+            ? array_diff((array) $payload['file_uuids'], $here) !== []
+            : (int) ($payload['files_count'] ?? 0) > count($here);
     }
 
     /**

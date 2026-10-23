@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Events\TaskReceived;
 use CharlesStOlive\FilamentTma\Events\TicketSynced;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Notifier;
@@ -16,8 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * L'API du client pour le maître : il pousse l'état d'un ticket du Support, puis les fichiers qui
- * manquent. Le maître ne peut pousser qu'un ticket de cette application, et ne joue que l'intervenant.
+ * L'API du client pour le maître : il pousse l'état d'un ticket du Support, d'une tâche ou d'un projet, puis les
+ * fichiers qui manquent. Le maître ne peut pousser qu'un ticket de cette application, et ne joue que l'intervenant.
  *
  * Chaque application notifie ses propres utilisateurs : ce que l'état reçu apporte de nouveau (passages, messages,
  * notes) les prévient (`Support\Notifier`), comme l'avertissement de clôture automatique décidé par le maître.
@@ -29,6 +30,10 @@ class SyncController
     {
         if ($request->input('kind') === 'task') {
             return $this->syncTask($request);
+        }
+
+        if ($request->input('kind') === 'project') {
+            return $this->syncProject($request);
         }
 
         $request->validate([
@@ -88,6 +93,30 @@ class SyncController
         }
 
         return response()->json(['missing_media' => $result['missing_media']]);
+    }
+
+    /**
+     * Un projet de cette application, seul : créé à sa première réception, même sans tâche publiée, puis tenu à jour,
+     * jusqu'à sa suppression (`deleted_at`).
+     */
+    private function syncProject(Request $request): JsonResponse
+    {
+        $request->validate([
+            'project' => ['required', 'array'],
+            'project.ulid' => ['required', 'string', 'size:26'],
+            'project.title' => ['required', 'string'],
+            'project.target_instance_uid' => ['required', 'in:'.Tma::instanceUid()],
+            'project.members' => ['array'],
+        ]);
+
+        $known = Project::withTrashed()->where('ulid', $request->input('project.ulid'))->exists();
+
+        // Supprimé dans le maître avant d'arriver ici : rien à recopier.
+        if ($known || blank($request->input('project.deleted_at'))) {
+            DB::transaction(fn () => Mirror::project($request->input('project'), Tma::instanceUid()));
+        }
+
+        return response()->json(['missing_media' => []]);
     }
 
     /**

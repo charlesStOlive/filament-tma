@@ -2,7 +2,9 @@
 
 namespace CharlesStOlive\FilamentTma\Models\Concerns;
 
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\File;
 
 /**
  * Les fichiers d'un ticket ou d'une entrée, par medialibrary, sur le disque privé de la config :
@@ -10,7 +12,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * - `content` : les images insérées dans le texte riche.
  *
  * Les types acceptés sont ceux de `filament-tma.attachments.accepted_types` (liste blanche, contrôlée sur le
- * contenu réel du fichier par medialibrary). Le téléchargement passe par une route qui vérifie les droits.
+ * contenu réel du fichier, avec une extension qui va avec : `Support\Attachments`). Le téléchargement passe par une
+ * route qui vérifie les droits.
  */
 trait HasAttachments
 {
@@ -27,7 +30,7 @@ trait HasAttachments
 
         $this->addMediaCollection(self::ATTACHMENTS_COLLECTION)
             ->useDisk($disk)
-            ->acceptsMimeTypes($types);
+            ->acceptsFile(fn (File $file): bool => Attachments::accepts($file->mimeType, $file->name));
 
         $this->addMediaCollection(self::CONTENT_COLLECTION)
             ->useDisk($disk)

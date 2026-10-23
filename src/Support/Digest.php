@@ -2,11 +2,16 @@
 
 namespace CharlesStOlive\FilamentTma\Support;
 
+use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Models\Actor;
+use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Workflow\Questions;
+use Filament\Facades\Filament;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Ce qui attend un utilisateur, pour le récapitulatif quotidien (CDC §12.1) :
@@ -14,14 +19,16 @@ use Illuminate\Support\Collection;
  * - `answer` : ses demandes qui attendent sa réponse ou sa validation ;
  * - `take` : les tickets soumis à cette application, que personne n'a pris et qu'il peut prendre ;
  * - `mine` : ce qu'il traite (tickets en cours, tâches projet en cours qui lui sont confiées) ;
- * - `resume` : ses pauses qui reprennent aujourd'hui.
+ * - `resume` : ses pauses qui reprennent aujourd'hui ;
+ * - `questions` : les questions du Support qu'on lui pose sur des tâches projet (application cliente,
+ *   `Workflow\Questions`), chacune avec son texte.
  *
  * Une attente plus longue que `notifications.digest.late_after_days` jours est signalée en retard ; une demande qui
  * attend son demandeur dit quand elle sera close sans réponse (`closes_on`).
  */
 final class Digest
 {
-    /** @return array<string, Collection<int, array{ref: string, title: string, state: string, since: ?\DateTimeInterface, late: bool, url: ?string, closes_on: ?\DateTimeInterface}>> */
+    /** @return array<string, Collection<int, array{ref: string, title: string, state: string, since: ?\DateTimeInterface, late: bool, url: ?string, closes_on: ?\DateTimeInterface, lines?: array<int, array{line: string, excerpt: ?string}>}>> */
     public static function for(Authenticatable $user): array
     {
         $actor = Actor::query()->where('instance_uid', Tma::instanceUid())->where('remote_id', (string) $user->getAuthIdentifier())->first();
@@ -64,7 +71,22 @@ final class Digest
             ->get()
             ->map(fn (Ticket $t) => $row($t, $t->paused_until));
 
-        return array_filter(compact('answer', 'take', 'mine', 'resume'), fn (Collection $items): bool => $items->isNotEmpty());
+        $questions = Questions::openFor($user)->map(fn (Entry $question): array => [
+            'ref' => $question->subject->number,
+            'title' => $question->subject->title,
+            'state' => __('Question du Support'),
+            'since' => $question->created_at,
+            'late' => now()->diffInDays($question->created_at, true) > $lateAfter,
+            'url' => rescue(fn (): string => TaskResource::getUrl('view', ['record' => $question->subject], panel: Filament::getCurrentOrDefaultPanel()?->getId()).'#tma-entry-'.$question->getKey(), null, false),
+            'closes_on' => null,
+            'lines' => [[
+                'line' => __(':who vous demande :', ['who' => $question->author === null ? __('Le Support')
+                    : $question->author->name.(($team = $question->author->team()) !== null ? " ({$team})" : '')]),
+                'excerpt' => Str::limit(Str::squish(Html::toText($question->body)), 300),
+            ]],
+        ]);
+
+        return array_filter(compact('answer', 'take', 'mine', 'resume', 'questions'), fn (Collection $items): bool => $items->isNotEmpty());
     }
 
     /** Quand une demande qui attend son demandeur sera close sans réponse (`auto_close`), sinon null. */

@@ -179,11 +179,27 @@ Le HTML (`description`, `body`) est nettoyé à la réception, quel qu'il soit.
 ```
 
 Une tâche en brouillon (`draft`) n'est jamais envoyée. `project` : son projet (null pour une tâche d'avant les
-projets) ; celle qui reçoit le crée ou met son titre à jour, par son `ulid`, avec sa fourchette (en jours, null sans
-borne) et ses participants nommés (`members`, des acteurs) ; absents (maître d'avant), ce qu'elle sait reste. Le temps
-d'un projet est la somme de celui de ses tâches : il ne voyage pas à part. `files_count`, `file_uuids` : ses pièces
+projets, voir « Projet ») ; celle qui reçoit le crée ou le met à jour, par son `ulid`. Le temps d'un projet est la
+somme de celui de ses tâches : il ne voyage pas à part. `files_count`, `file_uuids` : ses pièces
 jointes, comme pour un ticket (`POST media/task/{ulid}`). `deleted_at` : la tâche a été supprimée dans le maître (avec ses
 entrées, envoyées supprimées elles aussi) ; celle qui reçoit la retire, et n'en crée pas une qu'elle ne connaissait pas.
+
+### Projet
+
+```json
+{
+  "ulid": "01k…", "target_instance_uid": "01K…", "title": "Portail parrain", "description": null,
+  "estimate_min_days": 1.0, "estimate_max_days": 3.0,
+  "members": [ { "…acteur" } ],
+  "deleted_at": null
+}
+```
+
+Il part seul dès qu'il est créé, modifié (titre, description, fourchette, participants) ou supprimé, même sans tâche
+publiée (`POST sync`, `kind` = `project`), et avec chacune de ses tâches. La fourchette est en jours (null sans
+borne) ; `members` : ses participants nommés, des acteurs ; absents (maître d'avant), ce que le client sait reste.
+`deleted_at` : supprimé dans le maître, le client le retire. Un projet qui change d'application (possible tant qu'il
+n'a pas de tâche) part supprimé chez l'ancienne.
 
 ### État complet (snapshot)
 
@@ -349,15 +365,17 @@ les membres du Support ni le compte du maître.
 
 Le maître garde la liste en cache (`api.users_cache_ttl`, une heure), avec un bouton « Rafraîchir ».
 
-### `POST sync` — l'état d'un ticket du centre de service, ou d'une tâche projet
+### `POST sync` — l'état d'un ticket du centre de service, d'une tâche projet ou d'un projet
 
-Corps : un état complet (`kind` : `ticket` ou `task`).
+Corps : un état complet (`kind` : `ticket` ou `task`), ou un projet seul : `{ "kind": "project", "project": { "…" } }`.
 
 - **Ticket** : il doit être de cette application (`source_instance_uid`), au centre de service, et déjà connu,
   sauf s'il a été préparé par le maître pour elle et publié (`created_on_instance_uid` est celui du maître ; jamais
   un brouillon) : 404 sinon.
 - **Tâche** : destinée à cette application (`target_instance_uid`), jamais en brouillon (422) ; elle est créée à sa
   première réception (`Events\TaskReceived`).
+- **Projet** : destiné à cette application (`target_instance_uid`, 422 sinon) ; créé à sa première réception, même
+  sans tâche ; un projet inconnu qui arrive supprimé n'est pas créé. La réponse est toujours `{ "missing_media": [] }`.
 
 Le client recopie, puis prévient lui-même ses utilisateurs de ce qui est nouveau : passages, messages, notes,
 relances, tâche publiée (`Events\SnapshotMirrored`, `Support\Notifier`), avertissement avant clôture. Réponse :
@@ -367,7 +385,8 @@ relances, tâche publiée (`Events\SnapshotMirrored`, `Support\Notifier`), avert
 ```
 
 les entrées dont le client attend encore les fichiers, et l'ulid du ticket ou de la tâche s'il lui manque de leurs
-pièces jointes.
+pièces jointes : un fichier manque quand son identifiant est dans `file_uuids` et pas chez lui (une image remplacée par
+une autre manque donc, même si leur nombre ne change pas).
 
 ### `POST media/{entry|task|ticket}/{ulid}`
 

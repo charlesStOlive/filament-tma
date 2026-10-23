@@ -9,6 +9,7 @@ use CharlesStOlive\FilamentTma\Filament\Actions\TaskMoveAction;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasComposer;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasInfoPane;
 use CharlesStOlive\FilamentTma\Filament\Concerns\HasNotes;
+use CharlesStOlive\FilamentTma\Filament\Concerns\HasQuestions;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\TicketResource;
@@ -31,7 +32,8 @@ use Filament\Schemas\Components\Component;
  * (`HasComposer`) ; à droite, la tâche dans son projet, son temps et les notes (`HasInfoPane`) ; dans le maître, ses
  * passages. « Créer un ticket » ouvre un ticket de TMA à partir d'elle. Le calendrier et l'application ne s'affichent
  * qu'à la demande (« Tout afficher », `HasOnDemand`).
- * Les notes et la modification d'un message s'ouvrent en fenêtres (`HasNotes`).
+ * Les notes et la modification d'un message s'ouvrent en fenêtres (`HasNotes`) ; sous une question du Support,
+ * « Répondre » et « Retirer la question » (`HasQuestions`).
  */
 class ViewTask extends ViewRecord
 {
@@ -39,6 +41,7 @@ class ViewTask extends ViewRecord
     use HasInfoPane;
     use HasNotes;
     use HasOnDemand;
+    use HasQuestions;
 
     protected static string $resource = TaskResource::class;
 

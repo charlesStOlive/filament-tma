@@ -28,6 +28,9 @@
 .dark .fi-tma-entry-reply { border-color: var(--gray-700); }
 .fi-tma-entry-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
 .fi-tma-entry-edited { font-size: 0.75rem; font-style: italic; color: var(--gray-500); }
+/* Une question du Support (tâche) qui attend sa réponse, et à qui elle est posée. */
+.fi-tma-entry--question { border-color: color-mix(in oklab, var(--warning-500) 45%, transparent); }
+.fi-tma-entry-question-to { margin-top: 0.25rem; font-size: 0.75rem; color: var(--gray-500); }
 .fi-tma-entry-footer {
     display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1rem;
     margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--gray-200);

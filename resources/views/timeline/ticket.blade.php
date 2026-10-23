@@ -9,7 +9,8 @@
     /**
      * L'historique d'un ticket ou d'une tâche : la demande, puis les messages et les changements d'état, par date.
      * Sous la demande et sous chaque message, ses notes (des vignettes qui ouvrent la grande fenêtre, `NoteActions`)
-     * et ses boutons : ajouter une note, modifier son message.
+     * et ses boutons : ajouter une note, modifier son message ; sous une question du Support (tâche), y répondre, la
+     * retirer (`QuestionActions`).
      *
      * Un changement d'état fait en même temps qu'un message s'affiche dans le bloc du message :
      * - le premier passage hors du brouillon (transmettre, publier), dans le bloc de la demande ;
@@ -97,7 +98,7 @@
             </div>
         @else
             @php($entry = $row['item'])
-            <article class="fi-tma-entry" id="tma-entry-{{ $entry->getKey() }}" wire:key="tma-entry-{{ $entry->getKey() }}">
+            <article @class(['fi-tma-entry', 'fi-tma-entry--question' => \CharlesStOlive\FilamentTma\Workflow\Questions::status($entry) === \CharlesStOlive\FilamentTma\Workflow\Questions::OPEN]) id="tma-entry-{{ $entry->getKey() }}" wire:key="tma-entry-{{ $entry->getKey() }}">
                 @include('filament-tma::timeline.entry', ['entry' => $entry, 'transition' => $messageMoves->get($entry->getKey())])
 
                 @foreach ($entry->replies as $reply)
@@ -106,7 +107,11 @@
                     </div>
                 @endforeach
 
-                @php($entryButtons = $buttons(['entry' => $entry->getKey()], $notesOn ? ['editMessage', 'createNote'] : ['editMessage']))
+                @php($entryButtons = $buttons(['entry' => $entry->getKey()], [
+                    ...($entry->isQuestion() && $ticket instanceof ProjectTask ? ['answerQuestion', 'withdrawQuestion'] : []),
+                    'editMessage',
+                    ...($notesOn ? ['createNote'] : []),
+                ]))
                 @php($entryNotes = $notesOn ? $visibleNotes($entry->notes) : collect())
                 @if ($entryNotes->isNotEmpty() || $entryButtons !== [])
                     <footer class="fi-tma-entry-footer">

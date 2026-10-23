@@ -31,6 +31,8 @@ use Spatie\MediaLibrary\HasMedia;
  *   numéro par ticket (`number`, attribué à l'écriture), s'archive quand on n'a plus besoin de la lire
  *   (`archived_at`) ; son auteur seul la modifie ou la supprime. Lue de tous, sauf si son auteur la garde pour lui
  *   (`private`) : elle ne se montre alors qu'à lui, des deux côtés (`visibleTo()`).
+ * - Sur une tâche projet, un message du Support peut être une question au client (`meta.question`, voir
+ *   `Workflow\Questions`) : ses réponses sont les réponses au message.
  *
  * @property EntryType $type
  * @property int|null $number
@@ -137,6 +139,12 @@ class Entry extends Model implements HasMedia, HasRichContent
     public function isNote(): bool
     {
         return $this->type === EntryType::Note;
+    }
+
+    /** Une question du Support sur une tâche projet (`Workflow\Questions`). */
+    public function isQuestion(): bool
+    {
+        return $this->type === EntryType::Comment && $this->parent_id === null && ! empty($this->meta['question']);
     }
 
     /** Une note privée ne se montre qu'à son auteur ; le reste, à tous. */

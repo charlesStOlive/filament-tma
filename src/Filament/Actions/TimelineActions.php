@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Actions;
 
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tickets\Schemas\TimeEntryForm;
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
@@ -73,7 +74,7 @@ final class TimelineActions
 
     public static function attachmentsField(): FileUpload
     {
-        return FileUpload::make('attachments')
+        return Attachments::field(FileUpload::make('attachments'))
             ->label(__('Pièces jointes'))
             ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
             ->multiple()
@@ -81,7 +82,6 @@ final class TimelineActions
             ->directory('tma-uploads')
             ->visibility('private')
             ->storeFileNamesIn('attachment_names')
-            ->acceptedFileTypes(config('filament-tma.attachments.accepted_types', []))
             ->maxSize((int) config('filament-tma.attachments.max_size_kb', 10240))
             ->maxFiles((int) config('filament-tma.attachments.max_files', 10));
     }

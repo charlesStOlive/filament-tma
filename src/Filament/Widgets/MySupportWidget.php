@@ -17,6 +17,7 @@ use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
 use CharlesStOlive\FilamentTma\Support\Tma;
+use CharlesStOlive\FilamentTma\Workflow\Questions;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Support\Enums\FontWeight;
@@ -28,6 +29,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * Le tableau de bord : le suivi de la personne, en deux onglets (un groupe de boutons dans l'en-tête du tableau, plus
@@ -37,7 +39,9 @@ use Illuminate\Database\Eloquent\Model;
  *   secondaire ; ceux qui vous attendent d'abord, puis les plus récemment actifs. Le petit nombre de l'onglet : ceux qui
  *   vous attendent.
  * - **Projets** : les projets pas terminés où l'on participe (nommé, ou destinataire d'une de leurs tâches), avec leur
- *   fourchette et leur temps, en jours et heures. Le petit nombre de l'onglet : leurs tâches en cours.
+ *   fourchette et leur temps, en jours et heures, et les questions du Support qui vous y attendent (application
+ *   cliente, `Workflow\Questions`). Le petit nombre de l'onglet : ces questions s'il y en a, sinon leurs tâches en
+ *   cours.
  *
  * Dix au plus ; au-delà, la dernière ligne dit combien il en reste (« + 3 autres tickets »), en lien vers la liste.
  * Chaque onglet s'affiche à qui voit les tickets, les projets.
@@ -55,6 +59,9 @@ class MySupportWidget extends TableWidget
 
     /** L'onglet montré (`TICKETS`, `PROJECTS`). */
     public string $tab = self::TICKETS;
+
+    /** @var Collection<int|string, int>|null les questions ouvertes de la personne, par projet, le temps d'une requête */
+    protected ?Collection $questionsByProject = null;
 
     public static function canView(): bool
     {
@@ -93,6 +100,9 @@ class MySupportWidget extends TableWidget
     public function table(Table $table): Table
     {
         $user = auth()->user();
+        // Le petit nombre de l'onglet « Projets » : les questions qui vous attendent, sinon les tâches en cours.
+        $questions = (int) $this->questionsByProject($user)->sum();
+        $ongoing = $user === null ? null : (static::ongoingTasks($user)->count() ?: null);
 
         return $table
             ->heading(fn (): string => $this->isTab(self::PROJECTS) ? __('Mes projets') : __('Mes tickets en cours'))
@@ -152,6 +162,12 @@ class MySupportWidget extends TableWidget
                     ->badge()
                     ->color(fn (Project $record): string => $record->ongoing_tasks_count > 0 ? 'info' : 'gray')
                     ->visible(fn (): bool => $this->isTab(self::PROJECTS)),
+                TextColumn::make('questions')->label(__('Questions pour vous'))
+                    ->state(fn (Project $record): ?int => $this->questionsByProject($user)->get($record->getKey()))
+                    ->badge()
+                    ->color('warning')
+                    ->placeholder('—')
+                    ->visible(fn (): bool => $this->isTab(self::PROJECTS) && Tma::isClient()),
             ])
             ->recordActions([
                 Action::make('open')
@@ -169,9 +185,13 @@ class MySupportWidget extends TableWidget
                         ->badgeColor('warning')
                         ->tooltip($awaiting !== null ? __('Le nombre : ceux qui vous attendent') : null),
                     $this->tabAction(self::PROJECTS, __('Projets'), 'heroicon-m-folder')
-                        ->badge($ongoing = $user === null ? null : (static::ongoingTasks($user)->count() ?: null))
-                        ->badgeColor('info')
-                        ->tooltip($ongoing !== null ? __('Le nombre : leurs tâches en cours') : null),
+                        ->badge($questions ?: $ongoing)
+                        ->badgeColor($questions > 0 ? 'warning' : 'info')
+                        ->tooltip(match (true) {
+                            $questions > 0 => __('Le nombre : les questions du Support qui vous attendent'),
+                            $ongoing !== null => __('Le nombre : leurs tâches en cours'),
+                            default => null,
+                        }),
                 ])->buttonGroup()
                     ->visible(fn (): bool => count(static::tabs()) > 1),
                 Action::make('all')
@@ -247,6 +267,14 @@ class MySupportWidget extends TableWidget
             ->with(['targetInstance', 'tasks'])
             ->withCount(['ongoingTasks as ongoing_tasks_count'])
             ->withMax('tasks', 'last_activity_at');
+    }
+
+    /** @return Collection<int|string, int> les questions ouvertes posées à la personne, par projet */
+    protected function questionsByProject(?Authenticatable $user): Collection
+    {
+        return $this->questionsByProject ??= Questions::openFor($user)
+            ->filter(fn ($question): bool => $question->subject->project_id !== null)
+            ->countBy(fn ($question): int => (int) $question->subject->project_id);
     }
 
     /** Les tâches en cours des projets de la personne : le petit nombre de l'onglet « Projets ». */

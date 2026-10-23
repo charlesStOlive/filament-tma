@@ -3,6 +3,7 @@
 
     @var array $brand
     @var array $todo  [['title' => ..., 'items' => [...]]]
+    @var string $todoText  ce qui attend la personne, en une phrase
     @var array $news
     @var array $copies
 --}}
@@ -12,7 +13,7 @@
     @if ($todo !== [])
         @include('filament-tma::mail.partials.box', [
             'label' => __('À faire'),
-            'text' => trans_choice(':n ticket attend votre action.|:n tickets attendent votre action.', collect($todo)->sum(fn ($group) => count($group['items'])), ['n' => collect($todo)->sum(fn ($group) => count($group['items']))]),
+            'text' => $todoText,
         ])
         @foreach ($todo as $group)
             <p style="margin: 18px 0 10px 0; font-family: {!! $brand['font'] !!}; font-size: 13px; line-height: 18px; font-weight: bold; color: #374151;">{{ $group['title'] }}</p>

@@ -31,8 +31,8 @@ y en a beaucoup) mène à la liste des tâches du projet en cours.
 
 ## Dans l'application cliente
 
-Les projets arrivent avec leurs tâches publiées, en lecture, avec leur fourchette et leurs participants :
-**Support › Projets**.
+Un projet arrive dès sa création, même avant sa première tâche publiée, en lecture, avec sa fourchette et ses
+participants : **Support › Projets**. Ce que le Support y change suit, et un projet supprimé disparaît aussi.
 
 ## Sur le tableau de bord
 

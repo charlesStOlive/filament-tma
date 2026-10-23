@@ -3,7 +3,9 @@
 namespace CharlesStOlive\FilamentTma\Support;
 
 use CharlesStOlive\FilamentPermissionManager\UserOptions\Contracts\HasUserOptions;
+use CharlesStOlive\FilamentTma\Enums\NoticeEvent;
 use CharlesStOlive\FilamentTma\Enums\NoticeMode;
+use CharlesStOlive\FilamentTma\Enums\NoticeTone;
 use CharlesStOlive\FilamentTma\Models\Notice;
 use CharlesStOlive\FilamentTma\Notifications\DailyDigest;
 use CharlesStOlive\FilamentTma\Notifications\WeeklyDigest;
@@ -52,6 +54,15 @@ final class DigestSender
 
             $sections = $weekly ? [] : Digest::for($user);
             $pending = $scope(Notice::query()->pending()->for($user))->with('subject')->orderBy('id')->get();
+            // Une question du Support encore ouverte est dans « À faire », avec son texte (`Digest`) ; répondue ou
+            // retirée, il n'y a plus rien à en dire. Ses notifications sont seulement marquées envoyées.
+            [$questions, $pending] = $pending->partition(fn (Notice $notice): bool => $notice->event === NoticeEvent::Question
+                && ($notice->data['tone'] ?? null) === NoticeTone::Action->value);
+            $pending = $pending->values();
+
+            if (! $dryRun && $questions->isNotEmpty()) {
+                Notice::query()->whereKey($questions->modelKeys())->update(['sent_at' => now()]);
+            }
 
             if ($sections === [] && $pending->isEmpty()) {
                 return;

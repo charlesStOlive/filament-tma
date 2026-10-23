@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Sync;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Models\Actor;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
@@ -82,6 +83,28 @@ final class Payload
         ];
     }
 
+    /**
+     * Un projet : envoyé seul dès qu'il change (`POST sync`, `kind` = `project`), et avec chacune de ses tâches.
+     * `deleted_at` dit qu'il a été supprimé dans le maître.
+     *
+     * @return array<string, mixed>
+     */
+    public static function project(Project $project): array
+    {
+        $project->loadMissing('members');
+
+        return [
+            'ulid' => $project->ulid,
+            'target_instance_uid' => $project->target_instance_uid,
+            'title' => $project->title,
+            'description' => $project->description,
+            'estimate_min_days' => $project->estimate_min_days,
+            'estimate_max_days' => $project->estimate_max_days,
+            'members' => $project->members->map(fn (Actor $actor): array => self::actor($actor))->values()->all(),
+            'deleted_at' => self::date($project->deleted_at),
+        ];
+    }
+
     /** @return array<string, mixed> */
     public static function task(ProjectTask $task): array
     {
@@ -91,14 +114,7 @@ final class Payload
             'ulid' => $task->ulid,
             'number' => $task->number,
             'target_instance_uid' => $task->target_instance_uid,
-            'project' => $task->project === null ? null : [
-                'ulid' => $task->project->ulid,
-                'title' => $task->project->title,
-                'description' => $task->project->description,
-                'estimate_min_days' => $task->project->estimate_min_days,
-                'estimate_max_days' => $task->project->estimate_max_days,
-                'members' => $task->project->members->map(fn (Actor $actor): array => self::actor($actor))->values()->all(),
-            ],
+            'project' => $task->project === null ? null : self::project($task->project),
             'title' => $task->title,
             'description' => $task->description,
             'state' => $task->state::getMorphClass(),

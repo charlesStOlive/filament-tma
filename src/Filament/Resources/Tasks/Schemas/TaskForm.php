@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsFields;
 use CharlesStOlive\FilamentTma\Models\Project;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Support\Addressables;
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use CharlesStOlive\FilamentTma\Support\Help;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -142,14 +143,13 @@ class TaskForm
                     ['undo', 'redo'],
                 ])
                 ->columnSpanFull(),
-            SpatieMediaLibraryFileUpload::make('attachments')->label(__('Pièces jointes'))
+            Attachments::field(SpatieMediaLibraryFileUpload::make('attachments'))->label(__('Pièces jointes'))
                 ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
                 ->collection(ProjectTask::ATTACHMENTS_COLLECTION)
                 ->disk(config('filament-tma.attachments.disk', 'local'))
                 ->visibility('private')
                 ->multiple()
                 ->downloadable()
-                ->acceptedFileTypes(config('filament-tma.attachments.accepted_types', []))
                 ->maxSize((int) config('filament-tma.attachments.max_size_kb', 10240))
                 ->maxFiles((int) config('filament-tma.attachments.max_files', 10))
                 ->columnSpanFull(),

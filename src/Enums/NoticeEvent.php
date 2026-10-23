@@ -20,6 +20,7 @@ enum NoticeEvent: string implements HasLabel
     case Reminder = 'reminder';
     case AutoCloseWarning = 'auto-close-warning';
     case AutoClosed = 'auto-closed';
+    case Question = 'question';
 
     public function getLabel(): string
     {
@@ -34,6 +35,7 @@ enum NoticeEvent: string implements HasLabel
             self::Reminder => __('Relance'),
             self::AutoCloseWarning => __('Avertissement de clôture'),
             self::AutoClosed => __('Clôture automatique'),
+            self::Question => __('Question du Support'),
         };
     }
 }

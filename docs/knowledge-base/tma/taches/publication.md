@@ -19,7 +19,8 @@ Sans le droit de publier, la tâche reste en brouillon, et un message le dit.
 Une tâche a des **destinataires principaux** (prévenus dans la cloche de sa publication, puis de ce qui s'y passe, et
 dans leur bilan de la semaine) et des **secondaires** (dans leur bilan de la semaine seulement), choisis parmi les
 personnes du client qui peuvent faire une demande, et les membres du Support. Son auteur est principal d'office. Une
-tâche ne part jamais par courriel, sauf **Informer par courriel**.
+tâche ne part jamais par courriel, sauf **Informer par courriel**, et une
+[question du Support](#modal-tma.taches.questions) pour qui a choisi l'e-mail direct.
 
 À la création, les principaux sont d'office **toute l'équipe du projet** : ses participants et les destinataires de
 ses autres tâches (voir [Fourchette et participants](#modal-tma.projets.fourchette)) ; un autre projet choisi apporte

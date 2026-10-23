@@ -4,13 +4,14 @@
     @var array $brand
     @var array $projects  [['title' => ..., 'tasks' => [...]]]
     @var array $copies
+    @var string $boxText  en tête : rien à faire, ou les questions qui attendent la personne
 --}}
 @extends('filament-tma::mail.layout')
 
 @section('content')
     @include('filament-tma::mail.partials.box', [
         'label' => __('Pour information'),
-        'text' => __('Aucune action n’est attendue de votre part.'),
+        'text' => $boxText,
     ])
 
     @foreach ($projects as $project)

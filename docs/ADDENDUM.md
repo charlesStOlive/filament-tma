@@ -225,6 +225,10 @@ Décidé avec l'utilisateur (son tableau du 20/10), remplace « principal : cour
   oui/non, oui d'origine) pour la publication, une modification, le temps passé (une tâche a un temps, pas de prix),
   un message, la fin. Jamais de courriel, sauf **Informer par courriel** (le Support, à la main ; message marqué
   `meta.notify`). Le Support n'apprend d'une tâche que ce que le client y écrit, comme une action.
+- **Question du Support sur une tâche (23/10/2026)** : elle engage, comme un ticket, les personnes à qui elle est
+  posée (même en copie de la tâche) : cloche, puis e-mail direct ou bilan du matin (« À faire », avec son texte, tant
+  qu'elle est ouverte ; signalée aussi dans le bilan de la semaine). Les autres destinataires : pour information. Le
+  courriel prend la couleur et l'« À faire » d'un ticket. Voir §10.
 - **Secondaire** : seulement le bilan, en bas, sous « En copie ».
 - Courriels : gabarits propres (logo de l'application, couleur primaire et « À faire » pour un ticket, secondaire et
   « Pour information » pour une tâche ; tableaux et styles en ligne pour les messageries), objet qui dit ce qui se
@@ -361,6 +365,8 @@ Décisions du 14/10/2026 :
 - **Projets** : un projet a un titre (et une description), une application destinataire et N tâches ; une tâche
   appartient à un projet, dont elle prend l'application. Le temps d'un projet est la **somme du temps de ses
   tâches** : la facturation par projet s'appuiera dessus (§9). Le projet voyage avec ses tâches publiées.
+  Revu le 23/10/2026 (demande de l'utilisateur : tout enregistrement part chez l'autre) : le projet part aussi seul,
+  dès sa création, à chaque changement et à sa suppression, même sans tâche publiée (`POST sync`, `kind` = `project`).
 - **Modifier une tâche** : le maître modifie titre, description, dates et projet à tout moment, même terminée.
 - **Messages** : une tâche terminée se commente encore (surtout par le client) ; une tâche annulée n'accepte plus
   que des notes.
@@ -388,6 +394,31 @@ Décisions du 14/10/2026 :
 - **Destinataires d'une tâche (15/10/2026)** : comme un ticket (§4) ; pour l'enregistrer avant sa publication, ou la
   publier, au moins un principal chez le client.
 - **Jeu d'exemples** : `tma:demo` (voir le README), rejouable, par le vrai workflow.
+- **Pièces jointes (23/10/2026)**, demande de l'utilisateur (Markdown, PowerPoint, PDF, Excel sans macro) : PDF, docx,
+  xlsx, pptx étaient déjà dans la liste blanche ; `text/markdown` s'y ajoute. Contrôle unique, quel que soit le chemin
+  (formulaires, historique, autre application, `tma:*`) : `Support\Attachments`. Le type se détecte sur le contenu et
+  l'extension doit aller avec ; un `.md` est du Markdown même si son texte se détecte en HTML (enregistré en
+  `text/markdown`, toujours téléchargé) ; un document Office/OpenDocument est refusé s'il contient une macro
+  (`vbaProject.bin`, type `macroEnabled`, `Basic/`, `Scripts/`), un contrôle ActiveX, un objet OLE incorporé ou une
+  relation externe active (modèle, objet, sous-document), ou s'il dépasse `attachments.max_unpacked_mb` décompressé.
+  Les champs n'utilisent plus la règle `mimetypes` de Filament (elle refusait ce Markdown) mais `Attachments::rule()`
+  ; la collection medialibrary, `acceptsFile()`. Les fichiers d'un formulaire de ticket ou de tâche gardent leur nom
+  d'origine simplifié. Un ZIP reste accepté sans regarder dedans ; un PDF n'est pas inspecté (il se télécharge, avec
+  `nosniff` et une CSP `sandbox`).
+- **Questions du Support (23/10/2026)**, décidé avec l'utilisateur : une tâche informe, une question engage. Plutôt
+  qu'un ticket ouvert à côté (son temps irait au forfait de TMA), deux sortes de messages sur une tâche : l'information
+  (le message d'avant, « Informer par courriel » compris) et la **question**, posée par le Support dans le maître, à des
+  personnes du client choisies parmi les destinataires de la tâche (d'office ses principaux). C'est un message de
+  premier niveau marqué `meta.question` (`to` : leurs identifiants dans l'application cliente ; `withdrawn_at` quand
+  le Support la retire). Elle est ouverte jusqu'à la **première réponse de quelqu'un du client** (une réponse au
+  message, `parent_ulid`), ou son retrait ; ni tour, ni relance, ni clôture automatique, la tâche ne change pas
+  d'état, le temps reste au projet. Tout voyage avec la chronologie (rien de plus dans l'API) ; le client repère un
+  retrait dans l'état recopié. Le client ne pose pas de question : tout ce qu'il écrit sur une tâche est déjà une
+  action pour le Support. Interface : « Poser une question » dans la zone d'écriture, « Répondre » et « Retirer la
+  question » sous elle ; bilan du matin (« Les questions du Support sur vos projets »), bilan de la semaine, onglet
+  « Projets » du tableau de bord. Code : `Workflow\Questions`, `Filament\Actions\QuestionActions`,
+  `Support\Notifier`, `Support\Digest`. Le même jour, la publication d'une tâche se dit « Le Support a ajouté cette
+  tâche au projet » (et non plus « publié une tâche pour vous » : la tâche est le travail du Support).
 - **Fuseaux** : les dates s'enregistrent en UTC et s'affichent dans le fuseau du lecteur (`users.timezone` s'il
   existe, sinon celui de Filament), y compris dans les vues propres au module et les courriels (`Support\Dates`).
 

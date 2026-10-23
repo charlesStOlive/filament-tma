@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\Priority;
 use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Attachments;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Sync\RemoteUsers;
@@ -94,7 +95,7 @@ class TicketForm
                     ['undo', 'redo'],
                 ])
                 ->columnSpanFull(),
-            SpatieMediaLibraryFileUpload::make('attachments')
+            Attachments::field(SpatieMediaLibraryFileUpload::make('attachments'))
                 ->label(__('Pièces jointes'))
                 ->disabled(fn (string $operation, ?Ticket $record): bool => self::demandLocked($operation, $record))
                 ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
@@ -103,7 +104,6 @@ class TicketForm
                 ->visibility('private')
                 ->multiple()
                 ->downloadable()
-                ->acceptedFileTypes(config('filament-tma.attachments.accepted_types', []))
                 ->maxSize((int) config('filament-tma.attachments.max_size_kb', 10240))
                 ->maxFiles((int) config('filament-tma.attachments.max_files', 10))
                 ->columnSpanFull(),

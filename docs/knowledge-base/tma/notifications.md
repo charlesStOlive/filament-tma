@@ -14,7 +14,9 @@ order: 80
   le ticket sera clos sans réponse.
 - Une **tâche projet** tient le client au courant : on n'attend rien de lui. Ce qui lui arrive (publication,
   modification, temps passé, message, fin) arrive dans la cloche et dans le **bilan de la semaine**, jamais par un
-  courriel à chaque étape. Le Support peut tout de même **Informer par courriel**, à la main (voir plus bas).
+  courriel à chaque étape. Le Support peut tout de même **Informer par courriel**, à la main (voir plus bas). Quand
+  il attend une réponse, il **pose une question** dans la tâche : elle engage, comme un ticket, les personnes à qui
+  elle est posée (voir [Poser une question au client](#modal-tma.taches.questions)).
 - Le Support n'apprend d'une tâche que ce que le client y écrit (un message, une note) : c'est à voir, comme un ticket
   qui l'attend.
 
@@ -63,6 +65,7 @@ Desapp qui prévient ses destinataires, à la réception.
 | L'**avertissement** de clôture automatique | comme un ticket qui vous attend | — |
 | Ce qui arrive à une **tâche** (client) | la cloche et le **bilan de la semaine** | bilan de la semaine |
 | **Informer par courriel** sur une tâche | un courriel, **toujours**, et la cloche | bilan de la semaine |
+| Une **question du Support** sur une tâche, à qui elle est posée (client) | comme un ticket qui vous attend | comme un ticket qui vous attend |
 | Le client écrit sur une tâche (Support) | comme un ticket qui vous attend | bilan du matin |
 
 ## Mes notifications
@@ -83,7 +86,8 @@ valeurs de l'application s'appliquent à tout le monde, sans choix personnel.
 ## Les courriels
 
 Chaque courriel porte le logo de l'application. Celui d'un **ticket** prend sa couleur principale et s'ouvre sur
-**À faire** ; celui d'une **tâche**, sa couleur secondaire et **Pour information**. L'objet dit ce qui se passe :
+**À faire** ; celui d'une **tâche**, sa couleur secondaire et **Pour information** (une question du Support, elle,
+prend la couleur et l'**À faire** d'un ticket). L'objet dit ce qui se passe :
 « [DES-0012] Le Support attend votre réponse – Export des dons ». En bas, **Régler mes notifications** mène à votre
 profil.
 
@@ -93,7 +97,8 @@ Chaque jour ouvré à 8 h, chacun (sauf qui l'a refusé) reçoit **un seul courr
 
 - **À faire** : ses demandes qui attendent sa réponse ou sa confirmation (avec la date de clôture sans réponse), les
   demandes nouvelles sans contact, ce qu'il traite, ses pauses qui reprennent aujourd'hui ; sous chaque ticket, ce qui
-  s'y est passé depuis le dernier bilan. Ce qui attend depuis plus de 5 jours est signalé **en retard** ;
+  s'y est passé depuis le dernier bilan ; les **questions du Support** sur ses projets, avec leur texte. Ce qui attend
+  depuis plus de 5 jours est signalé **en retard** ;
 - **Nouveautés** : le reste, là où il est destinataire principal (une fin de ticket…) ;
 - **En copie**, en bas : là où il est destinataire secondaire.
 
@@ -106,7 +111,8 @@ ceux qui ont quelque chose en attente. Il faut le droit « Envoyer maintenant le
 
 Chaque lundi à 8 h, chacun reçoit, s'il y a du nouveau et s'il ne l'a pas refusé, le bilan de ses **tâches projet**,
 pour information : projet par projet, chaque tâche (son état, son échéance, le temps passé) et ce qui lui est arrivé
-dans la semaine ; **En copie** en bas. Le jour et l'heure se règlent.
+dans la semaine ; **En copie** en bas. Une question du Support qui vous attend encore y est signalée, en tête et sur
+sa tâche. Le jour et l'heure se règlent.
 
 ## Relancer
 

@@ -47,6 +47,13 @@ final class InstanceClient
             ->json('missing_media', []);
     }
 
+    /** @param  array<string, mixed>  $project  `Payload::project()` */
+    public function pushProject(array $project): void
+    {
+        Http::call(__('Envoi du projet :title', ['title' => $project['title'] ?? '?']), fn () => $this->http()
+            ->post($this->instance->apiUrl('sync'), ['kind' => 'project', 'project' => $project]));
+    }
+
     /**
      * Relie un agent : l'utilisateur de l'application qui a cet e-mail agira pour le Support, avec ce jeton.
      *

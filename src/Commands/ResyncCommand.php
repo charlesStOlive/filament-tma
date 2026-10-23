@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
  *
  *     php artisan tma:resync --all                    # tout, pour toutes les applications
  *     php artisan tma:resync --instance=01K…          # tout ce qui va à une application (son uid ou son nom)
- *     php artisan tma:resync --project=01k…           # les tâches publiées d'un projet (son ulid ou son titre)
+ *     php artisan tma:resync --project=01k…           # un projet et ses tâches publiées (son ulid ou son titre)
  *     php artisan tma:resync --ticket=DES-0042 --task=T-0007
  *     php artisan tma:resync --names                  # les noms seulement
  *     php artisan tma:resync --all --dry-run          # ce qui partirait, sans rien envoyer
@@ -28,15 +28,18 @@ use Illuminate\Support\Collection;
 class ResyncCommand extends Command
 {
     protected $signature = 'tma:resync
-        {--all : Tous les tickets et toutes les tâches publiées, pour toutes les applications}
+        {--all : Tous les projets, tickets et tâches publiées, pour toutes les applications}
         {--instance= : Une application cliente (uid ou nom) : tout ce qui va à elle}
-        {--project=* : Un projet (ulid ou titre) : ses tâches publiées}
+        {--project=* : Un projet (ulid ou titre), et ses tâches publiées}
         {--ticket=* : Un ticket (numéro ou ulid)}
         {--task=* : Une tâche (numéro ou ulid)}
         {--names : Les noms seulement, sans rien renvoyer}
         {--dry-run : Dire ce qui partirait, sans rien changer}';
 
     protected $description = 'Maître : rafraîchit les noms et renvoie tickets, tâches et projets à leurs applications clientes';
+
+    /** @var Collection<int, Project> les projets à renvoyer (`subjects()` les choisit avec le reste) */
+    private Collection $projects;
 
     public function handle(): int
     {
@@ -58,6 +61,7 @@ class ResyncCommand extends Command
             }
         }
 
+        $this->projects = collect();
         $subjects = $this->option('names') ? collect() : $this->subjects($instance);
 
         if ($subjects === null) {
@@ -65,7 +69,8 @@ class ResyncCommand extends Command
         }
 
         if ($this->option('dry-run')) {
-            $this->components->info(__(':n ticket(s) ou tâche(s) partiraient.', ['n' => $subjects->filter->isShared()->count()]));
+            $this->components->info(__(':projects projet(s), :n ticket(s) ou tâche(s) partiraient.', ['projects' => $this->projects->count(), 'n' => $subjects->filter->isShared()->count()]));
+            $this->projects->each(fn (Project $project) => $this->line('  '.__('Projet').' — '.$project->title));
             $subjects->each(fn ($subject) => $this->line('  '.$subject->number.' — '.$subject->title));
 
             return self::SUCCESS;
@@ -75,7 +80,7 @@ class ResyncCommand extends Command
         $this->components->info(__(':n nom(s) mis à jour.', ['n' => $names]));
 
         if (! $this->option('names')) {
-            $this->components->info(__(':n envoi(s) demandé(s), par la file.', ['n' => Resync::push($subjects)]));
+            $this->components->info(__(':n envoi(s) demandé(s), par la file.', ['n' => Resync::pushProjects($this->projects) + Resync::push($subjects)]));
         }
 
         return self::SUCCESS;
@@ -95,6 +100,7 @@ class ResyncCommand extends Command
                 return null;
             }
 
+            $this->projects->push($project);
             $chosen = $chosen->concat(Resync::subjects(project: $project));
         }
 
@@ -112,7 +118,7 @@ class ResyncCommand extends Command
             }
         }
 
-        if ($chosen->isNotEmpty()) {
+        if ($chosen->isNotEmpty() || $this->projects->isNotEmpty()) {
             return $chosen;
         }
 
@@ -121,6 +127,8 @@ class ResyncCommand extends Command
 
             return null;
         }
+
+        $this->projects = Resync::projects($instance);
 
         return Resync::subjects($instance);
     }

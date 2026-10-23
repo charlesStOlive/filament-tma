@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentTma\Models;
 
-use CharlesStOlive\FilamentTma\Events\TaskUpdated;
+use CharlesStOlive\FilamentTma\Jobs\PushProjectToInstance;
 use CharlesStOlive\FilamentTma\States\Task\TaskInProgress;
 use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Tma;
@@ -19,8 +19,9 @@ use Illuminate\Support\Collection;
 
 /**
  * Un projet : un titre, une application destinataire (`target_instance_uid`, celle de toutes ses tâches) et N tâches
- * projet. Créé dans le maître ; l'application cliente le reçoit avec ses tâches publiées. Son temps est la somme
- * des temps de ses tâches (`timeTotals()`), base de la future facturation par projet.
+ * projet. Créé dans le maître ; l'application cliente le reçoit dès sa création, puis à chaque changement, même sans
+ * tâche publiée (`pushToClient()`). Son temps est la somme des temps de ses tâches (`timeTotals()`), base de la future
+ * facturation par projet.
  *
  * Le maître lui donne une fourchette, en jours (`estimate_min_days`, `estimate_max_days` : « 1–3 j ») et des
  * participants (`members()`). Y participent aussi, sans qu'on les nomme, les destinataires de ses tâches
@@ -57,24 +58,34 @@ class Project extends Model
 
     protected static function booted(): void
     {
-        // Le titre, la fourchette changent aussi chez le client : ses tâches publiées repartent.
+        // Créé, modifié, supprimé : le client l'apprend aussitôt. Passé à une autre application (tant qu'il n'a pas de
+        // tâche), il quitte l'ancienne.
+        static::created(fn (Project $project) => $project->pushToClient());
+        static::deleted(fn (Project $project) => $project->pushToClient());
         static::updated(function (Project $project): void {
-            if ($project->wasChanged(['title', 'description', 'estimate_min_days', 'estimate_max_days'])) {
+            if ($project->wasChanged('target_instance_uid') && filled($from = $project->getOriginal('target_instance_uid'))) {
+                $project->pushToClient($from);
+            }
+
+            if ($project->wasChanged(['title', 'description', 'estimate_min_days', 'estimate_max_days', 'target_instance_uid'])) {
                 $project->pushToClient();
             }
         });
     }
 
-    /** Dans le maître, le projet repart chez le client avec ses tâches publiées (il n'y voyage qu'avec elles). */
-    public function pushToClient(): void
+    /**
+     * Dans le maître, le projet part chez son client, par la file (`Jobs\PushProjectToInstance`) ; avec `$from`, il est
+     * retiré de cette application-là. Un envoi qui échoue ne fait pas échouer l'action de l'utilisateur.
+     */
+    public function pushToClient(?string $from = null): void
     {
         if (! Tma::isMaster()) {
             return;
         }
 
-        $this->tasks()->get()
-            ->filter(fn (ProjectTask $task): bool => $task->isShared())
-            ->each(fn (ProjectTask $task) => event(new TaskUpdated($task)));
+        rescue(function () use ($from): void {
+            PushProjectToInstance::dispatch($this, $from);
+        });
     }
 
     public function tasks(): HasMany

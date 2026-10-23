@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Concerns;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
+use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
@@ -12,9 +13,11 @@ use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
 use CharlesStOlive\FilamentTma\Workflow\Context;
 use CharlesStOlive\FilamentTma\Workflow\Move;
+use CharlesStOlive\FilamentTma\Workflow\Questions;
 use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\RichEditor;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Actions;
@@ -31,7 +34,8 @@ use Illuminate\Validation\ValidationException;
  * les passages que le moteur lui permet (`Move::replyField()`). Le demandeur « Répond », ou « Confirme et clôt » /
  * renvoie au Support un ticket résolu ; le Support « Demande des précisions » ou « Marque comme résolu ». Il n'y a pas
  * de message à part : hors de son tour, ou pour un point d'étape, la zone renvoie aux notes. Sur une tâche projet, on
- * « Envoie le message ».
+ * « Envoie le message », pour information ; dans le maître, le Support peut aussi « Poser une question » au client,
+ * qui engage les personnes choisies (`Workflow\Questions`).
  *
  * À côté des boutons, « Orthographe » corrige le message avant l'envoi, quand l'IA est là (`HasOrthography`).
  */
@@ -103,6 +107,22 @@ trait HasComposer
                 ->color(fn (): string => $this->composerReplies() === [] ? 'primary' : 'gray')
                 ->visible(fn (): bool => $this->composerCanMessage())
                 ->action(fn () => $this->composerWrite()),
+            Action::make('composerQuestion')
+                ->label(__('Poser une question'))
+                ->icon('heroicon-m-question-mark-circle')
+                ->color('warning')
+                ->visible(fn (): bool => $this->composerCanAsk())
+                ->modalHeading(__('Poser la question au client'))
+                ->modalDescription(__('Votre message part dans la tâche comme une question : les personnes choisies l’apprennent comme un ticket qui les attend (la cloche, puis l’e-mail direct ou le bilan du matin), jusqu’à ce que quelqu’un du client y réponde.'))
+                ->modalSubmitActionLabel(__('Poser la question'))
+                ->fillForm(fn (): array => ['to' => Questions::defaultAddressees($this->getRecord())])
+                ->schema(fn (): array => [
+                    CheckboxList::make('to')
+                        ->label(__('À qui'))
+                        ->options(fn (): array => Questions::addressables($this->getRecord()))
+                        ->required(),
+                ])
+                ->action(fn (array $data) => $this->composerAsk((array) ($data['to'] ?? []))),
         ];
 
         foreach (app(TicketWorkflow::class)->moves() as $move) {
@@ -128,6 +148,14 @@ trait HasComposer
         $record = $this->getRecord();
 
         return app(Timeline::class)->canAdd($record, EntryType::Comment, Context::current());
+    }
+
+    /** « Poser une question » : le Support, dans le maître, sur une tâche publiée (`Questions::canAsk()`). */
+    protected function composerCanAsk(): bool
+    {
+        $record = $this->getRecord();
+
+        return $record instanceof ProjectTask && app(Questions::class)->canAsk($record, Context::current());
     }
 
     /**
@@ -159,7 +187,9 @@ trait HasComposer
         $record = $this->getRecord();
 
         if (! $record instanceof Ticket) {
-            return __('Tout le monde lira ce message.');
+            return $this->composerCanAsk()
+                ? __('Tout le monde lira ce message, pour information. Vous attendez une réponse du client ? « Poser une question ».')
+                : __('Tout le monde lira ce message.');
         }
 
         $replies = $this->composerReplies();
@@ -179,6 +209,15 @@ trait HasComposer
         $uploads = Uploads::fromForm($data);
 
         $this->composerRun(fn () => app(Timeline::class)->add($this->getRecord(), EntryType::Comment, $data['body'] ?? null, Context::current(), uploads: $uploads));
+    }
+
+    /** @param  array<int, string>  $to  à qui la poser (`Questions::addressables()`) */
+    protected function composerAsk(array $to): void
+    {
+        $data = $this->getSchema('composer')->getState();
+        $uploads = Uploads::fromForm($data);
+
+        $this->composerRun(fn () => app(Questions::class)->ask($this->getRecord(), $data['body'] ?? null, $to, Context::current(), $uploads));
     }
 
     protected function composerReply(Move $move): void

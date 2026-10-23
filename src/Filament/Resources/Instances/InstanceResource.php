@@ -257,8 +257,8 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     }
 
     /**
-     * « Tout renvoyer » : les noms à jour (ceux du Support, ceux des correspondants de l'application), puis tous ses
-     * tickets et ses tâches publiées, par la file (`Support\Resync`, comme `tma:resync --instance`).
+     * « Tout renvoyer » : les noms à jour (ceux du Support, ceux des correspondants de l'application), puis ses projets,
+     * tous ses tickets et ses tâches publiées, par la file (`Support\Resync`, comme `tma:resync --instance`).
      */
     public static function resyncAction(): Action
     {
@@ -269,17 +269,19 @@ class InstanceResource extends Resource implements HasKnowledgeBase
             ->visible(fn (Instance $record): bool => Tma::isMaster() && static::canEdit($record))
             ->requiresConfirmation()
             ->modalHeading(fn (Instance $record): string => __('Tout renvoyer à :name ?', ['name' => $record->name]))
-            ->modalDescription(fn (Instance $record): string => __('Les noms sont remis à jour des deux côtés, puis ses :n tickets et tâches publiées repartent, avec leurs projets, leurs messages et leurs fichiers. Rien n’est perdu ni dédoublé.', [
+            ->modalDescription(fn (Instance $record): string => __('Les noms sont remis à jour des deux côtés, puis ses :projects projets et ses :n tickets et tâches publiées repartent, avec leurs messages et leurs fichiers. Rien n’est perdu ni dédoublé.', [
+                'projects' => Resync::projects($record)->count(),
                 'n' => Resync::subjects($record)->filter->isShared()->count(),
             ]))
             ->modalSubmitActionLabel(__('Tout renvoyer'))
             ->action(function (Instance $record): void {
                 $names = Resync::refreshNames($record);
+                $projects = Resync::pushProjects(Resync::projects($record));
                 $sent = Resync::push(Resync::subjects($record));
 
                 Notification::make()->success()
                     ->title(__('Envoi demandé'))
-                    ->body(__(':sent ticket(s) et tâche(s) repartent ; :names nom(s) mis à jour.', ['sent' => $sent, 'names' => $names]))
+                    ->body(__(':projects projet(s), :sent ticket(s) et tâche(s) repartent ; :names nom(s) mis à jour.', ['projects' => $projects, 'sent' => $sent, 'names' => $names]))
                     ->send();
             });
     }

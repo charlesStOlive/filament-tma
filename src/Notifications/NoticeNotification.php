@@ -52,7 +52,8 @@ class NoticeNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject("[{$data['ref']}] {$headline} – {$heading}")
             ->view(['filament-tma::mail.notice', 'filament-tma::mail.notice-text'], [
-                'brand' => MailBrand::for($kind),
+                // Ce qui attend la personne prend la couleur des tickets, même sur une tâche (une question du Support).
+                'brand' => MailBrand::for($tone === NoticeTone::Action ? 'ticket' : $kind),
                 'kind' => $kind,
                 'tone' => $tone->value,
                 'data' => $data,
@@ -132,6 +133,7 @@ class NoticeNotification extends Notification implements ShouldQueue
 
         return match (true) {
             $this->notice->event === NoticeEvent::Reminder => __('Une relance arrive toujours par courriel.'),
+            $this->notice->event === NoticeEvent::Question && $this->tone() === NoticeTone::Action => __('Vous recevez ce courriel parce que le Support vous pose une question et que vous avez choisi l’e-mail direct.'),
             filled($this->notice->data['message'] ?? null) => __('Le Support a choisi de vous l’envoyer par courriel ; le reste de vos tâches vous parvient dans le bilan de la semaine.'),
             ($this->notice->data['role'] ?? null) === 'secondary' => $ticket ? __('Vous êtes destinataire secondaire de ce ticket.') : __('Vous êtes destinataire secondaire de cette tâche.'),
             $this->tone() === NoticeTone::Action => $ticket
@@ -154,6 +156,7 @@ class NoticeNotification extends Notification implements ShouldQueue
             NoticeEvent::Reminder, NoticeEvent::AutoCloseWarning => 'heroicon-o-bell-alert',
             NoticeEvent::Task => 'heroicon-o-clipboard-document-check',
             NoticeEvent::Recipient => 'heroicon-o-user-plus',
+            NoticeEvent::Question => 'heroicon-o-question-mark-circle',
             NoticeEvent::AutoClosed => 'heroicon-o-lock-closed',
             default => 'heroicon-o-lifebuoy',
         };
