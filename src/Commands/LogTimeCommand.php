@@ -41,7 +41,7 @@ class LogTimeCommand extends Command
         $minutes = $this->minutes();
 
         if ($minutes === null) {
-            $this->components->error(__('Indiquez une durée : --minutes, --hours ou --days.'));
+            $this->components->error(__('filament-tma::commands.log_time.duration_required'));
 
             return self::FAILURE;
         }
@@ -51,13 +51,13 @@ class LogTimeCommand extends Command
         return $this->runWithBackend(
             fn ($backend) => $backend->logTime((string) $this->argument('ref'), $minutes, $this->option('date'), $summary, ! $this->option('non-billable'), (bool) $this->option('internal'), $this->option('entry')),
             function (array $result): void {
-                $this->components->info(__(':ticket : :time enregistrées le :date:summary. Total du ticket : :total.', [
+                $this->components->info(__('filament-tma::commands.log_time.done', [
                     'ticket' => $result['ticket'],
                     'time' => Duration::format((int) $result['time_entry']['minutes']),
                     'date' => $result['time_entry']['worked_on'],
                     'summary' => match (true) {
-                        filled($result['summary_entry'] ?? null) => __(', avec le résumé'),
-                        filled($result['entry'] ?? null) => __(', sur le message :entry', ['entry' => $result['entry']]),
+                        filled($result['summary_entry'] ?? null) => __('filament-tma::commands.log_time.with_summary'),
+                        filled($result['entry'] ?? null) => __('filament-tma::commands.log_time.on_entry', ['entry' => $result['entry']]),
                         default => '',
                     },
                     'total' => Duration::format((int) $result['time_total_minutes']),

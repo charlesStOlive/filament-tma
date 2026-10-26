@@ -36,18 +36,18 @@ use Illuminate\Support\Str;
  */
 final class TimeEntryForm
 {
-    /** Les raccourcis de durée : libellé, valeur, unité. */
+    /** Les raccourcis de durée : valeur, unité ; libellé : `time.presets.{nom}`. */
     private const PRESETS = [
-        '10m' => ['10 min', 10, Duration::MINUTES],
-        '15m' => ['15 min', 15, Duration::MINUTES],
-        '20m' => ['20 min', 20, Duration::MINUTES],
-        '30m' => ['30 min', 30, Duration::MINUTES],
-        '45m' => ['45 min', 45, Duration::MINUTES],
-        '1h' => ['1 h', 1, Duration::HOURS],
-        '2h' => ['2 h', 2, Duration::HOURS],
-        '3h' => ['3 h', 3, Duration::HOURS],
-        'halfDay' => ['½ j', 0.5, Duration::DAYS],
-        '1d' => ['1 j', 1, Duration::DAYS],
+        '10m' => [10, Duration::MINUTES],
+        '15m' => [15, Duration::MINUTES],
+        '20m' => [20, Duration::MINUTES],
+        '30m' => [30, Duration::MINUTES],
+        '45m' => [45, Duration::MINUTES],
+        '1h' => [1, Duration::HOURS],
+        '2h' => [2, Duration::HOURS],
+        '3h' => [3, Duration::HOURS],
+        'halfDay' => [0.5, Duration::DAYS],
+        '1d' => [1, Duration::DAYS],
     ];
 
     /** Les trois champs de la durée. */
@@ -69,44 +69,44 @@ final class TimeEntryForm
         return [
             self::presets(),
             Grid::make(['default' => 3, 'sm' => 4])->columnSpanFull()->schema([
-                DatePicker::make('worked_on')->label(__('Le'))->required()->default(now())->maxDate(now()->addDay())
-                    ->hintAction(Help::action('tma.temps.saisie', __('Quel jour ?')))
+                DatePicker::make('worked_on')->label(__('filament-tma::common.date_on'))->required()->default(now())->maxDate(now()->addDay())
+                    ->hintAction(Help::action('tma.temps.saisie', __('filament-tma::time.form.day')))
                     ->columnSpan(['default' => 3, 'sm' => 1]),
-                self::part(self::DAYS, __('Jours'), __('j')),
-                self::part(self::HOURS, __('Heures'), __('h')),
-                self::part(self::MINUTES, __('Minutes'), __('min'))
+                self::part(self::DAYS, __('filament-tma::time.form.days'), __('filament-tma::common.units.days_short')),
+                self::part(self::HOURS, __('filament-tma::time.form.hours'), __('filament-tma::time.form.hours_suffix')),
+                self::part(self::MINUTES, __('filament-tma::time.form.minutes'), __('filament-tma::time.form.minutes_suffix'))
                     // Une seule règle pour les trois : il faut une durée (les minutes, sans jours ni heures).
                     ->required(fn (Get $get): bool => self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS)]) <= 0)
                     ->markAsRequired(false)
-                    ->validationMessages(['required' => __('Saisissez une durée.')])
+                    ->validationMessages(['required' => __('filament-tma::time.form.duration_required')])
                     ->rule(fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
                         $minutes = self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $value]);
 
                         if ($minutes <= 0) {
-                            $fail(__('Saisissez une durée.'));
+                            $fail(__('filament-tma::time.form.duration_required'));
                         } elseif ($minutes > self::MAX_MINUTES) {
                             // Une saisie, une intervention d'un jour (`TimeLog`).
-                            $fail(__('Une saisie va jusqu’à 24 heures (:max) : saisissez les autres jours à part.', ['max' => Duration::format(self::MAX_MINUTES)]));
+                            $fail(__('filament-tma::time.form.max_24h', ['max' => Duration::format(self::MAX_MINUTES)]));
                         }
                     }),
                 // Le total, tel qu'il s'affichera (« Soit 1 j 2 h », une journée de 7 h).
-                Text::make(fn (Get $get): string => __('Soit :total (une journée : :day).', [
+                Text::make(fn (Get $get): string => __('filament-tma::time.form.total', [
                     'total' => Duration::format(self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $get(self::MINUTES)])),
                     'day' => Duration::format(Duration::dayMinutes(), Duration::HOURS),
                 ]))->color('gray')->columnSpanFull(),
             ]),
-            Select::make('entry_id')->label(__('Sur'))
+            Select::make('entry_id')->label(__('filament-tma::time.form.target'))
                 ->options(fn (): array => self::entryOptions($subject()))
                 ->searchable()
-                ->placeholder(fn (): string => self::canWrite($subject()) ? __('Un nouveau message') : __('La fiche entière'))
+                ->placeholder(fn (): string => self::canWrite($subject()) ? __('filament-tma::time.form.new_message') : __('filament-tma::time.form.whole_record'))
                 ->helperText(fn (): string => self::canWrite($subject())
-                    ? __('Un message ou une note de la fiche, ou un nouveau message.')
-                    : __('Un message ou une note de la fiche, ou la fiche entière.'))
-                ->hintAction(Help::action('tma.temps.saisie', __('Sur quoi porte le temps ?')))
+                    ? __('filament-tma::time.form.target_help_message')
+                    : __('filament-tma::time.form.target_help_record'))
+                ->hintAction(Help::action('tma.temps.saisie', __('filament-tma::time.form.target_doc')))
                 ->columnSpanFull(),
-            RichEditor::make('message')->label(__('Ce qui a été fait'))
-                ->placeholder(__('Écrit dans l’historique de la fiche, avec ce temps…'))
-                ->helperText(__('Laissé vide, le temps porte sur la fiche entière.'))
+            RichEditor::make('message')->label(__('filament-tma::common.what_was_done'))
+                ->placeholder(__('filament-tma::time.form.summary_placeholder'))
+                ->helperText(__('filament-tma::time.form.target_empty'))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -118,8 +118,8 @@ final class TimeEntryForm
                     ! $get('entry_id')
                     JS)
                 ->columnSpanFull(),
-            Toggle::make('billable')->label(__('Facturable'))->default(true)
-                ->hintAction(Help::action('tma.temps.facturable', __('Facturable ou non ?'))),
+            Toggle::make('billable')->label(__('filament-tma::time.form.billable'))->default(true)
+                ->hintAction(Help::action('tma.temps.facturable', __('filament-tma::time.form.billable_doc'))),
         ];
     }
 
@@ -170,12 +170,12 @@ final class TimeEntryForm
     {
         return Actions::make(collect(self::PRESETS)
             ->map(fn (array $preset, string $name): Action => Action::make('duration_'.$name)
-                ->label($preset[0])
+                ->label(__("filament-tma::time.presets.{$name}"))
                 ->outlined()
                 ->color('gray')
                 ->size(Size::ExtraSmall)
                 ->action(function (Set $set) use ($preset): void {
-                    foreach (self::fill(Duration::toMinutes($preset[1], $preset[2])) as $field => $value) {
+                    foreach (self::fill(Duration::toMinutes($preset[0], $preset[1])) as $field => $value) {
                         $set($field, $value);
                     }
                 }))
@@ -207,8 +207,8 @@ final class TimeEntryForm
             ->partition(fn (Entry $entry): bool => $entry->isNote());
 
         return array_filter([
-            __('Messages') => $messages->mapWithKeys(fn (Entry $entry): array => [$entry->getKey() => self::entryLabel($entry)])->all(),
-            __('Notes') => $notes->mapWithKeys(fn (Entry $entry): array => [$entry->getKey() => self::entryLabel($entry)])->all(),
+            __('filament-tma::time.form.messages') => $messages->mapWithKeys(fn (Entry $entry): array => [$entry->getKey() => self::entryLabel($entry)])->all(),
+            __('filament-tma::common.notes') => $notes->mapWithKeys(fn (Entry $entry): array => [$entry->getKey() => self::entryLabel($entry)])->all(),
         ]);
     }
 
@@ -217,7 +217,7 @@ final class TimeEntryForm
     {
         $label = $entry->isNote()
             ? $entry->noteLabel()
-            : __('Message de :author du :date', ['author' => $entry->author?->name ?? '?', 'date' => Dates::format($entry->created_at, 'd/m')]);
+            : __('filament-tma::time.form.message_option', ['author' => $entry->author?->name ?? '?', 'date' => Dates::format($entry->created_at, 'd/m')]);
 
         return $label.' — '.Str::limit(Html::toText($entry->body), $short ? 40 : 80);
     }

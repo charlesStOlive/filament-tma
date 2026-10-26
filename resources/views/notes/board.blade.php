@@ -36,9 +36,9 @@
         <header class="fi-tma-board-notes-header">
             <h3>
                 @if ($message !== null)
-                    {{ __('Notes sur ce message') }}
+                    {{ __('filament-tma::notes.board.on_message') }}
                 @else
-                    {{ $subject instanceof ProjectTask ? __('Notes sur la tâche') : __('Notes sur le ticket') }}
+                    {{ $subject instanceof ProjectTask ? __('filament-tma::notes.board.on_task') : __('filament-tma::notes.board.on_ticket') }}
                 @endif
                 @if ($active->isNotEmpty())
                     <x-filament::badge color="warning" size="sm">{{ $active->count() }}</x-filament::badge>
@@ -52,12 +52,12 @@
         @forelse ($active as $note)
             @include('filament-tma::notes.card', ['note' => $note, 'focus' => $focus, 'action' => $action])
         @empty
-            <p class="fi-tma-timeline-empty">{{ __('Pas encore de note.') }}</p>
+            <p class="fi-tma-timeline-empty">{{ __('filament-tma::notes.board.empty') }}</p>
         @endforelse
 
         @if ($archived->isNotEmpty())
             <details class="fi-tma-board-archived" @if ($archived->contains(fn ($note) => $note->getKey() === $focus)) open @endif>
-                <summary>{{ trans_choice(':count note archivée|:count notes archivées', $archived->count(), ['count' => $archived->count()]) }}</summary>
+                <summary>{{ trans_choice('filament-tma::notes.chips.archived', $archived->count(), ['count' => $archived->count()]) }}</summary>
                 @foreach ($archived as $note)
                     @include('filament-tma::notes.card', ['note' => $note, 'focus' => $focus, 'action' => $action])
                 @endforeach

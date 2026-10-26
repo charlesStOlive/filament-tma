@@ -45,16 +45,16 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
     protected static array $specificPermissions = ['reset'];
 
     /** @var array<string, string> */
-    protected static array $permissionLabels = ['reset' => 'Réinitialiser les seuils d’une période'];
+    protected static array $permissionLabels = ['reset' => 'filament-tma::permissions.allowance.reset'];
 
     public static function getModelLabel(): string
     {
-        return __('forfait');
+        return __('filament-tma::allowances.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('forfaits');
+        return __('filament-tma::allowances.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -85,23 +85,23 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
 
         return $schema->components([
             Grid::make(2)->columnSpanFull()->schema([
-                Select::make('client_id')->label(__('Client'))
+                Select::make('client_id')->label(__('filament-tma::common.client'))
                     ->options(fn (): array => $clientModel ? $clientModel::query()->orderBy($title)->pluck($title, (new $clientModel)->getKeyName())->all() : [])
                     ->searchable()
                     ->required(fn ($get): bool => blank($get('instance_uid')))
-                    ->helperText(__('Sans application choisie, le forfait est partagé entre toutes celles du client.'))
-                    ->hintAction(Help::action('tma.forfaits.portee', __('Client ou application ?'))),
-                Select::make('instance_uid')->label(__('Application'))
+                    ->helperText(__('filament-tma::allowances.fields.instance_help'))
+                    ->hintAction(Help::action('tma.forfaits.portee', __('filament-tma::allowances.help.scope'))),
+                Select::make('instance_uid')->label(__('filament-tma::common.application'))
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all())
-                    ->placeholder(__('Toutes les applications du client')),
-                TextInput::make('contract')->label(__('Contrat'))->maxLength(255),
-                Select::make('period')->label(__('Rythme'))->options(AllowancePeriod::class)->default(AllowancePeriod::Monthly->value)->required()
-                    ->hintAction(Help::action('tma.forfaits.volume', __('Mensuel ou trimestriel ?'))),
-                TextInput::make('volume')->label(__('Volume par période'))->numeric()->minValue(0.25)->step(0.25)->required()
-                    ->hintAction(Help::action('tma.forfaits.volume', __('Ce qui est compté'))),
-                Select::make('unit')->label(__('En'))->options([Duration::HOURS => __('heures'), Duration::DAYS => __('jours')])->default(Duration::DAYS)->required(),
-                DatePicker::make('starts_on')->label(__('Du'))->required()->default(now()->startOfMonth()),
-                DatePicker::make('ends_on')->label(__('Au'))->afterOrEqual('starts_on'),
+                    ->placeholder(__('filament-tma::allowances.fields.all_applications')),
+                TextInput::make('contract')->label(__('filament-tma::allowances.fields.contract'))->maxLength(255),
+                Select::make('period')->label(__('filament-tma::allowances.fields.period'))->options(AllowancePeriod::class)->default(AllowancePeriod::Monthly->value)->required()
+                    ->hintAction(Help::action('tma.forfaits.volume', __('filament-tma::allowances.help.period'))),
+                TextInput::make('volume')->label(__('filament-tma::allowances.fields.volume'))->numeric()->minValue(0.25)->step(0.25)->required()
+                    ->hintAction(Help::action('tma.forfaits.volume', __('filament-tma::allowances.help.volume'))),
+                Select::make('unit')->label(__('filament-tma::allowances.fields.unit'))->options([Duration::HOURS => __('filament-tma::common.units.hours'), Duration::DAYS => __('filament-tma::common.units.days')])->default(Duration::DAYS)->required(),
+                DatePicker::make('starts_on')->label(__('filament-tma::common.date_from'))->required()->default(now()->startOfMonth()),
+                DatePicker::make('ends_on')->label(__('filament-tma::common.date_to'))->afterOrEqual('starts_on'),
             ]),
         ]);
     }
@@ -110,10 +110,10 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
     {
         return $table
             ->columns([
-                TextColumn::make('label')->label(__('Forfait'))->state(fn (Allowance $record): string => $record->label()),
-                TextColumn::make('period')->label(__('Rythme'))->badge(),
-                TextColumn::make('allocated')->label(__('Alloué'))->state(fn (Allowance $record): string => Duration::format($record->minutes)),
-                TextColumn::make('consumed')->label(__('Consommé (période en cours)'))
+                TextColumn::make('label')->label(__('filament-tma::common.allowance'))->state(fn (Allowance $record): string => $record->label()),
+                TextColumn::make('period')->label(__('filament-tma::allowances.fields.period'))->badge(),
+                TextColumn::make('allocated')->label(__('filament-tma::allowances.columns.allocated'))->state(fn (Allowance $record): string => Duration::format($record->minutes)),
+                TextColumn::make('consumed')->label(__('filament-tma::allowances.columns.consumed'))
                     ->state(function (Allowance $record): HtmlString {
                         $s = AllowanceMeter::status($record);
 
@@ -124,32 +124,32 @@ class AllowanceResource extends Resource implements HasKnowledgeBase
                         (AllowanceMeter::status($record)['percent'] ?? 0) >= 80 => 'warning',
                         default => 'success',
                     }),
-                TextColumn::make('remaining')->label(__('Restant'))
+                TextColumn::make('remaining')->label(__('filament-tma::allowances.columns.remaining'))
                     ->state(fn (Allowance $record): string => Duration::format(AllowanceMeter::status($record)['remaining_minutes'])),
-                TextColumn::make('starts_on')->label(__('Du'))->date('d/m/Y'),
-                TextColumn::make('ends_on')->label(__('Au'))->date('d/m/Y')->placeholder('—'),
+                TextColumn::make('starts_on')->label(__('filament-tma::common.date_from'))->date('d/m/Y'),
+                TextColumn::make('ends_on')->label(__('filament-tma::common.date_to'))->date('d/m/Y')->placeholder('—'),
             ])
             ->recordActions([
                 Action::make('months')
-                    ->label(__('Détail'))
+                    ->label(__('filament-tma::common.detail'))
                     ->icon('heroicon-m-calendar')
                     ->modalSubmitAction(false)
                     ->modalContent(function (Allowance $record): HtmlString {
                         $s = AllowanceMeter::status($record);
                         $rows = collect($s['by_month'])->map(fn (int $minutes, string $month): string => '<tr><td>'.e($month).'</td><td>'.e(Duration::format($minutes)).'</td></tr>')->implode('');
 
-                        return new HtmlString('<p>'.e(__('Période :p : :c consommées sur :a.', ['p' => $s['period_key'], 'c' => Duration::format($s['consumed_minutes']), 'a' => Duration::format($s['allocated_minutes'])])).'</p>'
+                        return new HtmlString('<p>'.e(__('filament-tma::allowances.columns.period_summary', ['p' => $s['period_key'], 'c' => Duration::format($s['consumed_minutes']), 'a' => Duration::format($s['allocated_minutes'])])).'</p>'
                             .($rows !== '' ? '<table class="fi-tma-months">'.$rows.'</table>' : ''));
                     }),
                 Action::make('resetThresholds')
-                    ->label(__('Réinitialiser les seuils'))
+                    ->label(__('filament-tma::allowances.actions.reset_thresholds'))
                     ->icon('heroicon-m-arrow-uturn-left')
                     ->requiresConfirmation()
-                    ->modalDescription(__('Les seuils de la période en cours pourront se déclencher de nouveau. Voir l’aide « Les seuils d’un forfait ».'))
+                    ->modalDescription(__('filament-tma::allowances.actions.reset_thresholds_description'))
                     ->authorize(static::class.'.reset')
                     ->action(function (Allowance $record): void {
                         AllowanceMeter::resetThresholds($record, AllowanceMeter::periodKey($record));
-                        Notification::make()->success()->title(__('Seuils réinitialisés'))->send();
+                        Notification::make()->success()->title(__('filament-tma::allowances.actions.thresholds_reset'))->send();
                     }),
                 EditAction::make(),
             ]);

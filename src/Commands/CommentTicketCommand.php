@@ -30,14 +30,14 @@ class CommentTicketCommand extends Command
         $body = filled($file) ? (string) file_get_contents($file === '-' ? 'php://stdin' : $file) : (string) $this->option('body');
 
         if (trim($body) === '') {
-            $this->components->error(__('Le texte est vide : --body ou --body-file.'));
+            $this->components->error(__('filament-tma::commands.comment.empty'));
 
             return self::FAILURE;
         }
 
         return $this->runWithBackend(
             fn ($backend) => $backend->comment((string) $this->argument('ref'), $body, (bool) $this->option('note')),
-            fn (array $result) => $this->components->info(__(':ticket : :type ajouté(e).', ['ticket' => $result['ticket'], 'type' => $result['type'] === 'note' ? __('note') : __('commentaire')])),
+            fn (array $result) => $this->components->info(__('filament-tma::commands.comment.done', ['ticket' => $result['ticket'], 'type' => $result['type'] === 'note' ? __('filament-tma::commands.comment.note') : __('filament-tma::commands.comment.comment')])),
         );
     }
 }

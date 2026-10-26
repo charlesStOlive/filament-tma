@@ -30,7 +30,7 @@ class Answer extends Move
 
     public function label(): string
     {
-        return __('Répondre');
+        return __('filament-tma::common.reply');
     }
 
     public function icon(): ?string
@@ -60,7 +60,7 @@ class Answer extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('answer', __('Réponse'), help: ['tma.tickets.question-reponse', __('Pourquoi répondre ici ?')])];
+        return [$this->messageField('answer', __('filament-tma::workflow.ticket.answer.message'), help: ['tma.tickets.question-reponse', __('filament-tma::workflow.ticket.answer.help')])];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

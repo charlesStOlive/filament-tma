@@ -63,8 +63,8 @@ class FilamentTmaPlugin implements Plugin
 
         return [
             'tma' => [
-                'label' => __('Notifications du Support'),
-                'description' => __('Un ticket attend parfois quelque chose de vous ; une tâche projet, jamais : elle vous tient au courant. La cloche de l’application vous prévient toujours.'),
+                'label' => __('filament-tma::plugin.options.label'),
+                'description' => __('filament-tma::plugin.options.description'),
                 'icon' => 'heroicon-o-bell',
                 'sort' => 50,
                 'visible' => fn (Authenticatable $user): bool => Gate::forUser($user)->allows('viewAny', Ticket::class)
@@ -78,33 +78,33 @@ class FilamentTmaPlugin implements Plugin
                     ],
                 ],
                 'schema' => fn (): array => [
-                    Fieldset::make(__('Tickets'))
+                    Fieldset::make(__('filament-tma::common.tickets'))
                         ->columns(1)
                         ->schema([
                             Checkbox::make('notifications.channels')
-                                ->label(__('E-mail direct : un courriel dès qu’un ticket attend mon action'))
-                                ->helperText(__('Une demande à prendre, une question à laquelle répondre, une solution à confirmer. Une relance arrive toujours par courriel.'))
+                                ->label(__('filament-tma::plugin.options.direct_email'))
+                                ->helperText(__('filament-tma::plugin.options.direct_email_help'))
                                 ->formatStateUsing(fn (mixed $state): bool => in_array(NoticeChannels::MAIL, (array) $state, true))
                                 ->dehydrateStateUsing(fn (mixed $state): array => $state ? [NoticeChannels::MAIL] : []),
                             Checkbox::make('notifications.digest')
-                                ->label(__('Bilan du matin'))
-                                ->helperText(__('Les jours ouvrés à :at : ce qui vous attend, la fin de vos tickets, et en bas ce que vous suivez en copie.', [
+                                ->label(__('filament-tma::plugin.options.morning_digest'))
+                                ->helperText(__('filament-tma::plugin.options.morning_digest_help', [
                                     'at' => config('filament-tma.notifications.digest.at', '08:00'),
                                 ]))
                                 ->visible(fn (): bool => (bool) config('filament-tma.notifications.digest.enabled', true))
                                 ->rule(fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
                                     if (! $value && ! $get('notifications.channels')) {
-                                        $fail(__('Choisissez l’e-mail direct, le bilan du matin, ou les deux : un ticket qui vous attend doit vous parvenir.'));
+                                        $fail(__('filament-tma::plugin.options.ticket_channel_required'));
                                     }
                                 }),
                         ]),
-                    Fieldset::make(__('Tâches projet'))
+                    Fieldset::make(__('filament-tma::plugin.options.project_tasks'))
                         ->columns(1)
                         ->visible(fn (): bool => (bool) config('filament-tma.notifications.weekly.enabled', true))
                         ->schema([
                             Checkbox::make('notifications.weekly')
-                                ->label(__('Bilan de la semaine'))
-                                ->helperText(__('Le :day : ce qui a avancé sur vos tâches projet, pour information. Il n’y a pas de courriel à chaque étape.', [
+                                ->label(__('filament-tma::plugin.options.weekly_digest'))
+                                ->helperText(__('filament-tma::plugin.options.weekly_digest_help', [
                                     'day' => now()->startOfWeek(CarbonInterface::MONDAY)->addDays((int) config('filament-tma.notifications.weekly.day', 1) - 1)->locale(app()->getLocale())->dayName,
                                 ])),
                         ]),

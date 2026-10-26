@@ -22,7 +22,7 @@ class Resume extends Move
 
     public function label(): string
     {
-        return __('Reprendre');
+        return __('filament-tma::workflow.ticket.resume.label');
     }
 
     public function icon(): ?string

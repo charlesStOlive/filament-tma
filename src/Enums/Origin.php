@@ -15,10 +15,10 @@ enum Origin: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Ui => __('Interface'),
-            self::Api => __('API'),
-            self::Command => __('Commande'),
-            self::Scheduler => __('Planificateur'),
+            self::Ui => __('filament-tma::enums.origin.interface'),
+            self::Api => __('filament-tma::enums.origin.api'),
+            self::Command => __('filament-tma::enums.origin.command'),
+            self::Scheduler => __('filament-tma::enums.origin.scheduler'),
         };
     }
 }

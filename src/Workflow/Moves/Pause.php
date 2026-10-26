@@ -28,7 +28,7 @@ class Pause extends Move
 
     public function label(): string
     {
-        return __('Mettre en pause');
+        return __('filament-tma::workflow.ticket.pause.label');
     }
 
     public function color(): string
@@ -67,9 +67,9 @@ class Pause extends Move
     public function formSchema(Ticket $ticket): array
     {
         return [
-            DateTimePicker::make('until')->label(__('Reprise le'))->required()->minDate(now())->seconds(false)
-                ->hintAction(Help::action('tma.tickets.pause', __('Que se passe-t-il à la reprise ?'))),
-            $this->reasonField(false, help: ['tma.tickets.pause', __('La pause et sa reprise')]),
+            DateTimePicker::make('until')->label(__('filament-tma::common.resumes_on'))->required()->minDate(now())->seconds(false)
+                ->hintAction(Help::action('tma.tickets.pause', __('filament-tma::workflow.ticket.pause.help'))),
+            $this->reasonField(false, help: ['tma.tickets.pause', __('filament-tma::workflow.ticket.pause.help_title')]),
         ];
     }
 

@@ -59,45 +59,45 @@ class AgentTimeEntries extends Component implements HasActions, HasSchemas, HasT
     {
         return $table
             ->records(fn (): array => $this->entries())
-            ->heading(__('Temps passé'))
+            ->heading(__('filament-tma::common.time_spent'))
             ->description(fn (): string => $this->error ?? TimeEntriesRelationManager::totals($this->subject()))
             ->paginated(false)
-            ->emptyStateHeading(fn (): string => $this->error !== null ? __('Le Support ne répond pas') : __('Pas encore de temps saisi'))
+            ->emptyStateHeading(fn (): string => $this->error !== null ? __('filament-tma::time.agent.support_unreachable') : __('filament-tma::common.no_time_yet'))
             ->emptyStateIcon('heroicon-o-clock')
             ->columns([
                 Split::make([
-                    TextColumn::make('actor')->label(__('Intervenant'))->weight(FontWeight::Medium)->limit(24),
-                    TextColumn::make('worked_on')->label(__('Le'))->date('d/m')->color('gray')->grow(false),
-                    TextColumn::make('minutes')->label(__('Durée'))
+                    TextColumn::make('actor')->label(__('filament-tma::common.agent'))->weight(FontWeight::Medium)->limit(24),
+                    TextColumn::make('worked_on')->label(__('filament-tma::common.date_on'))->date('d/m')->color('gray')->grow(false),
+                    TextColumn::make('minutes')->label(__('filament-tma::common.duration'))
                         ->formatStateUsing(fn (int $state): string => Duration::format($state))
                         ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
                 ]),
-                TextColumn::make('details')->label(__('Détail'))
+                TextColumn::make('details')->label(__('filament-tma::common.detail'))
                     ->state(fn (array $record): ?string => collect([
-                        ($entry = $this->entryOf($record['entry_ulid'])) !== null ? __('Sur : :entry', ['entry' => TimeEntryForm::entryLabel($entry, short: true)]) : null,
-                        $record['billable'] ? null : __('Non facturable'),
-                        $record['invoiced'] ? __('Facturée') : null,
+                        ($entry = $this->entryOf($record['entry_ulid'])) !== null ? __('filament-tma::common.on_entry', ['entry' => TimeEntryForm::entryLabel($entry, short: true)]) : null,
+                        $record['billable'] ? null : __('filament-tma::common.not_billable'),
+                        $record['invoiced'] ? __('filament-tma::common.billed') : null,
                     ])->filter()->implode(' · ') ?: null)
                     ->wrap()->color('gray')->size(TextSize::ExtraSmall),
             ])
             ->headerActions([
                 Action::make('logTime')
-                    ->label(__('Saisir du temps'))
+                    ->label(__('filament-tma::common.log_time'))
                     ->icon('heroicon-m-plus')
                     ->size(Size::Small)
-                    ->modalDescription(__('Enregistré chez le Support, en votre nom.'))
+                    ->modalDescription(__('filament-tma::time.agent.logged_for_you'))
                     ->schema(fn (): array => TimeEntryForm::components(fn (): Trackable => $this->subject()))
                     ->action(function (array $data, Action $action): void {
                         $this->send($action, fn (): array => TimelineActions::logAgentTime($this->subject(), $data));
-                        Notification::make()->success()->title(__('Temps enregistré chez le Support'))->send();
+                        Notification::make()->success()->title(__('filament-tma::common.time_logged_at_support'))->send();
                     }),
             ])
             ->recordActions([
                 Action::make('edit')
-                    ->label(__('Modifier'))
+                    ->label(__('filament-tma::common.edit'))
                     ->icon('heroicon-m-pencil-square')
                     ->iconButton()
-                    ->tooltip(__('Modifier'))
+                    ->tooltip(__('filament-tma::common.edit'))
                     ->hidden(fn (array $record): bool => $record['invoiced'])
                     ->fillForm(fn (array $record): array => [
                         'worked_on' => $record['worked_on'],
@@ -116,20 +116,20 @@ class AgentTimeEntries extends Component implements HasActions, HasSchemas, HasT
                             'summary' => TimeEntryForm::message($data),
                             'entry_ulid' => $on?->ulid,
                         ]));
-                        Notification::make()->success()->title(__('Temps modifié chez le Support'))->send();
+                        Notification::make()->success()->title(__('filament-tma::time.agent.updated'))->send();
                     }),
                 Action::make('delete')
-                    ->label(__('Supprimer'))
+                    ->label(__('filament-tma::common.delete'))
                     ->icon('heroicon-m-trash')
                     ->color('danger')
                     ->iconButton()
-                    ->tooltip(__('Supprimer'))
+                    ->tooltip(__('filament-tma::common.delete'))
                     ->hidden(fn (array $record): bool => $record['invoiced'])
                     ->requiresConfirmation()
-                    ->modalHeading(__('Supprimer cette saisie ?'))
+                    ->modalHeading(__('filament-tma::time.agent.delete_confirm'))
                     ->action(function (array $record, Action $action): void {
                         $this->send($action, fn (): array => app(MasterClient::class)->agentChangeTime($this->agent(), $this->subject(), $record['ulid'], ['delete' => true]));
-                        Notification::make()->success()->title(__('Saisie supprimée chez le Support'))->send();
+                        Notification::make()->success()->title(__('filament-tma::time.agent.deleted'))->send();
                     }),
             ]);
     }
@@ -193,6 +193,6 @@ class AgentTimeEntries extends Component implements HasActions, HasSchemas, HasT
     protected function agent(): Agent
     {
         return Context::current()->forSubject($this->subject())->agent
-            ?? throw new AuthorizationException(__('Réservé aux membres du Support.'));
+            ?? throw new AuthorizationException(__('filament-tma::common.support_members_only'));
     }
 }

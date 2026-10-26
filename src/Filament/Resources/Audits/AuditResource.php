@@ -34,12 +34,12 @@ class AuditResource extends Resource implements HasKnowledgeBase
 
     public static function getModelLabel(): string
     {
-        return __('entrée du journal');
+        return __('filament-tma::audits.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('journal d’audit');
+        return __('filament-tma::audits.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -73,28 +73,28 @@ class AuditResource extends Resource implements HasKnowledgeBase
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('created_at')->label(__('Le'))->dateTime('d/m/Y H:i:s')->sortable(),
-                TextColumn::make('action')->label(__('Action'))->badge()->searchable(),
-                TextColumn::make('subject_label')->label(__('Objet'))->searchable(),
-                TextColumn::make('actor.name')->label(__('Par'))->placeholder(__('Système')),
-                TextColumn::make('origin')->label(__('Origine'))->badge(),
-                TextColumn::make('changes')->label(__('Changement'))
+                TextColumn::make('created_at')->label(__('filament-tma::common.date_on'))->dateTime('d/m/Y H:i:s')->sortable(),
+                TextColumn::make('action')->label(__('filament-tma::audits.columns.action'))->badge()->searchable(),
+                TextColumn::make('subject_label')->label(__('filament-tma::audits.columns.subject'))->searchable(),
+                TextColumn::make('actor.name')->label(__('filament-tma::audits.columns.causer'))->placeholder(__('filament-tma::common.system')),
+                TextColumn::make('origin')->label(__('filament-tma::audits.columns.origin'))->badge(),
+                TextColumn::make('changes')->label(__('filament-tma::audits.columns.change'))
                     ->state(fn (Audit $record): HtmlString => self::summary($record))
                     ->wrap(),
             ])
             ->filters([
-                SelectFilter::make('action')->label(__('Action'))->options(fn (): array => Audit::query()->distinct()->orderBy('action')->pluck('action', 'action')->all()),
-                SelectFilter::make('origin')->label(__('Origine'))->options(Origin::class),
+                SelectFilter::make('action')->label(__('filament-tma::audits.columns.action'))->options(fn (): array => Audit::query()->distinct()->orderBy('action')->pluck('action', 'action')->all()),
+                SelectFilter::make('origin')->label(__('filament-tma::audits.columns.origin'))->options(Origin::class),
                 Filter::make('period')->schema([
-                    DatePicker::make('from')->label(__('Du')),
-                    DatePicker::make('until')->label(__('Au')),
+                    DatePicker::make('from')->label(__('filament-tma::common.date_from')),
+                    DatePicker::make('until')->label(__('filament-tma::common.date_to')),
                 ])->query(fn (Builder $query, array $data): Builder => $query
                     ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '>=', $d))
                     ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '<=', $d))),
             ])
             ->recordActions([
                 Action::make('details')
-                    ->label(__('Détail'))
+                    ->label(__('filament-tma::common.detail'))
                     ->modalSubmitAction(false)
                     ->modalContent(fn (Audit $record): HtmlString => new HtmlString(
                         '<pre style="white-space:pre-wrap;font-size:.75rem">'.e(json_encode([

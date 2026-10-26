@@ -30,12 +30,12 @@ class ForceClose extends Move
 
     public function label(): string
     {
-        return __('Forcer la clôture');
+        return __('filament-tma::workflow.ticket.force_close.label');
     }
 
     public function description(): ?string
     {
-        return __('Hors du tour : le ticket est clos tout de suite, quel que soit celui qu’on attend.');
+        return __('filament-tma::workflow.ticket.force_close.description');
     }
 
     public function color(): string
@@ -75,7 +75,7 @@ class ForceClose extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->reasonField(help: ['tma.tickets.forcages', __('Quand forcer la clôture ?')])];
+        return [$this->reasonField(help: ['tma.tickets.forcages', __('filament-tma::workflow.ticket.force_close.help')])];
     }
 
     public function requiresConfirmation(): bool

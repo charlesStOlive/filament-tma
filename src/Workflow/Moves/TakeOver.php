@@ -25,17 +25,17 @@ class TakeOver extends Move
 
     public function label(): string
     {
-        return __('Prendre la main');
+        return __('filament-tma::workflow.ticket.take_over.label');
     }
 
     public function labelFor(Ticket $ticket): string
     {
-        return $ticket->requester === null ? $this->label() : __('Prendre la main (à la place de :name)', ['name' => $ticket->requester->name]);
+        return $ticket->requester === null ? $this->label() : __('filament-tma::workflow.ticket.take_over.label_named', ['name' => $ticket->requester->name]);
     }
 
     public function description(): ?string
     {
-        return __('Vous devenez le demandeur : c’est vous que le Support attendra, pour cette réponse et la suite.');
+        return __('filament-tma::workflow.ticket.take_over.description');
     }
 
     public function color(): string

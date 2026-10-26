@@ -24,12 +24,12 @@ class ReopenTask extends TaskMove
 
     public function label(): string
     {
-        return __('Rouvrir');
+        return __('filament-tma::workflow.task.reopen.label');
     }
 
     public function description(): ?string
     {
-        return __('La tâche repart En cours, chez le client aussi.');
+        return __('filament-tma::workflow.task.reopen.description');
     }
 
     public function color(): string
@@ -65,7 +65,7 @@ class ReopenTask extends TaskMove
 
     public function formSchema(ProjectTask $task): array
     {
-        return [Textarea::make('reason')->label(__('Pourquoi la rouvrir ? (facultatif)'))->rows(3)->maxLength(2000)];
+        return [Textarea::make('reason')->label(__('filament-tma::workflow.task.reopen.reason'))->rows(3)->maxLength(2000)];
     }
 
     public function apply(ProjectTask $task, array $data, Context $context): void

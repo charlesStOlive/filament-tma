@@ -61,13 +61,13 @@ final class TimeLog
 
         // Sur un ticket, un message va avec un passage : le temps n'y a pas de texte (addendum §3.2).
         if ($ticket instanceof Ticket) {
-            throw ValidationException::withMessages(['message' => __('Sur un ticket, le temps n’a pas de texte : rattachez-le à un message ou une note de la fiche, ou à la fiche entière.')]);
+            throw ValidationException::withMessages(['message' => __('filament-tma::time.errors.ticket_time_needs_target')]);
         }
 
         if (! app(Timeline::class)->canAdd($ticket, $type, $context)) {
             throw new AuthorizationException($type === EntryType::Note
-                ? __('Vous ne pouvez pas écrire de note sur ce ticket.')
-                : __('Ce ticket ne prend plus de message : rattachez le temps à un message existant, ou à la fiche entière.'));
+                ? __('filament-tma::time.errors.cannot_write_note')
+                : __('filament-tma::time.errors.ticket_closed_for_messages'));
         }
 
         return DB::transaction(fn (): TimeEntry => $this->add(
@@ -79,11 +79,11 @@ final class TimeLog
     private function assertCanAdd(Trackable $ticket, int $minutes, \DateTimeInterface|string|null $workedOn, Context $context, bool $billable): void
     {
         if (! $this->canLog($ticket, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas saisir de temps sur ce ticket.'));
+            throw new AuthorizationException(__('filament-tma::common.cannot_log_time'));
         }
 
         if ($minutes <= 0 || $minutes > 24 * 60) {
-            throw ValidationException::withMessages(['minutes' => __('Une saisie va d’une minute à 24 heures.')]);
+            throw ValidationException::withMessages(['minutes' => __('filament-tma::time.errors.range')]);
         }
 
         $this->assertWithinAllowance($ticket, $minutes, $workedOn, $billable);
@@ -103,7 +103,7 @@ final class TimeLog
             $key = AllowanceMeter::periodKey($allowance, $probe->worked_on);
 
             if (AllowanceMeter::consumed($allowance, $key) + $minutes > $allowance->minutes) {
-                throw ValidationException::withMessages(['minutes' => __('Le forfait « :label » serait dépassé.', ['label' => $allowance->label()])]);
+                throw ValidationException::withMessages(['minutes' => __('filament-tma::time.errors.allowance_exceeded', ['label' => $allowance->label()])]);
             }
         }
     }
@@ -115,6 +115,6 @@ final class TimeLog
             return;
         }
 
-        throw ValidationException::withMessages(['entry_id' => __('Ce message n’est pas sur cette fiche.')]);
+        throw ValidationException::withMessages(['entry_id' => __('filament-tma::time.errors.message_not_on_record')]);
     }
 }

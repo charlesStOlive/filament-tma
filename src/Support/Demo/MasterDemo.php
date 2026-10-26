@@ -33,7 +33,7 @@ final class MasterDemo extends Scenario
         config(['queue.default' => 'sync']);
 
         $instance = Instance::query()->active()->orderBy('id')->first()
-            ?? throw new RuntimeException(__('Aucune application cliente active : reliez-en une (Support › Applications clientes).'));
+            ?? throw new RuntimeException(__('filament-tma::commands.demo.no_instance'));
         $support = $this->teller = $this->supportUser();
         $ctx = Context::ui($support);
         $tasks = app(TaskWorkflow::class);
@@ -163,6 +163,6 @@ final class MasterDemo extends Scenario
 
         return $model::query()->orderBy('id')->get()
             ->first(fn ($user): bool => TmaGate::allows($user, TmaGate::workflowAction('publish'), new ProjectTask) && TmaGate::allows($user, TmaGate::TIME, new ProjectTask))
-            ?? throw new RuntimeException(__('Aucun utilisateur ne peut publier de tâche ni saisir du temps.'));
+            ?? throw new RuntimeException(__('filament-tma::commands.demo.no_publisher'));
     }
 }

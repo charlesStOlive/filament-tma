@@ -31,13 +31,13 @@ final class RecipientsSection
 {
     public static function make(): Section
     {
-        return Section::make(__('Destinataires'))->key('recipients')->compact()->columnSpanFull()
-            ->headerActions([self::editAction(), Help::title('tma.notifications', __('Qui est prévenu ?'))])
+        return Section::make(__('filament-tma::recipients.heading'))->key('recipients')->compact()->columnSpanFull()
+            ->headerActions([self::editAction(), Help::title('tma.notifications', __('filament-tma::recipients.help'))])
             ->schema([
-                TextEntry::make('primary_recipients')->label(__('Principaux'))
+                TextEntry::make('primary_recipients')->label(__('filament-tma::recipients.main_short'))
                     ->state(fn (Trackable $record): array => self::names($record, RecipientRole::Primary))
                     ->badge()->color('primary')->placeholder('—'),
-                TextEntry::make('secondary_recipients')->label(__('Secondaires'))
+                TextEntry::make('secondary_recipients')->label(__('filament-tma::recipients.secondary_short'))
                     ->state(fn (Trackable $record): array => self::names($record, RecipientRole::Secondary))
                     ->badge()->color('gray')->placeholder('—'),
             ]);
@@ -46,19 +46,19 @@ final class RecipientsSection
     public static function editAction(): Action
     {
         return Action::make('recipients')
-            ->label(__('Modifier'))
+            ->label(__('filament-tma::common.edit'))
             ->icon('heroicon-m-pencil-square')
             ->link()
             ->size(Size::Small)
             ->visible(fn (Trackable $record): bool => self::mayEdit($record))
-            ->modalHeading(__('Destinataires'))
-            ->modalDescription(__('Les principaux sont prévenus tout de suite de ce qui arrive ; les secondaires, dans leur bilan. L’auteur reste principal.'))
+            ->modalHeading(__('filament-tma::recipients.heading'))
+            ->modalDescription(__('filament-tma::recipients.description'))
             ->fillForm(fn (Trackable $record): array => app(Recipients::class)->keys($record))
             ->schema(fn (Trackable $record): array => RecipientsFields::make(
                 fn (): ?string => $record->clientInstanceUid(),
                 project: $record instanceof ProjectTask ? fn (): ?Project => $record->project : null,
             ))
-            ->modalSubmitActionLabel(__('Enregistrer'))
+            ->modalSubmitActionLabel(__('filament-tma::common.save'))
             ->action(function (Trackable $record, array $data, Action $action, Component $livewire): void {
                 try {
                     app(Recipients::class)->update($record, (array) ($data['primary_recipients'] ?? []), (array) ($data['secondary_recipients'] ?? []), Context::current());
@@ -68,7 +68,7 @@ final class RecipientsSection
                 }
 
                 $livewire->dispatch('tma-timeline-changed');
-                Notification::make()->success()->title(__('Destinataires enregistrés'))->send();
+                Notification::make()->success()->title(__('filament-tma::recipients.saved'))->send();
             });
     }
 

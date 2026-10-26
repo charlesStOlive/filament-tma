@@ -8,7 +8,7 @@ class TaskDone extends TaskState
 
     public function getLabel(): string
     {
-        return __('Terminée');
+        return __('filament-tma::states.task.done.label');
     }
 
     public function getColor(): string
@@ -23,7 +23,7 @@ class TaskDone extends TaskState
 
     public function getDescription(): ?string
     {
-        return __('Achevée : elle peut être facturée entièrement.');
+        return __('filament-tma::states.task.done.description');
     }
 
     public function isFinal(): bool

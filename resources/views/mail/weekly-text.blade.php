@@ -2,7 +2,7 @@
 
 {!! $heading !!}
 
-{!! mb_strtoupper(__('Pour information')) !!} : {!! $boxText !!}
+{!! mb_strtoupper(__('filament-tma::notifications.mail.for_information')) !!} : {!! $boxText !!}
 @foreach ($projects as $project)
 
 === {!! $project['title'] !!} ===
@@ -19,7 +19,7 @@
 @endforeach
 @if ($copies !== [])
 
-=== {!! mb_strtoupper(__('En copie')) !!} ===
+=== {!! mb_strtoupper(__('filament-tma::notifications.digest.copy')) !!} ===
 @foreach ($copies as $task)
 - {!! $task['ref'] !!} — {!! $task['title'] !!}
 @foreach ($task['lines'] as $line)
@@ -32,6 +32,6 @@
 --
 {!! $reason !!}
 @if ($brand['preferences'])
-{!! __('Régler mes notifications') !!} : {!! $brand['preferences'] !!}
+{!! __('filament-tma::notifications.mail.settings') !!} : {!! $brand['preferences'] !!}
 @endif
 {!! $brand['name'] !!}

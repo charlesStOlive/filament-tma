@@ -1,0 +1,36 @@
+<?php
+
+return [
+    'errors' => [
+        'request_locked' => 'Un message a suivi la demande : elle ne se modifie plus.',
+        'ticket_finished' => 'Ce ticket est terminé.',
+        'task_cancelled' => 'Cette tâche est annulée.',
+        'wrong_uid' => 'L’application répond, mais avec un autre identifiant (:uid).',
+        'check_url' => ':message Vérifiez l’adresse de l’application dans sa fiche, chez le Support (:url).',
+        'agent_missing' => 'Aucun utilisateur :email dans :app : créez-le d’abord, avec ses rôles.',
+        'unknown_ticket' => 'Ticket inconnu de cette application.',
+        'master_missing' => 'Le Support n’est pas configuré (TMA_MASTER_URL, TMA_MASTER_TOKEN).',
+        'master_url_missing' => 'Le Support n’est pas configuré (TMA_MASTER_URL).',
+        'entry_other_ticket' => 'Cette entrée appartient à un autre ticket.',
+        'message_locked' => 'Quelqu’un a écrit après ce message : il ne se modifie plus.',
+        'file' => 'Fichier illisible ou trop gros : :name',
+        'status' => ':what : l’autre application a répondu :status (:detail).',
+        'no_answer' => ':what : l’autre application ne répond pas.',
+        'no_token' => 'L’application :name n’a pas de jeton : renseignez-le dans « Applications clientes ».',
+        'unknown' => 'Erreur inconnue',
+    ],
+    'operations' => [
+        'test_master' => 'Test de connexion au Support',
+        'transmit' => 'Transmission au Support',
+        'transmit_token' => 'Transmission du jeton au Support',
+        'push_master' => 'Envoi au Support',
+        'test' => 'Test de connexion',
+        'users' => 'Utilisateurs de :name',
+        'push_ticket' => 'Envoi du ticket :number',
+        'push_project' => 'Envoi du projet :title',
+        'link_agent' => 'Relier l’agent :email',
+        'unlink_agent' => 'Délier l’agent :email',
+        'push_files' => 'Envoi des fichiers',
+        'push_allowances' => 'Envoi des forfaits',
+    ],
+];

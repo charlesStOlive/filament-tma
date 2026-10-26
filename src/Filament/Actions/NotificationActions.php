@@ -38,7 +38,7 @@ final class NotificationActions
     public static function profileLink(): Action
     {
         return Action::make('tmaNotifications')
-            ->label(__('Mes notifications'))
+            ->label(__('filament-tma::notification_settings.mine'))
             ->icon('heroicon-o-adjustments-horizontal')
             ->visible(fn (): bool => NoticeChannels::userChoice()
                 && auth()->user() instanceof HasUserOptions
@@ -50,25 +50,25 @@ final class NotificationActions
     public static function sendNow(): Action
     {
         return Action::make('tmaSendNotifications')
-            ->label(__('Envoyer maintenant'))
+            ->label(__('filament-tma::notification_settings.flush.label'))
             ->icon('heroicon-o-paper-airplane')
             ->visible(fn (): bool => TmaGate::allows(auth()->user(), TmaGate::NOTIFY))
             ->requiresConfirmation()
             ->modalIcon('heroicon-o-paper-airplane')
-            ->modalHeading(__('Envoyer les notifications en attente ?'))
+            ->modalHeading(__('filament-tma::notification_settings.flush.heading'))
             ->modalDescription(function (): string {
                 $counts = DigestSender::pendingCounts();
 
                 return $counts['notices'] === 0
-                    ? __('Rien n’attend un envoi groupé.')
-                    : __(':n notification(s) en attente pour :r personne(s) : chacune reçoit son récapitulatif maintenant, au lieu d’attendre le prochain.', ['n' => $counts['notices'], 'r' => $counts['recipients']]);
+                    ? __('filament-tma::notification_settings.flush.nothing')
+                    : __('filament-tma::notification_settings.flush.description', ['n' => $counts['notices'], 'r' => $counts['recipients']]);
             })
-            ->modalSubmitActionLabel(__('Envoyer'))
+            ->modalSubmitActionLabel(__('filament-tma::notification_settings.flush.submit'))
             ->action(function (): void {
                 $result = DigestSender::send(pendingOnly: true);
                 Notification::make()->success()
-                    ->title(__(':r récapitulatif(s) envoyé(s)', ['r' => $result['recipients']]))
-                    ->body(__(':n notification(s).', ['n' => $result['notices']]))
+                    ->title(__('filament-tma::notification_settings.flush.done', ['r' => $result['recipients']]))
+                    ->body(__('filament-tma::notification_settings.flush.done_body', ['n' => $result['notices']]))
                     ->send();
             });
     }
@@ -76,53 +76,53 @@ final class NotificationActions
     public static function remind(): Action
     {
         return Action::make('remind')
-            ->label(__('Relancer'))
+            ->label(__('filament-tma::notification_settings.remind.label'))
             ->icon('heroicon-m-bell-alert')
             ->color('gray')
             ->visible(fn (Ticket $record): bool => self::canRemind($record, Context::current()))
-            ->modalHeading(fn (Ticket $record): string => __('Relancer : :who', ['who' => match ($record->sideInCharge()) {
+            ->modalHeading(fn (Ticket $record): string => __('filament-tma::notification_settings.remind.heading', ['who' => match ($record->sideInCharge()) {
                 Side::Requester => $record->requester?->name,
                 Side::Handler => $record->assignee?->name,
                 default => null,
             } ?? $record->waitingOn()]))
-            ->modalDescription(__('Un message marqué « Relance » part dans l’historique ; qui a la main reçoit un courriel tout de suite, même s’il n’a pas choisi l’e-mail direct.'))
+            ->modalDescription(__('filament-tma::notification_settings.remind.description'))
             ->schema([
                 Textarea::make('message')
-                    ->label(__('Votre mot (facultatif)'))
+                    ->label(__('filament-tma::notification_settings.remind.message'))
                     ->placeholder(self::defaultReminder())
                     ->rows(3),
             ])
-            ->modalSubmitActionLabel(__('Relancer'))
+            ->modalSubmitActionLabel(__('filament-tma::notification_settings.remind.label'))
             ->action(function (Ticket $record, array $data, Component $livewire): void {
                 $text = trim((string) ($data['message'] ?? '')) ?: self::defaultReminder();
                 app(Timeline::class)->add($record, EntryType::Comment, '<p>'.nl2br(e($text)).'</p>', Context::current(), meta: ['reminder' => true]);
 
                 $livewire->dispatch('tma-timeline-changed');
-                Notification::make()->success()->title(__('Relance envoyée'))->send();
+                Notification::make()->success()->title(__('filament-tma::notification_settings.remind.sent'))->send();
             });
     }
 
     public static function informByMail(): Action
     {
         return Action::make('informByMail')
-            ->label(__('Informer par courriel'))
+            ->label(__('filament-tma::notification_settings.inform.label'))
             ->icon('heroicon-m-envelope')
             ->color('gray')
             ->visible(fn (ProjectTask $record): bool => self::canInform($record, Context::current()))
-            ->modalHeading(__('Informer le client par courriel'))
-            ->modalDescription(__('Votre message part dans l’historique de la tâche, et ses destinataires principaux chez le client le reçoivent par courriel. Sans cela, une tâche ne leur parvient que dans la cloche et le bilan de la semaine.'))
+            ->modalHeading(__('filament-tma::notification_settings.inform.heading'))
+            ->modalDescription(__('filament-tma::notification_settings.inform.description'))
             ->schema([
                 Textarea::make('message')
-                    ->label(__('Message'))
+                    ->label(__('filament-tma::common.message'))
                     ->required()
                     ->rows(5),
             ])
-            ->modalSubmitActionLabel(__('Envoyer'))
+            ->modalSubmitActionLabel(__('filament-tma::notification_settings.flush.submit'))
             ->action(function (ProjectTask $record, array $data, Component $livewire): void {
                 app(Timeline::class)->add($record, EntryType::Comment, '<p>'.nl2br(e(trim((string) $data['message']))).'</p>', Context::current(), meta: ['notify' => true]);
 
                 $livewire->dispatch('tma-timeline-changed');
-                Notification::make()->success()->title(__('Message envoyé'))->body(__('Le client le reçoit par courriel.'))->send();
+                Notification::make()->success()->title(__('filament-tma::notification_settings.inform.sent'))->body(__('filament-tma::notification_settings.inform.sent_body'))->send();
             });
     }
 
@@ -163,6 +163,6 @@ final class NotificationActions
 
     private static function defaultReminder(): string
     {
-        return __('Ce ticket attend votre retour.');
+        return __('filament-tma::notification_settings.remind.default_message');
     }
 }

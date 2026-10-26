@@ -14,8 +14,8 @@ enum AllowancePeriod: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Monthly => __('Mensuel'),
-            self::Quarterly => __('Trimestriel'),
+            self::Monthly => __('filament-tma::enums.allowance_period.monthly'),
+            self::Quarterly => __('filament-tma::enums.allowance_period.quarterly'),
         };
     }
 

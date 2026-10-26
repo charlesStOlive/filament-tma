@@ -10,7 +10,7 @@ class Cancelled extends TicketState
 
     public function getLabel(): string
     {
-        return __('Annulé');
+        return __('filament-tma::states.ticket.cancelled.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Cancelled extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Abandonné ou refusé, avec son motif.');
+        return __('filament-tma::states.ticket.cancelled.description');
     }
 
     public function inHandsOf(): ?Side

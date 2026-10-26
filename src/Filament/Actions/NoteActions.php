@@ -38,12 +38,12 @@ final class NoteActions
     public static function board(): Action
     {
         return Action::make('notes')
-            ->label(__('Notes'))
+            ->label(__('filament-tma::common.notes'))
             ->icon('heroicon-m-pencil-square')
             ->color('warning')
             ->modalHeading(fn (Trackable $record, array $arguments): string => ($message = self::message($record, $arguments)) !== null
-                ? __('Le message de :author et ses notes', ['author' => $message->author?->name ?? '?'])
-                : __('Les notes sur :subject', ['subject' => $record->number]))
+                ? __('filament-tma::notes.heading.message', ['author' => $message->author?->name ?? '?'])
+                : __('filament-tma::notes.heading.subject', ['subject' => $record->number]))
             ->modalWidth(Width::SevenExtraLarge)
             ->modalContent(fn (Trackable $record, array $arguments, Action $action) => view('filament-tma::notes.board', [
                 'subject' => $record,
@@ -52,7 +52,7 @@ final class NoteActions
                 'action' => $action,
             ]))
             ->modalSubmitAction(false)
-            ->modalCancelActionLabel(__('Fermer'))
+            ->modalCancelActionLabel(__('filament-tma::common.close'))
             ->registerModalActions([self::create(), self::edit(), self::archive(), self::delete()])
             ->visible(fn (): bool => Timeline::notesEnabled());
     }
@@ -60,15 +60,15 @@ final class NoteActions
     public static function create(): Action
     {
         return Action::make('createNote')
-            ->label(__('Ajouter une note'))
+            ->label(__('filament-tma::notes.add.label'))
             ->icon('heroicon-m-plus')
             ->color('warning')
             ->modalHeading(fn (Trackable $record, array $arguments): string => ($message = self::message($record, $arguments)) !== null
-                ? __('Une note sur le message de :author', ['author' => $message->author?->name ?? '?'])
-                : __('Une note sur :subject', ['subject' => $record->number]))
-            ->modalDescription(__('Tout le monde sur le ticket la lira, sauf si vous la gardez pour vous ; elle ne change pas son état.'))
+                ? __('filament-tma::notes.add.heading_message', ['author' => $message->author?->name ?? '?'])
+                : __('filament-tma::notes.add.heading_subject', ['subject' => $record->number]))
+            ->modalDescription(__('filament-tma::notes.add.description'))
             ->modalWidth(Width::TwoExtraLarge)
-            ->modalSubmitActionLabel(__('Ajouter la note'))
+            ->modalSubmitActionLabel(__('filament-tma::notes.add.submit'))
             ->overlayParentActions()
             ->schema([self::bodyField(), self::imagesField(), self::privateField()])
             ->visible(fn (Trackable $record): bool => app(Timeline::class)->canAdd($record, EntryType::Note, Context::current()))
@@ -83,19 +83,19 @@ final class NoteActions
                     private: (bool) ($data['private'] ?? false),
                 ));
 
-                Notification::make()->success()->title(__(':note ajoutée', ['note' => $note->noteLabel()]))->send();
+                Notification::make()->success()->title(__('filament-tma::notes.add.done', ['note' => $note->noteLabel()]))->send();
             });
     }
 
     public static function edit(): Action
     {
         return Action::make('editNote')
-            ->label(__('Modifier'))
+            ->label(__('filament-tma::common.edit'))
             ->icon('heroicon-m-pencil')
             ->color('gray')
-            ->modalHeading(fn (Trackable $record, array $arguments): string => __('Modifier la note n° :number', ['number' => self::note($record, $arguments)->number]))
+            ->modalHeading(fn (Trackable $record, array $arguments): string => __('filament-tma::notes.edit.heading', ['number' => self::note($record, $arguments)->number]))
             ->modalWidth(Width::TwoExtraLarge)
-            ->modalSubmitActionLabel(__('Enregistrer'))
+            ->modalSubmitActionLabel(__('filament-tma::common.save'))
             ->overlayParentActions()
             ->fillForm(fn (Trackable $record, array $arguments): array => [
                 'body' => self::note($record, $arguments)->body,
@@ -104,12 +104,12 @@ final class NoteActions
             ->schema(fn (Trackable $record, array $arguments): array => [
                 self::bodyField(),
                 CheckboxList::make('remove_files')
-                    ->label(__('Retirer'))
+                    ->label(__('filament-tma::common.withdraw'))
                     ->options(self::note($record, $arguments)->getMedia(Entry::ATTACHMENTS_COLLECTION)
                         ->mapWithKeys(fn (Media $media): array => [Uploads::uuidOf($media) => $media->file_name])->all())
                     ->visible(fn (): bool => self::note($record, $arguments)->getMedia(Entry::ATTACHMENTS_COLLECTION)->isNotEmpty())
                     ->columns(2),
-                self::imagesField()->label(__('Ajouter des images')),
+                self::imagesField()->label(__('filament-tma::notes.edit.add_images')),
                 self::privateField(),
             ])
             ->visible(fn (Trackable $record, array $arguments): bool => ($note = self::note($record, $arguments, orFail: false)) !== null
@@ -126,7 +126,7 @@ final class NoteActions
                     (bool) ($data['private'] ?? false),
                 ));
 
-                Notification::make()->success()->title(__(':note modifiée', ['note' => $note->noteLabel()]))->send();
+                Notification::make()->success()->title(__('filament-tma::notes.edit.done', ['note' => $note->noteLabel()]))->send();
             });
     }
 
@@ -134,7 +134,7 @@ final class NoteActions
     public static function archive(): Action
     {
         return Action::make('archiveNote')
-            ->label(fn (Trackable $record, array $arguments): string => self::note($record, $arguments, orFail: false)?->isArchived() ? __('Ressortir') : __('Archiver'))
+            ->label(fn (Trackable $record, array $arguments): string => self::note($record, $arguments, orFail: false)?->isArchived() ? __('filament-tma::notes.archive.restore') : __('filament-tma::notes.archive.archive'))
             ->icon(fn (Trackable $record, array $arguments): string => self::note($record, $arguments, orFail: false)?->isArchived() ? 'heroicon-m-arrow-uturn-up' : 'heroicon-m-archive-box')
             ->color('gray')
             ->visible(fn (Trackable $record, array $arguments): bool => ($note = self::note($record, $arguments, orFail: false)) !== null
@@ -146,7 +146,7 @@ final class NoteActions
                 self::run($action, fn (): Entry => app(Timeline::class)->archive($note, $archived, Context::current()));
 
                 Notification::make()->success()
-                    ->title($archived ? __(':note archivée', ['note' => $note->noteLabel()]) : __(':note ressortie', ['note' => $note->noteLabel()]))
+                    ->title($archived ? __('filament-tma::notes.archive.archived', ['note' => $note->noteLabel()]) : __('filament-tma::notes.archive.restored', ['note' => $note->noteLabel()]))
                     ->send();
             });
     }
@@ -154,13 +154,13 @@ final class NoteActions
     public static function delete(): Action
     {
         return Action::make('deleteNote')
-            ->label(__('Supprimer'))
+            ->label(__('filament-tma::common.delete'))
             ->icon('heroicon-m-trash')
             ->color('danger')
             ->requiresConfirmation()
-            ->modalHeading(fn (Trackable $record, array $arguments): string => __('Supprimer la note n° :number ?', ['number' => self::note($record, $arguments)->number]))
-            ->modalDescription(__('Elle disparaît, des deux côtés. Son numéro n’est pas redonné.'))
-            ->modalSubmitActionLabel(__('Supprimer'))
+            ->modalHeading(fn (Trackable $record, array $arguments): string => __('filament-tma::notes.delete.heading', ['number' => self::note($record, $arguments)->number]))
+            ->modalDescription(__('filament-tma::notes.delete.description'))
+            ->modalSubmitActionLabel(__('filament-tma::common.delete'))
             ->overlayParentActions()
             ->visible(fn (Trackable $record, array $arguments): bool => ($note = self::note($record, $arguments, orFail: false)) !== null
                 && app(Timeline::class)->canDelete($note, Context::current()))
@@ -169,7 +169,7 @@ final class NoteActions
 
                 self::run($action, fn (): Entry => app(Timeline::class)->delete($note, Context::current()));
 
-                Notification::make()->success()->title(__(':note supprimée', ['note' => $note->noteLabel()]))->send();
+                Notification::make()->success()->title(__('filament-tma::notes.delete.done', ['note' => $note->noteLabel()]))->send();
             });
     }
 
@@ -177,15 +177,15 @@ final class NoteActions
     public static function editMessage(): Action
     {
         return Action::make('editMessage')
-            ->label(__('Modifier'))
+            ->label(__('filament-tma::common.edit'))
             ->icon('heroicon-m-pencil')
             ->color('gray')
-            ->modalHeading(__('Modifier votre message'))
-            ->modalDescription(__('Possible tant que personne d’autre n’a écrit après lui. Tout le monde verra qu’il a été modifié.'))
+            ->modalHeading(__('filament-tma::notes.message.edit_heading'))
+            ->modalDescription(__('filament-tma::notes.message.edit_description'))
             ->modalWidth(Width::ThreeExtraLarge)
-            ->modalSubmitActionLabel(__('Enregistrer'))
+            ->modalSubmitActionLabel(__('filament-tma::common.save'))
             ->fillForm(fn (Trackable $record, array $arguments): array => ['body' => self::message($record, $arguments, orFail: true)->body])
-            ->schema([self::bodyField(__('Votre message…'))->required()])
+            ->schema([self::bodyField(__('filament-tma::common.your_message'))->required()])
             ->visible(fn (Trackable $record, array $arguments): bool => ($message = self::message($record, $arguments)) !== null
                 && app(Timeline::class)->canEdit($message, Context::current()))
             ->action(function (Trackable $record, array $data, array $arguments, Action $action): void {
@@ -193,7 +193,7 @@ final class NoteActions
 
                 self::run($action, fn (): Entry => app(Timeline::class)->edit($message, $data['body'] ?? null, Context::current()));
 
-                Notification::make()->success()->title(__('Message modifié'))->send();
+                Notification::make()->success()->title(__('filament-tma::notes.message.edited'))->send();
             });
     }
 
@@ -201,7 +201,7 @@ final class NoteActions
     {
         return RichEditor::make('body')
             ->hiddenLabel()
-            ->placeholder($placeholder ?? __('Votre note…'))
+            ->placeholder($placeholder ?? __('filament-tma::notes.fields.placeholder'))
             ->toolbarButtons([
                 ['bold', 'italic', 'underline', 'strike', 'link'],
                 ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -213,8 +213,8 @@ final class NoteActions
     public static function privateField(): Toggle
     {
         return Toggle::make('private')
-            ->label(__('Visible de moi seul'))
-            ->helperText(__('Personne d’autre ne la verra. Vous pourrez la montrer à tous plus tard.'));
+            ->label(__('filament-tma::notes.fields.private'))
+            ->helperText(__('filament-tma::notes.fields.private_help'));
     }
 
     /** Les images d'une note : celles de la liste blanche des pièces jointes (`filament-tma.attachments`). */
@@ -226,8 +226,8 @@ final class NoteActions
         ));
 
         return FileUpload::make('attachments')
-            ->label(__('Images'))
-            ->hintAction(Help::action('tma.chronologie.notes', __('Les notes')))
+            ->label(__('filament-tma::notes.fields.images'))
+            ->hintAction(Help::action('tma.chronologie.notes', __('filament-tma::notes.help')))
             ->image()
             ->multiple()
             ->disk(config('filament-tma.attachments.disk', 'local'))

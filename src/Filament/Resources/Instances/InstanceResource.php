@@ -50,12 +50,12 @@ class InstanceResource extends Resource implements HasKnowledgeBase
 
     public static function getModelLabel(): string
     {
-        return __('application cliente');
+        return __('filament-tma::instances.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('applications clientes');
+        return __('filament-tma::instances.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -84,13 +84,13 @@ class InstanceResource extends Resource implements HasKnowledgeBase
         $clientModel = config('filament-tma.models.client');
 
         return $schema->components([
-            Section::make(__('Application'))->columns(2)->columnSpanFull()->schema([
-                TextInput::make('name')->label(__('Nom'))->required()->maxLength(255),
-                TextInput::make('short_name')->label(__('Nom court du client'))->maxLength(30)
+            Section::make(__('filament-tma::common.application'))->columns(2)->columnSpanFull()->schema([
+                TextInput::make('name')->label(__('filament-tma::instances.fields.name'))->required()->maxLength(255),
+                TextInput::make('short_name')->label(__('filament-tma::instances.fields.short_name'))->maxLength(30)
                     ->placeholder('EDM')
-                    ->helperText(__('Il nomme le client dans certains libellés : « Publier chez EDM », « Correspondants EDM ». Il part chez le client avec « Configuration de l’application ».'))
-                    ->hintAction(Help::action('tma.comprendre.vocabulaire', __('Les mots du module'))),
-                TextInput::make('uid')->label(__('Identifiant (TMA_INSTANCE_UID de l’application)'))
+                    ->helperText(__('filament-tma::instances.fields.short_name_help'))
+                    ->hintAction(Help::action('tma.comprendre.vocabulaire', __('filament-tma::instances.help.wording'))),
+                TextInput::make('uid')->label(__('filament-tma::instances.fields.uid'))
                     ->required()->length(26)->unique(ignoreRecord: true)
                     ->default(fn (): string => self::newUid())
                     ->dehydrateStateUsing(fn (string $state): string => strtoupper(trim($state)))
@@ -98,36 +98,36 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                     ->suffixAction(
                         Action::make('generateUid')
                             ->icon('heroicon-m-arrow-path')
-                            ->tooltip(__('Générer un nouvel identifiant'))
+                            ->tooltip(__('filament-tma::instances.fields.uid_regenerate'))
                             ->visible(fn (?Instance $record): bool => $record === null || ! $record->hasTickets())
                             ->action(fn ($set) => $set('uid', self::newUid())),
                     )
-                    ->helperText(__('Proposé d’office : gardez-le, l’application le recevra par « Configuration de l’application ». Si elle en a déjà un, collez le sien. Il ne change plus une fois des tickets reçus.'))
-                    ->hintAction(Help::action('tma.demarrer.identifiant', __('À quoi sert l’identifiant ?'))),
-                TextInput::make('url')->label(__('Adresse'))->required()->url()->maxLength(255)->columnSpanFull()
-                    ->helperText(__('La racine du site de l’application, telle que le Support la joint.'))
-                    ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
-                Select::make('client_id')->label(__('Client'))
+                    ->helperText(__('filament-tma::instances.fields.uid_help'))
+                    ->hintAction(Help::action('tma.demarrer.identifiant', __('filament-tma::instances.help.uid'))),
+                TextInput::make('url')->label(__('filament-tma::instances.fields.base_url'))->required()->url()->maxLength(255)->columnSpanFull()
+                    ->helperText(__('filament-tma::instances.fields.base_url_help'))
+                    ->hintAction(Help::action('tma.demarrer.adresse', __('filament-tma::instances.help.base_url'))),
+                Select::make('client_id')->label(__('filament-tma::common.client'))
                     ->visible(filled($clientModel))
                     ->options(fn (): array => $clientModel ? $clientModel::query()->orderBy(config('filament-tma.models.client_title', 'name'))->pluck(config('filament-tma.models.client_title', 'name'), (new $clientModel)->getKeyName())->all() : [])
                     ->searchable(),
-                Toggle::make('is_active')->label(__('Active'))->default(true),
+                Toggle::make('is_active')->label(__('filament-tma::instances.fields.active'))->default(true),
             ]),
-            Section::make(__('Accès'))->columns(2)->columnSpanFull()
-                ->headerActions([Help::title('tma.demarrer.jetons', __('Les comptes et leurs jetons'))])
+            Section::make(__('filament-tma::instances.sections.access'))->columns(2)->columnSpanFull()
+                ->headerActions([Help::title('tma.demarrer.jetons', __('filament-tma::instances.help.tokens'))])
                 ->visibleOn('edit')
                 ->schema([
-                    TextEntry::make('service_account')->label(__('Compte de service de l’application'))
+                    TextEntry::make('service_account')->label(__('filament-tma::instances.fields.service_account'))
                         ->state(fn (?Instance $record): string => $record?->apiUser?->email ?? '—')
-                        ->helperText(__('Créé par le Support, sans rôle : c’est à son jeton qu’il reconnaît l’application.')),
-                    TextEntry::make('token_status')->label(__('Jeton de l’application'))
+                        ->helperText(__('filament-tma::instances.fields.service_account_help')),
+                    TextEntry::make('token_status')->label(__('filament-tma::instances.fields.token'))
                         ->state(fn (?Instance $record): string => filled($record?->token)
-                            ? __('Reçu')
-                            : __('En attente : lancez dans l’application la commande de « Configuration de l’application ».'))
+                            ? __('filament-tma::instances.fields.token_received')
+                            : __('filament-tma::instances.fields.token_pending'))
                         ->badge()
                         ->color(fn (?Instance $record): string => filled($record?->token) ? 'success' : 'warning'),
-                    TextInput::make('token')->label(__('Saisir le jeton à la main'))
-                        ->helperText(__('Seulement si la commande n’a pas pu le transmettre : elle l’affiche alors. Laisser vide pour garder le jeton actuel.'))
+                    TextInput::make('token')->label(__('filament-tma::instances.fields.token_manual'))
+                        ->helperText(__('filament-tma::instances.fields.token_manual_help'))
                         ->password()->revealable()
                         ->dehydrated(fn (?string $state): bool => filled($state))
                         ->columnSpanFull(),
@@ -139,14 +139,14 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     {
         return $table
             ->columns([
-                TextColumn::make('name')->label(__('Nom'))->searchable()->sortable(),
-                TextColumn::make('short_name')->label(__('Nom court'))->placeholder('—'),
-                TextColumn::make('client.'.config('filament-tma.models.client_title', 'name'))->label(__('Client'))->placeholder('—'),
-                TextColumn::make('url')->label(__('Adresse'))->toggleable(),
-                TextColumn::make('uid')->label(__('Identifiant'))->fontFamily('mono')->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('is_active')->label(__('Active'))->boolean(),
-                TextColumn::make('last_seen_at')->label(__('Dernier appel reçu'))->since()->placeholder('—'),
-                TextColumn::make('last_pushed_at')->label(__('Dernier envoi'))->since()->placeholder('—'),
+                TextColumn::make('name')->label(__('filament-tma::instances.fields.name'))->searchable()->sortable(),
+                TextColumn::make('short_name')->label(__('filament-tma::instances.columns.short_name'))->placeholder('—'),
+                TextColumn::make('client.'.config('filament-tma.models.client_title', 'name'))->label(__('filament-tma::common.client'))->placeholder('—'),
+                TextColumn::make('url')->label(__('filament-tma::instances.fields.base_url'))->toggleable(),
+                TextColumn::make('uid')->label(__('filament-tma::instances.columns.uid'))->fontFamily('mono')->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('is_active')->label(__('filament-tma::instances.fields.active'))->boolean(),
+                TextColumn::make('last_seen_at')->label(__('filament-tma::instances.columns.last_seen'))->since()->placeholder('—'),
+                TextColumn::make('last_pushed_at')->label(__('filament-tma::instances.columns.last_push'))->since()->placeholder('—'),
             ])
             ->recordActions([
                 self::setupClientAction(),
@@ -169,21 +169,21 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     public static function setupClientAction(): Action
     {
         return Action::make('setupClient')
-            ->label(__('Configuration de l’application'))
+            ->label(__('filament-tma::instances.configure.label'))
             ->icon('heroicon-m-key')
-            ->modalHeading(fn (Instance $record): string => __('Configurer :name', ['name' => $record->name]))
-            ->modalDescription(__('Un nouveau jeton est émis pour l’application ; le précédent ne marche plus.'))
-            ->modalSubmitActionLabel(__('Générer'))
+            ->modalHeading(fn (Instance $record): string => __('filament-tma::instances.configure.heading', ['name' => $record->name]))
+            ->modalDescription(__('filament-tma::instances.configure.description'))
+            ->modalSubmitActionLabel(__('filament-tma::instances.configure.submit'))
             ->fillForm(fn (Instance $record): array => [
                 'master_url' => config('filament-tma.api.public_url') ?: config('app.url'),
                 'ticket_prefix' => strtoupper(Str::substr(Str::slug($record->name, ''), 0, 3)),
             ])
             ->schema([
-                TextInput::make('master_url')->label(__('Adresse du Support, vue de l’application'))->url()->required()
-                    ->helperText(__('En développement, l’adresse du conteneur (http://filbreeze.test…), pas localhost.'))
-                    ->hintAction(Help::action('tma.demarrer.adresse', __('Quelle adresse ?'))),
-                TextInput::make('ticket_prefix')->label(__('Préfixe des tickets de l’application'))->required()->maxLength(10)
-                    ->hintAction(Help::action('tma.demarrer.identifiant', __('Le préfixe des numéros'))),
+                TextInput::make('master_url')->label(__('filament-tma::instances.configure.master_url'))->url()->required()
+                    ->helperText(__('filament-tma::instances.configure.master_url_help'))
+                    ->hintAction(Help::action('tma.demarrer.adresse', __('filament-tma::instances.help.base_url'))),
+                TextInput::make('ticket_prefix')->label(__('filament-tma::instances.configure.prefix'))->required()->maxLength(10)
+                    ->hintAction(Help::action('tma.demarrer.identifiant', __('filament-tma::instances.help.prefix'))),
             ])
             ->action(function (Instance $record, array $data, $livewire): void {
                 $token = ServiceAccount::token($record->ensureServiceAccount());
@@ -211,9 +211,9 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     public static function clientEnvAction(): Action
     {
         return Action::make('clientEnv')
-            ->modalHeading(__('Configuration de l’application'))
+            ->modalHeading(__('filament-tma::instances.configure.label'))
             ->modalSubmitAction(false)
-            ->modalCancelActionLabel(__('Fermer'))
+            ->modalCancelActionLabel(__('filament-tma::common.close'))
             ->modalContent(fn (array $arguments) => view('filament-tma::instances.client-env', [
                 'command' => $arguments['command'] ?? '',
                 'env' => $arguments['env'] ?? '',
@@ -237,7 +237,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     public static function pingAction(): Action
     {
         return Action::make('ping')
-            ->label(__('Tester'))
+            ->label(__('filament-tma::instances.test.label'))
             ->icon('heroicon-m-signal')
             ->action(function (Instance $record): void {
                 try {
@@ -251,7 +251,7 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 $sameUid = ($answer['instance_uid'] ?? null) === $record->uid;
                 Notification::make()
                     ->{$sameUid ? 'success' : 'warning'}()
-                    ->title($sameUid ? __('Connexion réussie : :name', ['name' => $answer['name'] ?? $record->name]) : __('L’application répond, mais son identifiant n’est pas celui enregistré ici.'))
+                    ->title($sameUid ? __('filament-tma::instances.test.success', ['name' => $answer['name'] ?? $record->name]) : __('filament-tma::instances.test.wrong_uid'))
                     ->send();
             });
     }
@@ -263,25 +263,25 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     public static function resyncAction(): Action
     {
         return Action::make('resyncAll')
-            ->label(__('Tout renvoyer'))
+            ->label(__('filament-tma::instances.resync.label'))
             ->icon('heroicon-m-arrow-path')
             ->color('gray')
             ->visible(fn (Instance $record): bool => Tma::isMaster() && static::canEdit($record))
             ->requiresConfirmation()
-            ->modalHeading(fn (Instance $record): string => __('Tout renvoyer à :name ?', ['name' => $record->name]))
-            ->modalDescription(fn (Instance $record): string => __('Les noms sont remis à jour des deux côtés, puis ses :projects projets et ses :n tickets et tâches publiées repartent, avec leurs messages et leurs fichiers. Rien n’est perdu ni dédoublé.', [
+            ->modalHeading(fn (Instance $record): string => __('filament-tma::instances.resync.heading', ['name' => $record->name]))
+            ->modalDescription(fn (Instance $record): string => __('filament-tma::instances.resync.description', [
                 'projects' => Resync::projects($record)->count(),
                 'n' => Resync::subjects($record)->filter->isShared()->count(),
             ]))
-            ->modalSubmitActionLabel(__('Tout renvoyer'))
+            ->modalSubmitActionLabel(__('filament-tma::instances.resync.label'))
             ->action(function (Instance $record): void {
                 $names = Resync::refreshNames($record);
                 $projects = Resync::pushProjects(Resync::projects($record));
                 $sent = Resync::push(Resync::subjects($record));
 
                 Notification::make()->success()
-                    ->title(__('Envoi demandé'))
-                    ->body(__(':projects projet(s), :sent ticket(s) et tâche(s) repartent ; :names nom(s) mis à jour.', ['projects' => $projects, 'sent' => $sent, 'names' => $names]))
+                    ->title(__('filament-tma::common.send_requested'))
+                    ->body(__('filament-tma::instances.resync.done', ['projects' => $projects, 'sent' => $sent, 'names' => $names]))
                     ->send();
             });
     }
@@ -289,11 +289,11 @@ class InstanceResource extends Resource implements HasKnowledgeBase
     public static function usersAction(): Action
     {
         return Action::make('users')
-            ->label(__('Utilisateurs'))
+            ->label(__('filament-tma::instances.users.heading'))
             ->icon('heroicon-m-users')
             ->modalSubmitAction(false)
-            ->modalCancelActionLabel(__('Fermer'))
-            ->modalDescription(__('Les utilisateurs de l’application qui ont accès au Support (liste gardée une heure).'))
+            ->modalCancelActionLabel(__('filament-tma::common.close'))
+            ->modalDescription(__('filament-tma::instances.users.description'))
             ->modalContent(function (Instance $record): HtmlString {
                 try {
                     $users = RemoteUsers::for($record);
@@ -302,14 +302,14 @@ class InstanceResource extends Resource implements HasKnowledgeBase
                 }
 
                 if ($users === []) {
-                    return new HtmlString('<p>'.e(__('Aucun utilisateur.')).'</p>');
+                    return new HtmlString('<p>'.e(__('filament-tma::instances.users.empty')).'</p>');
                 }
 
                 return new HtmlString('<ul class="fi-tma-users">'.collect($users)->map(fn (array $user): string => '<li><strong>'.e($user['name']).'</strong> '.e($user['email'] ?? '').'</li>')->implode('').'</ul>');
             })
             ->extraModalFooterActions([
                 Action::make('refreshUsers')
-                    ->label(__('Rafraîchir'))
+                    ->label(__('filament-tma::instances.users.refresh'))
                     ->action(fn (Instance $record) => RemoteUsers::forget($record)),
             ]);
     }

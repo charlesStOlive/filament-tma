@@ -42,7 +42,7 @@ class InstallCommand extends Command
         $mode = $this->option('mode') ?: config('filament-tma.mode', 'client');
 
         if (! in_array($mode, ['master', 'client'], true)) {
-            $this->components->error(__('Le mode est master ou client.'));
+            $this->components->error(__('filament-tma::commands.install.mode'));
 
             return self::FAILURE;
         }
@@ -51,13 +51,13 @@ class InstallCommand extends Command
         $uid = strtoupper((string) ($this->option('uid') ?: $current ?: Str::ulid()));
 
         if (strlen($uid) !== 26) {
-            $this->components->error(__('Un identifiant fait 26 caractères (un ULID).'));
+            $this->components->error(__('filament-tma::commands.install.uid_length'));
 
             return self::FAILURE;
         }
 
         if (filled($current) && $current !== $uid && Ticket::withTrashed()->exists()) {
-            $this->components->error(__('Des tickets existent déjà avec l’identifiant :uid : il ne change plus.', ['uid' => $current]));
+            $this->components->error(__('filament-tma::commands.install.uid_locked', ['uid' => $current]));
 
             return self::FAILURE;
         }
@@ -78,7 +78,7 @@ class InstallCommand extends Command
 
         if ($mode === 'client' && filled($email = $this->option('master-account'))) {
             if ($this->option('show')) {
-                $this->components->warn(__('--show : le compte du Support n’est pas créé.'));
+                $this->components->warn(__('filament-tma::commands.install.show_no_account'));
             } else {
                 $this->connectMaster($email, $values);
             }
@@ -86,11 +86,11 @@ class InstallCommand extends Command
 
         $this->newLine();
         $this->components->bulletList([
-            __('Identifiant de cette application : :uid', ['uid' => $uid]),
+            __('filament-tma::commands.install.uid', ['uid' => $uid]),
             $mode === 'master'
-                ? __('Déclarez chaque application cliente dans Support › Applications clientes.')
-                : __('Chez le Support, l’application se déclare avec cet identifiant.'),
-            __('Pensez à `php artisan config:clear` si la configuration est en cache.'),
+                ? __('filament-tma::commands.install.declare_clients')
+                : __('filament-tma::commands.install.declare_at_master'),
+            __('filament-tma::commands.install.config_clear'),
         ]);
 
         return self::SUCCESS;
@@ -104,7 +104,7 @@ class InstallCommand extends Command
      */
     private function connectMaster(string $email, array $values): void
     {
-        $token = ServiceAccount::token(ServiceAccount::user($email, __('Support (TMA)')));
+        $token = ServiceAccount::token(ServiceAccount::user($email, __('filament-tma::commands.install.service_account_name')));
 
         config(array_filter([
             'filament-tma.api.master_user' => $email,
@@ -113,7 +113,7 @@ class InstallCommand extends Command
         ]));
 
         if (blank(config('filament-tma.master.url')) || blank(config('filament-tma.master.token'))) {
-            $this->showToken($email, $token, __('Le Support n’est pas encore configuré (--master-url, --master-token).'));
+            $this->showToken($email, $token, __('filament-tma::commands.install.master_missing'));
 
             return;
         }
@@ -126,19 +126,19 @@ class InstallCommand extends Command
             return;
         }
 
-        $this->components->info(__('Jeton transmis au Support (application « :name »).', ['name' => $answer['instance'] ?? '?']));
+        $this->components->info(__('filament-tma::commands.install.token_sent', ['name' => $answer['instance'] ?? '?']));
 
         if ($answer['callback'] ?? false) {
-            $this->components->info(__('Le Support joint cette application : la liaison marche dans les deux sens.'));
+            $this->components->info(__('filament-tma::commands.install.reachable'));
         } else {
-            $this->components->warn(__('Le Support ne joint pas encore cette application : :error', ['error' => $answer['callback_error'] ?? '?']));
+            $this->components->warn(__('filament-tma::commands.install.unreachable', ['error' => $answer['callback_error'] ?? '?']));
         }
     }
 
     private function showToken(string $email, string $token, string $why): void
     {
         $this->components->warn($why);
-        $this->components->info(__('Compte du Support : :email. Son jeton, à coller chez le Support (Applications clientes › Saisir le jeton à la main) :', ['email' => $email]));
+        $this->components->info(__('filament-tma::commands.install.account_token', ['email' => $email]));
         $this->line($token);
     }
 
@@ -147,7 +147,7 @@ class InstallCommand extends Command
     {
         if ($this->option('show') || ! EnvFile::writable()) {
             if (! $this->option('show')) {
-                $this->components->warn(__('.env n’est pas modifiable : ajoutez ces lignes vous-même.'));
+                $this->components->warn(__('filament-tma::commands.install.env_readonly'));
             }
 
             $this->line(EnvFile::lines($values));
@@ -156,6 +156,6 @@ class InstallCommand extends Command
         }
 
         EnvFile::set($values);
-        $this->components->info(__('.env mis à jour : :keys', ['keys' => implode(', ', array_keys($values))]));
+        $this->components->info(__('filament-tma::commands.install.env_updated', ['keys' => implode(', ', array_keys($values))]));
     }
 }

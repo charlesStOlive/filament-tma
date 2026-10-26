@@ -84,7 +84,7 @@ class Allowance extends Model
 
     public function label(): string
     {
-        $who = $this->instance?->name ?? $this->client?->{config('filament-tma.models.client_title', 'name')} ?? __('Forfait');
+        $who = $this->instance?->name ?? $this->client?->{config('filament-tma.models.client_title', 'name')} ?? __('filament-tma::common.allowance');
 
         return trim($who.($this->contract ? ' — '.$this->contract : ''));
     }

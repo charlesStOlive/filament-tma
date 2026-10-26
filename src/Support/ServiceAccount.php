@@ -55,7 +55,7 @@ final class ServiceAccount
     public static function token(Authenticatable $user): string
     {
         if (! method_exists($user, 'createToken')) {
-            throw new RuntimeException(__('Le modèle des utilisateurs doit utiliser Laravel\Passport\HasApiTokens.'));
+            throw new RuntimeException(__('filament-tma::commands.errors.user_model_tokens'));
         }
 
         $user->tokens()->where('name', self::TOKEN_NAME)->where('revoked', false)->get()->each->revoke();

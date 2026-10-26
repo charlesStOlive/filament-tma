@@ -3,13 +3,13 @@
 {!! $heading !!}
 
 @if ($tone === 'action')
-{!! mb_strtoupper(__('À faire')) !!} : {!! $data['action'] ?? __('Ce ticket attend votre action.') !!}
+{!! mb_strtoupper(__('filament-tma::notifications.digest.todo')) !!} : {!! $data['action'] ?? __('filament-tma::notifications.mail.waiting_action') !!}
 @if ($closesOn)
-{!! __('Sans réponse, le ticket sera clos automatiquement le :date.', ['date' => $closesOn]) !!}
+{!! __('filament-tma::notifications.mail.closing', ['date' => $closesOn]) !!}
 @endif
 
 @elseif ($kind === 'task')
-{!! mb_strtoupper(__('Pour information')) !!} : {!! __('Aucune action n’est attendue de votre part.') !!}
+{!! mb_strtoupper(__('filament-tma::notifications.mail.for_information')) !!} : {!! __('filament-tma::notifications.weekly.no_action') !!}
 
 @endif
 {!! $data['line'] !!}
@@ -34,6 +34,6 @@
 {!! $reason !!}
 @endif
 @if ($brand['preferences'])
-{!! __('Régler mes notifications') !!} : {!! $brand['preferences'] !!}
+{!! __('filament-tma::notifications.mail.settings') !!} : {!! $brand['preferences'] !!}
 @endif
 {!! $brand['name'] !!}

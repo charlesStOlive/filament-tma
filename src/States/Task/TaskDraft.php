@@ -8,7 +8,7 @@ class TaskDraft extends TaskState
 
     public function getLabel(): string
     {
-        return __('Brouillon');
+        return __('filament-tma::states.task.draft.label');
     }
 
     public function getColor(): string
@@ -23,6 +23,6 @@ class TaskDraft extends TaskState
 
     public function getDescription(): ?string
     {
-        return __('Visible du Support seulement : pas encore publiée chez le client.');
+        return __('filament-tma::states.task.draft.description');
     }
 }

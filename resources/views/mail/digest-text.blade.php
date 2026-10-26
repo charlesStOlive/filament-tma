@@ -3,12 +3,12 @@
 {!! $heading !!}
 @if ($todo !== [])
 
-=== {!! mb_strtoupper(__('À faire')) !!} ===
+=== {!! mb_strtoupper(__('filament-tma::notifications.digest.todo')) !!} ===
 @foreach ($todo as $group)
 
 {!! $group['title'] !!}
 @foreach ($group['items'] as $item)
-- {!! $item['ref'] !!} — {!! $item['title'] !!} ({!! implode(', ', array_filter([$item['state'], $item['since'] ? __('depuis le :date', ['date' => $item['since']]) : null, $item['closes_on'] ? __('clos sans réponse le :date', ['date' => $item['closes_on']]) : null, $item['late'] ? __('en retard') : null])) !!})
+- {!! $item['ref'] !!} — {!! $item['title'] !!} ({!! implode(', ', array_filter([$item['state'], $item['since'] ? __('filament-tma::notifications.digest.since', ['date' => $item['since']]) : null, $item['closes_on'] ? __('filament-tma::notifications.digest.auto_closed', ['date' => $item['closes_on']]) : null, $item['late'] ? __('filament-tma::notifications.digest.overdue') : null])) !!})
 @if ($item['url'])
   {!! $item['url'] !!}
 @endif
@@ -21,7 +21,7 @@
 @endif
 @if ($news !== [])
 
-=== {!! mb_strtoupper(__('Nouveautés')) !!} ===
+=== {!! mb_strtoupper(__('filament-tma::notifications.digest.news')) !!} ===
 @foreach ($news as $group)
 - {!! $group['ref'] !!} — {!! $group['title'] !!}
 @if ($group['url'])
@@ -35,8 +35,8 @@
 @endif
 @if ($copies !== [])
 
-=== {!! mb_strtoupper(__('En copie')) !!} ===
-{!! __('Pour information : là où vous êtes destinataire secondaire.') !!}
+=== {!! mb_strtoupper(__('filament-tma::notifications.digest.copy')) !!} ===
+{!! __('filament-tma::notifications.digest.copy_help') !!}
 @foreach ($copies as $group)
 - {!! $group['ref'] !!} — {!! $group['title'] !!}
 @foreach ($group['lines'] as $line)
@@ -49,6 +49,6 @@
 --
 {!! $reason !!}
 @if ($brand['preferences'])
-{!! __('Régler mes notifications') !!} : {!! $brand['preferences'] !!}
+{!! __('filament-tma::notifications.mail.settings') !!} : {!! $brand['preferences'] !!}
 @endif
 {!! $brand['name'] !!}

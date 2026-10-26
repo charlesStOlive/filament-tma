@@ -32,9 +32,9 @@
     @if ($for)
         {{-- Au nom d'un client (un courriel recopié par le Support), adressé à quelqu'un du client, ou pour lui. --}}
         <span class="fi-tma-entry-instance">{{ match (true) {
-            $subject->opening === \CharlesStOlive\FilamentTma\Enums\TicketOpening::OnBehalf => __('au nom de :name', ['name' => $for->name]),
-            $subject->opening->fromSupport() => __('à :name', ['name' => $for->name]),
-            default => __('pour :name', ['name' => $for->name]),
+            $subject->opening === \CharlesStOlive\FilamentTma\Enums\TicketOpening::OnBehalf => __('filament-tma::timeline.request.on_behalf_of', ['name' => $for->name]),
+            $subject->opening->fromSupport() => __('filament-tma::timeline.request.to', ['name' => $for->name]),
+            default => __('filament-tma::timeline.request.for', ['name' => $for->name]),
         } }}</span>
     @endif
     @if ($opening ?? null)
@@ -43,16 +43,16 @@
     @if ($at)
         <time datetime="{{ $at->toIso8601String() }}">{{ $at->timezone($timezone)->format('d/m/Y H:i') }}</time>
     @elseif ($scheduled)
-        <time datetime="{{ $scheduled->toIso8601String() }}">{{ __('publication prévue le :date', ['date' => $scheduled->timezone($timezone)->format('d/m/Y H:i')]) }}</time>
+        <time datetime="{{ $scheduled->toIso8601String() }}">{{ __('filament-tma::timeline.request.publish_at', ['date' => $scheduled->timezone($timezone)->format('d/m/Y H:i')]) }}</time>
     @elseif ($isTask)
-        <span class="fi-tma-entry-instance">{{ __('brouillon, pas encore publié') }}</span>
+        <span class="fi-tma-entry-instance">{{ __('filament-tma::timeline.request.draft') }}</span>
     @endif
 </header>
 <div class="fi-tma-entry-body prose dark:prose-invert max-w-none">
     @if (filled($subject->description))
         {!! $subject->renderRichContent('description') !!}
     @else
-        <p class="fi-tma-timeline-empty">{{ __('Pas de description.') }}</p>
+        <p class="fi-tma-timeline-empty">{{ __('filament-tma::timeline.request.no_description') }}</p>
     @endif
 </div>
 @include('filament-tma::attachments', ['model' => $subject, 'collection' => $subject::ATTACHMENTS_COLLECTION, 'large' => $large ?? false])

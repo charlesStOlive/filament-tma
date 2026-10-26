@@ -22,20 +22,20 @@
     @if ($note->getKey() === $focus) x-init="$nextTick(() => $el.scrollIntoView({ block: 'nearest' }))" @endif
 >
     <header class="fi-tma-entry-header">
-        <x-filament::badge color="warning" size="sm" icon="heroicon-m-pencil-square">{{ __('n° :number', ['number' => $note->number]) }}</x-filament::badge>
+        <x-filament::badge color="warning" size="sm" icon="heroicon-m-pencil-square">{{ __('filament-tma::notes.card.number', ['number' => $note->number]) }}</x-filament::badge>
         <strong>{{ $note->author?->name }}</strong>
         @if ($team = $note->author?->team())
             <x-filament::badge color="gray" size="sm" class="fi-tma-entry-instance">{{ $team }}</x-filament::badge>
         @endif
         @if ($note->private)
-            <x-filament::badge color="gray" size="sm" icon="heroicon-m-lock-closed">{{ __('Visible de vous seul') }}</x-filament::badge>
+            <x-filament::badge color="gray" size="sm" icon="heroicon-m-lock-closed">{{ __('filament-tma::notes.card.private') }}</x-filament::badge>
         @endif
         @if ($note->isArchived())
-            <x-filament::badge color="gray" size="sm" icon="heroicon-m-archive-box">{{ __('Archivée') }}</x-filament::badge>
+            <x-filament::badge color="gray" size="sm" icon="heroicon-m-archive-box">{{ __('filament-tma::notes.card.archived') }}</x-filament::badge>
         @endif
         @include('filament-tma::timeline.time', ['entry' => $note])
         @if ($note->edited_at)
-            <span class="fi-tma-entry-edited" title="{{ $note->edited_at->timezone($timezone)->format('d/m/Y H:i') }}">{{ __('modifiée') }}</span>
+            <span class="fi-tma-entry-edited" title="{{ $note->edited_at->timezone($timezone)->format('d/m/Y H:i') }}">{{ __('filament-tma::notes.card.edited') }}</span>
         @endif
         <time datetime="{{ $note->created_at->toIso8601String() }}">{{ $note->created_at->timezone($timezone)->format('d/m/Y H:i') }}</time>
     </header>

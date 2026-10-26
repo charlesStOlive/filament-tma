@@ -22,7 +22,8 @@ final class Orthography
     /** La famille des droits de l'IA, comme dans filament-prism (`AiPermissions::FAMILY`). */
     public const FAMILY = 'ai';
 
-    public const FAMILY_LABEL = 'Intelligence artificielle';
+    /** Une clé de traduction : filament-permission-manager la traduit à l'affichage. */
+    public const FAMILY_LABEL = 'filament-tma::permissions.families.ai';
 
     public static function installed(): bool
     {
@@ -55,6 +56,6 @@ final class Orthography
      */
     public static function permissionActions(): array
     {
-        return self::installed() ? [self::FAMILY.'.'.self::task() => 'Corriger l’orthographe avec l’IA'] : [];
+        return self::installed() ? [self::FAMILY.'.'.self::task() => 'filament-tma::permissions.orthography'] : [];
     }
 }

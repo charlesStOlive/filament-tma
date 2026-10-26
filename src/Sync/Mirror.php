@@ -172,7 +172,7 @@ final class Mirror
         $entry = Entry::withTrashed()->firstOrNew(['ulid' => $payload['ulid']]);
 
         if ($entry->exists && ($entry->subject_type !== $ticket->getMorphClass() || (int) $entry->subject_id !== (int) $ticket->getKey())) {
-            throw ValidationException::withMessages(['ulid' => __('Cette entrée appartient à un autre ticket.')]);
+            throw ValidationException::withMessages(['ulid' => __('filament-tma::sync.errors.entry_other_ticket')]);
         }
 
         // Une réponse répond à un message de premier niveau ; une note commente un message de premier niveau, ou le
@@ -252,7 +252,7 @@ final class Mirror
         }
 
         if ($entry->subject_type !== $ticket->getMorphClass() || (int) $entry->subject_id !== (int) $ticket->getKey()) {
-            throw ValidationException::withMessages(['ulid' => __('Cette entrée appartient à un autre ticket.')]);
+            throw ValidationException::withMessages(['ulid' => __('filament-tma::sync.errors.entry_other_ticket')]);
         }
 
         if ($entry->origin_instance_uid !== $instanceUid) {
@@ -264,7 +264,7 @@ final class Mirror
         }
 
         if (! $entry->isNote() && Html::clean((string) ($payload['body'] ?? '')) !== $entry->body && ! $entry->isStillEditable()) {
-            throw ValidationException::withMessages(['body' => __('Quelqu’un a écrit après ce message : il ne se modifie plus.')]);
+            throw ValidationException::withMessages(['body' => __('filament-tma::sync.errors.message_locked')]);
         }
 
         return self::entry($ticket, $payload);
@@ -431,7 +431,7 @@ final class Mirror
             $content = base64_decode((string) ($file['content'] ?? ''), true);
 
             if ($content === false || strlen($content) > $maxBytes) {
-                throw ValidationException::withMessages(['files' => __('Fichier illisible ou trop gros : :name', ['name' => $file['file_name'] ?? '?'])]);
+                throw ValidationException::withMessages(['files' => __('filament-tma::sync.errors.file', ['name' => $file['file_name'] ?? '?'])]);
             }
 
             // Les mêmes contrôles que pour un fichier joint ici : type réel, extension, macros.

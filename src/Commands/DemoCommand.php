@@ -33,26 +33,26 @@ class DemoCommand extends Command
     {
         $wipe = $this->option('wipe') || $this->option('fresh');
 
-        if ($wipe && ! $this->option('force') && ! $this->confirm(__('Vider tous les tickets, tâches, projets, messages, notes et temps de cette application ?'))) {
+        if ($wipe && ! $this->option('force') && ! $this->confirm(__('filament-tma::commands.demo.confirm_wipe'))) {
             return self::FAILURE;
         }
 
         if (app()->isProduction() && ! $this->option('force')) {
-            $this->components->error(__('En production, il faut --force.'));
+            $this->components->error(__('filament-tma::commands.reset.force_required'));
 
             return self::FAILURE;
         }
 
         if ($wipe) {
             $removed = Wipe::run();
-            $this->components->info(__('Vidé : :what.', ['what' => collect($removed)->map(fn (int $n, string $what): string => "{$n} {$what}")->implode(', ')]));
+            $this->components->info(__('filament-tma::commands.demo.wiped', ['what' => collect($removed)->map(fn (int $n, string $what): string => "{$n} {$what}")->implode(', ')]));
         }
 
         if ($this->option('wipe')) {
             return self::SUCCESS;
         }
 
-        $this->components->info(Tma::isMaster() ? __('Exemples du Support :') : __('Exemples de l’application cliente :'));
+        $this->components->info(Tma::isMaster() ? __('filament-tma::commands.demo.master_examples') : __('filament-tma::commands.demo.client_examples'));
 
         try {
             // Des exemples, pas de vrais échanges : personne n'est prévenu.

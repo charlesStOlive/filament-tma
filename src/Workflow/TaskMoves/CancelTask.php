@@ -20,7 +20,7 @@ class CancelTask extends TaskMove
 
     public function label(): string
     {
-        return __('Annuler');
+        return __('filament-tma::workflow.task.cancel.label');
     }
 
     public function color(): string
@@ -50,7 +50,7 @@ class CancelTask extends TaskMove
 
     public function formSchema(ProjectTask $task): array
     {
-        return [Textarea::make('reason')->label(__('Motif'))->required(! $task->state instanceof TaskDraft)->rows(3)->maxLength(2000)];
+        return [Textarea::make('reason')->label(__('filament-tma::workflow.reason'))->required(! $task->state instanceof TaskDraft)->rows(3)->maxLength(2000)];
     }
 
     public function apply(ProjectTask $task, array $data, Context $context): void

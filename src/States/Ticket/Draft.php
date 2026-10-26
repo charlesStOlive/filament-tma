@@ -10,7 +10,7 @@ class Draft extends TicketState
 
     public function getLabel(): string
     {
-        return __('Brouillon');
+        return __('filament-tma::states.task.draft.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Draft extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('En préparation : visible de son auteur et de son application seulement.');
+        return __('filament-tma::states.ticket.draft.description');
     }
 
     public function inHandsOf(): ?Side

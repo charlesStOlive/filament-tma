@@ -20,9 +20,9 @@
                 wire:click="mountAction('notes', @js(['entry' => $entryId, 'note' => $note->getKey()]))"
             >
                 <x-filament::icon icon="heroicon-m-pencil-square" class="fi-tma-note-chip-icon" />
-                <span class="fi-tma-note-chip-number">{{ __('n° :number', ['number' => $note->number]) }}</span>
+                <span class="fi-tma-note-chip-number">{{ __('filament-tma::notes.card.number', ['number' => $note->number]) }}</span>
                 @if ($note->private)
-                    <x-filament::icon icon="heroicon-m-lock-closed" class="fi-tma-note-chip-icon" :title="__('Visible de vous seul')" />
+                    <x-filament::icon icon="heroicon-m-lock-closed" class="fi-tma-note-chip-icon" :title="__('filament-tma::notes.card.private')" />
                 @endif
                 <span class="fi-tma-note-chip-author">{{ $note->author?->name }}</span>
                 @if ($note->getMedia(\CharlesStOlive\FilamentTma\Models\Entry::ATTACHMENTS_COLLECTION)->isNotEmpty())
@@ -38,7 +38,7 @@
                 wire:click="mountAction('notes', @js(['entry' => $entryId]))"
             >
                 <x-filament::icon icon="heroicon-m-archive-box" class="fi-tma-note-chip-icon" />
-                {{ trans_choice(':count note archivée|:count notes archivées', $archived, ['count' => $archived]) }}
+                {{ trans_choice('filament-tma::notes.chips.archived', $archived, ['count' => $archived]) }}
             </button>
         @endif
     </div>

@@ -83,8 +83,8 @@ class CleanupCommand extends Command
 
         $this->cleanUploads($dry);
 
-        $this->table([__('Catégorie'), __('Nombre')], collect($this->report)->map(fn (int $n, string $k): array => [$k, $n])->values()->all());
-        $this->components->info($dry ? __('Simulation : rien n’a été supprimé.') : __('Nettoyage terminé.'));
+        $this->table([__('filament-tma::commands.cleanup.category'), __('filament-tma::commands.cleanup.count')], collect($this->report)->map(fn (int $n, string $k): array => [$k, $n])->values()->all());
+        $this->components->info($dry ? __('filament-tma::commands.cleanup.dry_run') : __('filament-tma::commands.cleanup.done'));
 
         Log::info('filament-tma : nettoyage'.($dry ? ' (simulation)' : ''), $this->report);
 

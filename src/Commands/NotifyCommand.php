@@ -29,7 +29,7 @@ class NotifyCommand extends Command
     public function handle(): int
     {
         if (! $this->option('stale') && ! $this->option('grouped')) {
-            $this->components->error(__('Préciser --stale, --grouped, ou les deux.'));
+            $this->components->error(__('filament-tma::commands.notify.what'));
 
             return self::INVALID;
         }
@@ -39,10 +39,10 @@ class NotifyCommand extends Command
 
         if ($this->option('stale')) {
             if (! config('filament-tma.notifications.stale.enabled', true)) {
-                $this->components->info(__('Rappels désactivés (filament-tma.notifications.stale.enabled).'));
+                $this->components->info(__('filament-tma::commands.notify.stale_disabled'));
             } else {
                 $result = StaleReminders::run($dryRun, fn (Trackable $subject, int $days, int $sent) => $this->line("{$subject->number} — {$subject->title} : {$days} j, {$sent} personne(s)"));
-                $this->components->info($prefix.__(':n rappel(s) sur :s élément(s).', ['n' => $result['reminders'], 's' => $result['subjects']]));
+                $this->components->info($prefix.__('filament-tma::commands.notify.stale_done', ['n' => $result['reminders'], 's' => $result['subjects']]));
             }
         }
 
@@ -52,7 +52,7 @@ class NotifyCommand extends Command
                 dryRun: $dryRun,
                 report: fn (Authenticatable $user, int $waiting, int $news) => $this->line(($user->email ?? $user->getAuthIdentifier())." : {$news} nouveauté(s)"),
             );
-            $this->components->info($prefix.__(':r récapitulatif(s), :n nouveauté(s).', ['r' => $result['recipients'], 'n' => $result['notices']]));
+            $this->components->info($prefix.__('filament-tma::commands.notify.grouped_done', ['r' => $result['recipients'], 'n' => $result['notices']]));
         }
 
         return self::SUCCESS;

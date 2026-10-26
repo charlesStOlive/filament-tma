@@ -21,7 +21,7 @@ class Complete extends TaskMove
 
     public function label(): string
     {
-        return __('Terminer');
+        return __('filament-tma::workflow.task.complete.label');
     }
 
     public function color(): string
@@ -58,8 +58,8 @@ class Complete extends TaskMove
     public function formSchema(ProjectTask $task): array
     {
         return [
-            RichEditor::make('message')->label(__('Le mot de la fin (facultatif)'))
-                ->helperText(__('Ce qui a été livré, ce qui reste à faire : il ouvre le bloc de clôture de l’historique.'))
+            RichEditor::make('message')->label(__('filament-tma::workflow.task.complete.message'))
+                ->helperText(__('filament-tma::workflow.task.complete.message_help'))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['bulletList', 'orderedList'],

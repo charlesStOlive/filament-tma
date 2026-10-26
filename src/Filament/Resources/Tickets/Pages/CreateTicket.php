@@ -81,7 +81,7 @@ class CreateTicket extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return $this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]);
+        return $this->orthographyActions('form', ['title' => __('filament-tma::common.title'), 'description' => __('filament-tma::common.description')]);
     }
 
     /**
@@ -102,7 +102,7 @@ class CreateTicket extends CreateRecord
                     $this->publishNow = true;
                     $this->create();
                 }),
-            $this->getCreateFormAction()->label(__('Enregistrer le brouillon'))->color('gray'),
+            $this->getCreateFormAction()->label(__('filament-tma::tickets.actions.save_draft'))->color('gray'),
             $this->getCancelFormAction(),
         ];
     }
@@ -121,7 +121,7 @@ class CreateTicket extends CreateRecord
     {
         $task = $this->sourceTask();
 
-        return $task === null ? null : __('À partir de la tâche :task', ['task' => $task->number.' — '.$task->title]);
+        return $task === null ? null : __('filament-tma::tickets.from_task_named', ['task' => $task->number.' — '.$task->title]);
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -131,7 +131,7 @@ class CreateTicket extends CreateRecord
         if (Tma::isMaster()) {
             $instance = Instance::query()->where('uid', $data['instance_uid'])->firstOrFail();
             $requester = collect(RemoteUsers::for($instance))->firstWhere('id', (string) $data['requester_id'])
-                ?? throw ValidationException::withMessages(['data.requester_id' => __('Ce demandeur n’est plus dans l’application.')]);
+                ?? throw ValidationException::withMessages(['data.requester_id' => __('filament-tma::tickets.errors.requester_gone')]);
 
             return app(TicketWorkflow::class)->createForClient($instance, $requester, $data, Context::current());
         }

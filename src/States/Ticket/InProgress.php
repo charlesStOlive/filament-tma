@@ -10,7 +10,7 @@ class InProgress extends TicketState
 
     public function getLabel(): string
     {
-        return __('En cours');
+        return __('filament-tma::common.in_progress');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class InProgress extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('La demande est traitée.');
+        return __('filament-tma::states.ticket.in_progress.description');
     }
 
     public function inHandsOf(): ?Side

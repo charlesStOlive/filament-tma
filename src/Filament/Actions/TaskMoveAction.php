@@ -33,7 +33,7 @@ final class TaskMoveAction
                     $action->halt();
                 }
 
-                Notification::make()->success()->title(__('Tâche :number : :state', ['number' => $record->number, 'state' => $record->refresh()->state->getLabel()]))->send();
+                Notification::make()->success()->title(__('filament-tma::workflow.move_heading.task', ['number' => $record->number, 'state' => $record->refresh()->state->getLabel()]))->send();
             });
 
         if ($move->requiresConfirmation()) {

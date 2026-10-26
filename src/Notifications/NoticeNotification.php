@@ -75,7 +75,7 @@ class NoticeNotification extends Notification implements ShouldQueue
         $body = $data['line'].(filled($data['excerpt'] ?? null) ? ' « '.$data['excerpt'].' »' : '');
 
         if ($this->tone() === NoticeTone::Action && filled($data['action'] ?? null)) {
-            $body .= ' '.__('À faire : :action', ['action' => lcfirst((string) $data['action'])]);
+            $body .= ' '.__('filament-tma::notifications.mail.todo', ['action' => lcfirst((string) $data['action'])]);
         }
 
         $notification = FilamentNotification::make()
@@ -111,8 +111,8 @@ class NoticeNotification extends Notification implements ShouldQueue
         $data = $this->notice->data;
 
         return $this->kind() === 'task'
-            ? __('Tâche :ref', ['ref' => $data['ref']]).(filled($data['project'] ?? null) ? ' · '.$data['project'] : '')
-            : __('Ticket :ref', ['ref' => $data['ref']]).' · '.__('Support');
+            ? __('filament-tma::notifications.mail.task_ref', ['ref' => $data['ref']]).(filled($data['project'] ?? null) ? ' · '.$data['project'] : '')
+            : __('filament-tma::notifications.mail.ticket_ref', ['ref' => $data['ref']]).' · '.__('filament-tma::common.support');
     }
 
     /** @return array<string, string> */
@@ -121,9 +121,9 @@ class NoticeNotification extends Notification implements ShouldQueue
         $data = $this->notice->data;
 
         return array_filter([
-            __('État') => $data['state'] ?? null,
-            __('Priorité') => $data['priority'] ?? null,
-            __('Projet') => $this->kind() === 'task' ? ($data['project'] ?? null) : null,
+            __('filament-tma::common.state') => $data['state'] ?? null,
+            __('filament-tma::common.priority') => $data['priority'] ?? null,
+            __('filament-tma::common.project') => $this->kind() === 'task' ? ($data['project'] ?? null) : null,
         ], fn (?string $value): bool => filled($value));
     }
 
@@ -132,20 +132,20 @@ class NoticeNotification extends Notification implements ShouldQueue
         $ticket = $this->kind() === 'ticket';
 
         return match (true) {
-            $this->notice->event === NoticeEvent::Reminder => __('Une relance arrive toujours par courriel.'),
-            $this->notice->event === NoticeEvent::Question && $this->tone() === NoticeTone::Action => __('Vous recevez ce courriel parce que le Support vous pose une question et que vous avez choisi l’e-mail direct.'),
-            filled($this->notice->data['message'] ?? null) => __('Le Support a choisi de vous l’envoyer par courriel ; le reste de vos tâches vous parvient dans le bilan de la semaine.'),
-            ($this->notice->data['role'] ?? null) === 'secondary' => $ticket ? __('Vous êtes destinataire secondaire de ce ticket.') : __('Vous êtes destinataire secondaire de cette tâche.'),
+            $this->notice->event === NoticeEvent::Reminder => __('filament-tma::notifications.mail.why.reminder'),
+            $this->notice->event === NoticeEvent::Question && $this->tone() === NoticeTone::Action => __('filament-tma::notifications.mail.why.question'),
+            filled($this->notice->data['message'] ?? null) => __('filament-tma::notifications.mail.why.informed'),
+            ($this->notice->data['role'] ?? null) === 'secondary' => $ticket ? __('filament-tma::notifications.mail.why.secondary_ticket') : __('filament-tma::notifications.mail.why.secondary_task'),
             $this->tone() === NoticeTone::Action => $ticket
-                ? __('Vous recevez ce courriel parce que ce ticket attend votre action et que vous avez choisi l’e-mail direct.')
-                : __('Vous recevez ce courriel parce que vous êtes destinataire de cette tâche et avez choisi l’e-mail direct.'),
-            default => $ticket ? __('Vous êtes destinataire principal de ce ticket.') : __('Vous êtes destinataire principal de cette tâche.'),
+                ? __('filament-tma::notifications.mail.why.ticket_action')
+                : __('filament-tma::notifications.mail.why.task_recipient'),
+            default => $ticket ? __('filament-tma::notifications.mail.why.main_ticket') : __('filament-tma::notifications.mail.why.main_task'),
         };
     }
 
     private function openLabel(): string
     {
-        return $this->kind() === 'task' ? __('Ouvrir la tâche') : __('Ouvrir le ticket');
+        return $this->kind() === 'task' ? __('filament-tma::notifications.open_task') : __('filament-tma::notifications.open_ticket');
     }
 
     private function icon(): string

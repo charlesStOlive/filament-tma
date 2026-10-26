@@ -71,17 +71,17 @@ class TaskResource extends Resource implements HasKnowledgeBase
 
     /** @var array<string, string> */
     protected static array $permissionFamilies = [
-        TmaGate::WORKFLOW_FAMILY => 'Passages de la tâche',
+        TmaGate::WORKFLOW_FAMILY => 'filament-tma::permissions.families.task_moves',
         Orthography::FAMILY => Orthography::FAMILY_LABEL,
     ];
 
-    /** @var array<string, string> */
+    /** @var array<string, string> Des clés de traduction : filament-permission-manager les traduit à l'affichage. */
     protected static array $permissionLabels = [
-        TmaGate::COMMENT => 'Commenter et répondre',
-        TmaGate::NOTE => 'Écrire des notes et les archiver',
-        TmaGate::TIME => 'Saisir et modifier du temps (maître)',
-        TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
-        TmaGate::TIME_REPORT => 'Voir le suivi des temps (tableau de bord)',
+        TmaGate::COMMENT => 'filament-tma::permissions.task.comment',
+        TmaGate::NOTE => 'filament-tma::permissions.note',
+        TmaGate::TIME => 'filament-tma::permissions.time',
+        TmaGate::SYNC => 'filament-tma::permissions.sync',
+        TmaGate::TIME_REPORT => 'filament-tma::permissions.task.time_report',
     ];
 
     /** @return array<string, string> */
@@ -97,12 +97,12 @@ class TaskResource extends Resource implements HasKnowledgeBase
 
     public static function getModelLabel(): string
     {
-        return __('tâche projet');
+        return __('filament-tma::tasks.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('tâches projet');
+        return __('filament-tma::tasks.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -161,55 +161,55 @@ class TaskResource extends Resource implements HasKnowledgeBase
             ->columns([
                 Split::make([
                     Stack::make([
-                        TextColumn::make('number')->label(__('N°'))->searchable()->sortable()
+                        TextColumn::make('number')->label(__('filament-tma::common.number'))->searchable()->sortable()
                             ->fontFamily(FontFamily::Mono)->size(TextSize::ExtraSmall)->color('gray'),
-                        TextColumn::make('title')->label(__('Titre'))->searchable()->sortable()
+                        TextColumn::make('title')->label(__('filament-tma::common.title'))->searchable()->sortable()
                             ->weight(FontWeight::SemiBold)->wrap(),
                         // Le début de la description, en texte (la colonne recevrait sinon le contenu riche).
-                        TextColumn::make('excerpt')->label(__('Description'))
+                        TextColumn::make('excerpt')->label(__('filament-tma::common.description'))
                             ->state(fn (ProjectTask $record): ?string => filled($record->description) ? Str::limit(Html::toText($record->description), 140) : null)
                             ->color('gray')->size(TextSize::Small)->wrap(),
                     ])->space(1),
                     Stack::make([
-                        TextColumn::make('state')->label(__('État'))->badge(),
-                        TextColumn::make('due_on')->label(__('Échéance prévue'))->sortable()
+                        TextColumn::make('state')->label(__('filament-tma::common.state'))->badge(),
+                        TextColumn::make('due_on')->label(__('filament-tma::common.due_date'))->sortable()
                             ->state(fn (ProjectTask $record): ?string => self::nextDate($record)['text'] ?? null)
                             ->icon(fn (ProjectTask $record): ?string => self::nextDate($record)['icon'] ?? null)
                             ->color(fn (ProjectTask $record): string => self::nextDate($record)['color'] ?? 'gray')
                             ->size(TextSize::Small),
-                        TextColumn::make('targetInstance.name')->label(__('Application'))
+                        TextColumn::make('targetInstance.name')->label(__('filament-tma::common.application'))
                             ->icon('heroicon-m-computer-desktop')->color('gray')->size(TextSize::ExtraSmall)
                             ->visible(fn (): bool => Tma::isMaster()),
                     ])->space(1)->grow(false)
                         // Des largeurs fixes (ici et à droite) : d'une ligne à l'autre, l'état et sa date restent alignés.
                         ->extraAttributes(['style' => 'width: 15rem']),
                     Stack::make([
-                        TextColumn::make('time')->label(__('Temps'))
+                        TextColumn::make('time')->label(__('filament-tma::common.time'))
                             ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes']))
                             ->icon('heroicon-m-clock')->weight(FontWeight::SemiBold),
-                        TextColumn::make('last_activity_at')->label(__('Dernière activité'))->sortable()
+                        TextColumn::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->sortable()
                             ->since()->tooltip(fn (ProjectTask $record): string => Dates::format($record->last_activity_at))->color('gray')->size(TextSize::ExtraSmall),
                     ])->space(1)->grow(false)->extraAttributes(['style' => 'width: 8rem']),
                 ])->from('md'),
             ])
             // Les tâches se rangent par projet.
             ->groups([
-                Group::make('project.title')->label(__('Projet'))
-                    ->getTitleFromRecordUsing(fn (ProjectTask $record): string => $record->project?->title ?? __('Sans projet')),
+                Group::make('project.title')->label(__('filament-tma::common.project'))
+                    ->getTitleFromRecordUsing(fn (ProjectTask $record): string => $record->project?->title ?? __('filament-tma::common.no_project')),
             ])
             ->defaultGroup('project.title')
             ->filters([
-                SelectFilter::make('project_id')->label(__('Projet'))
+                SelectFilter::make('project_id')->label(__('filament-tma::common.project'))
                     ->options(fn (): array => Project::query()->orderBy('title')->pluck('title', 'id')->all())
                     ->searchable(),
-                StateFusionSelectFilter::make('state')->label(__('État'))->multiple(),
-                SelectFilter::make('target_instance_uid')->label(__('Application'))
+                StateFusionSelectFilter::make('state')->label(__('filament-tma::common.state'))->multiple(),
+                SelectFilter::make('target_instance_uid')->label(__('filament-tma::common.application'))
                     ->visible(fn (): bool => Tma::isMaster())
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all()),
             ])
             ->recordActions([
-                ViewAction::make()->iconButton()->tooltip(__('Ouvrir')),
-                TaskDeleteActions::make()->iconButton()->tooltip(__('Supprimer')),
+                ViewAction::make()->iconButton()->tooltip(__('filament-tma::common.open')),
+                TaskDeleteActions::make()->iconButton()->tooltip(__('filament-tma::common.delete')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([TaskDeleteActions::bulk()]),
@@ -225,11 +225,11 @@ class TaskResource extends Resource implements HasKnowledgeBase
     private static function nextDate(ProjectTask $task): ?array
     {
         return match (true) {
-            $task->state instanceof TaskDraft && $task->publish_at !== null => ['text' => __('Publication le :date à :time', ['date' => Dates::format($task->publish_at, 'd/m'), 'time' => Dates::format($task->publish_at, 'H:i')]), 'icon' => 'heroicon-m-paper-airplane', 'color' => 'info'],
-            $task->state instanceof TaskDone && $task->done_at !== null => ['text' => __('le :date', ['date' => Dates::format($task->done_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
-            $task->state instanceof TaskCancelled && $task->cancelled_at !== null => ['text' => __('le :date', ['date' => Dates::format($task->cancelled_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
-            $task->due_on !== null && $task->due_on->endOfDay()->isPast() && ! $task->state instanceof TaskDone && ! $task->state instanceof TaskCancelled => ['text' => __('En retard : échéance le :date', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-exclamation-triangle', 'color' => 'danger'],
-            $task->due_on !== null => ['text' => __('Échéance le :date', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            $task->state instanceof TaskDraft && $task->publish_at !== null => ['text' => __('filament-tma::tasks.schedule.publication', ['date' => Dates::format($task->publish_at, 'd/m'), 'time' => Dates::format($task->publish_at, 'H:i')]), 'icon' => 'heroicon-m-paper-airplane', 'color' => 'info'],
+            $task->state instanceof TaskDone && $task->done_at !== null => ['text' => __('filament-tma::tasks.schedule.on_date', ['date' => Dates::format($task->done_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            $task->state instanceof TaskCancelled && $task->cancelled_at !== null => ['text' => __('filament-tma::tasks.schedule.on_date', ['date' => Dates::format($task->cancelled_at, 'd/m/Y')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
+            $task->due_on !== null && $task->due_on->endOfDay()->isPast() && ! $task->state instanceof TaskDone && ! $task->state instanceof TaskCancelled => ['text' => __('filament-tma::tasks.schedule.overdue', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-exclamation-triangle', 'color' => 'danger'],
+            $task->due_on !== null => ['text' => __('filament-tma::tasks.schedule.due', ['date' => $task->due_on->format('d/m')]), 'icon' => 'heroicon-m-calendar', 'color' => 'gray'],
             default => null,
         };
     }

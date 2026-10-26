@@ -63,7 +63,7 @@
                             <p style="margin: 0 0 6px 0;">{{ $reason }}</p>
                         @endif
                         @if ($brand['preferences'])
-                            <p style="margin: 0 0 6px 0;"><a href="{{ $brand['preferences'] }}" style="color: #6B7280; text-decoration: underline;">{{ __('Régler mes notifications') }}</a></p>
+                            <p style="margin: 0 0 6px 0;"><a href="{{ $brand['preferences'] }}" style="color: #6B7280; text-decoration: underline;">{{ __('filament-tma::notifications.mail.settings') }}</a></p>
                         @endif
                         <p style="margin: 0;">{{ $brand['name'] }}</p>
                     </td>

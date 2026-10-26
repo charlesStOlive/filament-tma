@@ -41,7 +41,7 @@ class TaskForm
             fn (Get $get): ?string => self::instanceUid($get),
             fn (?ProjectTask $record): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
                 if (! $record?->isShared() && ! collect((array) $value)->contains(fn (mixed $key): bool => str_starts_with((string) $key, 'c:'))) {
-                    $fail(__('Choisissez au moins un destinataire principal chez le client, « Toute l’équipe projet » ou « Tout le monde ».'));
+                    $fail(__('filament-tma::tasks.errors.recipient_required'));
                 }
             },
             fn (Get $get): ?Project => Project::query()->find($get('project_id')),
@@ -67,7 +67,7 @@ class TaskForm
     {
         return $schema->components([
             // Le projet porte l'application destinataire ; une tâche publiée ne change plus d'application.
-            Select::make('project_id')->label(__('Projet'))
+            Select::make('project_id')->label(__('filament-tma::common.project'))
                 ->options(fn (?ProjectTask $record): array => Project::query()->with('targetInstance')
                     ->when($record?->isShared(), fn (Builder $q): Builder => $q->where('target_instance_uid', $record->target_instance_uid))
                     ->orderBy('title')
@@ -79,11 +79,11 @@ class TaskForm
                 ->required()
                 ->createOptionForm(ProjectResource::formFields())
                 ->createOptionUsing(fn (array $data): int => ProjectResource::createProject($data)->getKey())
-                ->createOptionModalHeading(__('Nouveau projet'))
+                ->createOptionModalHeading(__('filament-tma::tasks.fields.new_project'))
                 // Le projet choisi se modifie sur place, dans un volet glissant : sa description, sa fourchette, ses
                 // participants (son application ne change plus une fois des tâches dedans).
                 ->editOptionForm(fn (Get $get): array => [
-                    TextInput::make('title')->label(__('Titre'))->required()->maxLength(255),
+                    TextInput::make('title')->label(__('filament-tma::common.title'))->required()->maxLength(255),
                     ...ProjectResource::detailFields(
                         fn (): ?string => self::instanceUid($get),
                         fn (): ?Project => Project::query()->find($get('project_id')),
@@ -95,10 +95,10 @@ class TaskForm
                         ProjectResource::updateProject($project, $data);
                     }
                 })
-                ->editOptionModalHeading(__('Modifier le projet'))
+                ->editOptionModalHeading(__('filament-tma::common.edit_project'))
                 ->editOptionAction(fn (Action $action): Action => $action->slideOver()->modalWidth('lg')
                     ->visible(fn (Select $component): bool => ($project = Project::query()->find($component->getState())) !== null && ProjectResource::canEdit($project)))
-                ->hintAction(Help::action('tma.projets', __('Les projets')))
+                ->hintAction(Help::action('tma.projets', __('filament-tma::common.projects_help')))
                 ->live()
                 // Une nouvelle tâche prend l'équipe de son projet pour destinataires principaux ; un autre projet choisi
                 // ensuite apporte la sienne, tant qu'on n'a pas changé la liste à la main.
@@ -116,35 +116,35 @@ class TaskForm
                 ->columnSpanFull(),
             // Ses destinataires : son auteur d'office ; avant sa publication, au moins un principal chez le client.
             Grid::make(2)->columnSpanFull()->schema(self::recipients()),
-            TextInput::make('title')->label(__('Titre'))->required()->maxLength(255)->columnSpanFull(),
+            TextInput::make('title')->label(__('filament-tma::common.title'))->required()->maxLength(255)->columnSpanFull(),
             Grid::make(2)->columnSpanFull()->schema([
-                DatePicker::make('starts_on')->label(__('Début'))
-                    ->helperText(__('Vide : le jour de la création.'))
-                    ->hintAction(Help::action('tma.taches.periode', __('Début et échéance'))),
+                DatePicker::make('starts_on')->label(__('filament-tma::common.start'))
+                    ->helperText(__('filament-tma::tasks.fields.starts_on_help'))
+                    ->hintAction(Help::action('tma.taches.periode', __('filament-tma::tasks.help.dates'))),
                 // Comparée au début saisi, sinon au jour de la création : sans début, la règle de Filament comparerait
                 // à une valeur vide et refuserait toute échéance.
-                DatePicker::make('due_on')->label(__('Échéance prévue'))
-                    ->helperText(__('Facultative : une date visée, pas une fin fixe.'))
+                DatePicker::make('due_on')->label(__('filament-tma::common.due_date'))
+                    ->helperText(__('filament-tma::tasks.fields.due_on_help'))
                     ->afterOrEqual(fn (Get $get, ?ProjectTask $record): string => $get('starts_on') ?: ($record?->created_at ?? now())->toDateString())
-                    ->validationMessages(['after_or_equal' => __('L’échéance ne peut pas précéder le début.')])
+                    ->validationMessages(['after_or_equal' => __('filament-tma::tasks.errors.due_before_start')])
                     // Facultative : elle ne s'affiche qu'à la demande (« Tout afficher »).
                     ->onDemand(),
-                DateTimePicker::make('publish_at')->label(__('Publication programmée'))
-                    ->helperText(__('Vide : la tâche part chez le client dès l’enregistrement. Avec une date, elle reste en brouillon, invisible du client, et se publie à l’heure dite.'))
+                DateTimePicker::make('publish_at')->label(__('filament-tma::common.scheduled_publication'))
+                    ->helperText(__('filament-tma::tasks.fields.publish_at_help'))
                     ->minDate(now())->seconds(false)
-                    ->hintAction(Help::action('tma.taches.publication', __('Publier une tâche')))
+                    ->hintAction(Help::action('tma.taches.publication', __('filament-tma::tasks.help.publish')))
                     ->visible(fn (?ProjectTask $record): bool => $record === null || ! $record->isShared()),
             ]),
-            RichEditor::make('description')->label(__('Description'))
-                ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('Mise en forme du texte')))
+            RichEditor::make('description')->label(__('filament-tma::common.description'))
+                ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('filament-tma::common.text_formatting')))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['h2', 'h3', 'bulletList', 'orderedList', 'blockquote', 'codeBlock'],
                     ['undo', 'redo'],
                 ])
                 ->columnSpanFull(),
-            Attachments::field(SpatieMediaLibraryFileUpload::make('attachments'))->label(__('Pièces jointes'))
-                ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
+            Attachments::field(SpatieMediaLibraryFileUpload::make('attachments'))->label(__('filament-tma::common.attachments'))
+                ->hintAction(Help::action('tma.chronologie.fichiers', __('filament-tma::common.files_help')))
                 ->collection(ProjectTask::ATTACHMENTS_COLLECTION)
                 ->disk(config('filament-tma.attachments.disk', 'local'))
                 ->visibility('private')

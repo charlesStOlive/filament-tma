@@ -15,10 +15,10 @@ enum Priority: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Low => __('Basse'),
-            self::Normal => __('Normale'),
-            self::High => __('Haute'),
-            self::Urgent => __('Urgente'),
+            self::Low => __('filament-tma::enums.priority.low'),
+            self::Normal => __('filament-tma::enums.priority.normal'),
+            self::High => __('filament-tma::enums.priority.high'),
+            self::Urgent => __('filament-tma::enums.priority.urgent'),
         };
     }
 

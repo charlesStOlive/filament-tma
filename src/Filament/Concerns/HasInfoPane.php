@@ -64,7 +64,7 @@ trait HasInfoPane
             Livewire::make(AgentTimeEntries::class, fn (): array => ['record' => $this->getRecord()])
                 ->key('agent-time-entries')
                 ->visible(fn (Model $record): bool => ! $canLog($record) && $isAgent($record)),
-            Section::make(__('Temps passé'))->key('time')->compact()->columnSpanFull()
+            Section::make(__('filament-tma::common.time_spent'))->key('time')->compact()->columnSpanFull()
                 ->visible(fn (Model $record): bool => ! $canLog($record) && ! $isAgent($record))
                 ->headerActions([TimelineActions::agentTime()->size(Size::Small)])
                 ->schema([
@@ -87,7 +87,7 @@ trait HasInfoPane
     /** Le premier onglet du volet : « Suivi » pour un ticket. */
     protected function sideTabLabel(): string
     {
-        return __('Suivi');
+        return __('filament-tma::common.follow_up');
     }
 
     protected function sideTabIcon(): string
@@ -100,7 +100,7 @@ trait HasInfoPane
     {
         return [
             'infos' => SidePane::make('infos')
-                ->label(__('Suivi'))
+                ->label(__('filament-tma::common.follow_up'))
                 ->closable(false)
                 ->hiddenHeader()
                 ->schema([EmbeddedSchema::make('sideInfolist')]),
@@ -142,7 +142,7 @@ trait HasInfoPane
                     Tab::make($this->sideTabLabel())
                         ->icon($this->sideTabIcon())
                         ->schema($this->sideComponents($this->timeBlock())),
-                    Tab::make(__('Notes'))
+                    Tab::make(__('filament-tma::common.notes'))
                         ->icon('heroicon-m-pencil-square')
                         ->badge(fn (Trackable $record): ?int => $record->entries()->notes()->visibleTo(auth()->user())->whereNull('archived_at')->count() ?: null)
                         ->badgeColor('warning')

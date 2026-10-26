@@ -17,7 +17,7 @@ final class TaskPublication
     {
         if (app(TaskWorkflow::class)->publishUnlessScheduled($task, Context::current())) {
             Notification::make()->success()
-                ->title(__('Publiée chez :client', ['client' => Terms::clientOrInstance($task->target_instance_uid)]))
+                ->title(__('filament-tma::tasks.publication.published', ['client' => Terms::clientOrInstance($task->target_instance_uid)]))
                 ->send();
 
             return true;
@@ -25,7 +25,7 @@ final class TaskPublication
 
         if ($task->state instanceof TaskDraft && $task->publish_at === null) {
             Notification::make()->warning()
-                ->title(__('Restée en brouillon : vous ne pouvez pas la publier.'))
+                ->title(__('filament-tma::tasks.publication.still_draft'))
                 ->send();
         }
 

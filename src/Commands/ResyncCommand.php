@@ -44,7 +44,7 @@ class ResyncCommand extends Command
     public function handle(): int
     {
         if (! Tma::isMaster()) {
-            $this->components->error(__('Cette commande se lance dans le maître : c’est lui qui renvoie aux applications.'));
+            $this->components->error(__('filament-tma::commands.resync.master_only'));
 
             return self::FAILURE;
         }
@@ -55,7 +55,7 @@ class ResyncCommand extends Command
             $instance = Instance::query()->where('uid', $name)->orWhere('name', $name)->first();
 
             if ($instance === null) {
-                $this->components->error(__('Application inconnue : :name', ['name' => $name]));
+                $this->components->error(__('filament-tma::commands.resync.unknown_instance', ['name' => $name]));
 
                 return self::FAILURE;
             }
@@ -69,18 +69,18 @@ class ResyncCommand extends Command
         }
 
         if ($this->option('dry-run')) {
-            $this->components->info(__(':projects projet(s), :n ticket(s) ou tâche(s) partiraient.', ['projects' => $this->projects->count(), 'n' => $subjects->filter->isShared()->count()]));
-            $this->projects->each(fn (Project $project) => $this->line('  '.__('Projet').' — '.$project->title));
+            $this->components->info(__('filament-tma::commands.resync.dry_run', ['projects' => $this->projects->count(), 'n' => $subjects->filter->isShared()->count()]));
+            $this->projects->each(fn (Project $project) => $this->line('  '.__('filament-tma::common.project').' — '.$project->title));
             $subjects->each(fn ($subject) => $this->line('  '.$subject->number.' — '.$subject->title));
 
             return self::SUCCESS;
         }
 
         $names = Resync::refreshNames($instance);
-        $this->components->info(__(':n nom(s) mis à jour.', ['n' => $names]));
+        $this->components->info(__('filament-tma::commands.resync.names', ['n' => $names]));
 
         if (! $this->option('names')) {
-            $this->components->info(__(':n envoi(s) demandé(s), par la file.', ['n' => Resync::pushProjects($this->projects) + Resync::push($subjects)]));
+            $this->components->info(__('filament-tma::commands.resync.queued', ['n' => Resync::pushProjects($this->projects) + Resync::push($subjects)]));
         }
 
         return self::SUCCESS;
@@ -95,7 +95,7 @@ class ResyncCommand extends Command
             $project = Project::query()->where('ulid', strtolower($ref))->orWhere('title', $ref)->first();
 
             if ($project === null) {
-                $this->components->error(__('Projet inconnu : :ref', ['ref' => $ref]));
+                $this->components->error(__('filament-tma::commands.resync.unknown_project', ['ref' => $ref]));
 
                 return null;
             }
@@ -109,7 +109,7 @@ class ResyncCommand extends Command
                 $subject = $model::query()->where('number', $ref)->orWhere('ulid', strtolower($ref))->first();
 
                 if ($subject === null) {
-                    $this->components->error(__('Introuvable : :ref', ['ref' => $ref]));
+                    $this->components->error(__('filament-tma::commands.resync.not_found', ['ref' => $ref]));
 
                     return null;
                 }
@@ -123,7 +123,7 @@ class ResyncCommand extends Command
         }
 
         if ($instance === null && ! $this->option('all')) {
-            $this->components->error(__('Dites quoi renvoyer : --all, --instance, --project, --ticket, --task (ou --names).'));
+            $this->components->error(__('filament-tma::commands.resync.what'));
 
             return null;
         }

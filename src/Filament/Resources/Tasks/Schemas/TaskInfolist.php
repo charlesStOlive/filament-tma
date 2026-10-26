@@ -26,8 +26,8 @@ class TaskInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('Historique'))->columnSpanFull()
-                ->headerActions([Help::title('tma.chronologie.notes', __('Messages et notes'))])
+            Section::make(__('filament-tma::common.history'))->columnSpanFull()
+                ->headerActions([Help::title('tma.chronologie.notes', __('filament-tma::common.messages_and_notes'))])
                 ->schema([
                     ViewEntry::make('timeline')->hiddenLabel()->view('filament-tma::timeline.ticket'),
                 ]),
@@ -49,53 +49,53 @@ class TaskInfolist
     {
         $agentMode = TextEntry::make('agent_mode')->hiddenLabel()
             ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
-                ? __('Vous intervenez ici au nom du Support.')
+                ? __('filament-tma::common.acting_for_support')
                 : null)
             ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
             ->badge()->color('info')->icon('heroicon-m-lifebuoy')
-            ->hintAction(Help::action('tma.agents', __('Membre du Support')));
+            ->hintAction(Help::action('tma.agents', __('filament-tma::common.support_member')));
 
         $about = [
-            Section::make(__('Suivi'))->compact()->columnSpanFull()
-                ->headerActions([Help::title('tma.projets', __('Les projets'))])
+            Section::make(__('filament-tma::common.follow_up'))->compact()->columnSpanFull()
+                ->headerActions([Help::title('tma.projets', __('filament-tma::common.projects_help'))])
                 ->schema([
-                    TextEntry::make('state')->label(__('État'))->badge()
+                    TextEntry::make('state')->label(__('filament-tma::common.state'))->badge()
                         ->helperText(fn (ProjectTask $record): ?string => $record->state->getDescription()),
                     // Le projet : un lien vers sa fiche ; « Modifier le projet » l'ouvre dans un volet glissant (maître).
-                    TextEntry::make('project.title')->label(__('Projet'))->placeholder(__('Sans projet'))
+                    TextEntry::make('project.title')->label(__('filament-tma::common.project'))->placeholder(__('filament-tma::common.no_project'))
                         ->weight(FontWeight::SemiBold)
                         ->url(fn (ProjectTask $record): ?string => $record->project !== null && ProjectResource::canView($record->project)
                             ? ProjectResource::getUrl('view', ['record' => $record->project])
                             : null)
-                        ->hintAction(ProjectResource::editAction()->label(__('Modifier'))->link()->size(Size::Small)),
-                    TextEntry::make('project_estimate')->label(__('Fourchette du projet'))
+                        ->hintAction(ProjectResource::editAction()->label(__('filament-tma::common.edit'))->link()->size(Size::Small)),
+                    TextEntry::make('project_estimate')->label(__('filament-tma::tasks.fields.project_estimate'))
                         ->state(fn (ProjectTask $record): ?string => $record->project?->estimateLabel())
                         ->visible(fn (ProjectTask $record): bool => $record->project?->estimateLabel() !== null),
-                    TextEntry::make('project_time')->label(__('Temps du projet'))
+                    TextEntry::make('project_time')->label(__('filament-tma::tasks.fields.project_time'))
                         ->state(fn (ProjectTask $record): ?string => $record->project !== null ? Duration::format($record->project->timeTotals()['total_minutes']) : null)
                         ->color(fn (ProjectTask $record): ?string => $record->project?->isOverEstimate($record->project->timeTotals()['total_minutes']) ? 'danger' : null)
                         ->visible(fn (ProjectTask $record): bool => $record->project !== null),
-                    TextEntry::make('targetInstance.name')->label(__('Application'))
+                    TextEntry::make('targetInstance.name')->label(__('filament-tma::common.application'))
                         ->visible(fn (): bool => Tma::isMaster())
                         ->onDemand(),
                 ]),
             RecipientsSection::make(),
-            Section::make(__('Calendrier'))->compact()->columnSpanFull()
-                ->headerActions([Help::title('tma.taches.periode', __('Début et échéance'))])
+            Section::make(__('filament-tma::tasks.fields.schedule'))->compact()->columnSpanFull()
+                ->headerActions([Help::title('tma.taches.periode', __('filament-tma::tasks.help.dates'))])
                 ->columns(2)
                 ->onDemand()
                 ->schema([
-                    TextEntry::make('starts_on')->label(__('Début'))->date('d/m/Y')->placeholder('—'),
-                    TextEntry::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')
+                    TextEntry::make('starts_on')->label(__('filament-tma::common.start'))->date('d/m/Y')->placeholder('—'),
+                    TextEntry::make('due_on')->label(__('filament-tma::common.due_date'))->date('d/m/Y')->placeholder('—')
                         ->color(fn (ProjectTask $record): ?string => $record->done_at === null && $record->due_on?->isPast() ? 'danger' : null),
-                    TextEntry::make('done_at')->label(__('Terminée le'))->date('d/m/Y')
+                    TextEntry::make('done_at')->label(__('filament-tma::tasks.fields.completed_at'))->date('d/m/Y')
                         ->visible(fn (ProjectTask $record): bool => $record->done_at !== null),
-                    TextEntry::make('publish_at')->label(__('Publication prévue'))->dateTime('d/m/Y H:i')
+                    TextEntry::make('publish_at')->label(__('filament-tma::tasks.fields.publish_at'))->dateTime('d/m/Y H:i')
                         ->visible(fn (ProjectTask $record): bool => Tma::isMaster() && $record->publish_at !== null && ! $record->isShared()),
-                    TextEntry::make('published_at')->label(__('Publiée le'))->date('d/m/Y')
+                    TextEntry::make('published_at')->label(__('filament-tma::tasks.fields.published_at'))->date('d/m/Y')
                         ->visible(fn (ProjectTask $record): bool => $record->published_at !== null),
                 ]),
-            Section::make(__('Tickets'))->compact()->columnSpanFull()
+            Section::make(__('filament-tma::common.tickets'))->compact()->columnSpanFull()
                 ->visible(fn (ProjectTask $record): bool => $record->tickets()->exists())
                 ->schema([
                     TextEntry::make('tickets')->hiddenLabel()
@@ -107,11 +107,11 @@ class TaskInfolist
                         ->html(),
                 ]),
             Section::make()->compact()->columnSpanFull()->schema([
-                TextEntry::make('sync_status')->label(__('Synchro'))->badge()
-                    ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
+                TextEntry::make('sync_status')->label(__('filament-tma::common.sync'))->badge()
+                    ->hintAction(Help::action('tma.synchronisation.erreurs', __('filament-tma::common.status_help')))
                     ->visible(fn (ProjectTask $record): bool => $record->isShared())
                     ->helperText(fn (ProjectTask $record): ?string => $record->last_sync_error),
-                TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
+                TextEntry::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->since(),
             ]),
         ];
 

@@ -34,19 +34,19 @@ final class RecipientsFields
 
         return [
             self::field('primary_recipients', 'secondary_recipients', $options, $project)
-                ->label(__('Destinataires principaux'))
-                ->helperText(__('Prévenus tout de suite, par courriel ou dans l’application selon leurs réglages.'))
+                ->label(__('filament-tma::recipients.main'))
+                ->helperText(__('filament-tma::recipients.main_help'))
                 ->rules($primaryRule !== null ? [$primaryRule] : []),
             self::field('secondary_recipients', 'primary_recipients', $options, $project)
-                ->label(__('Destinataires secondaires'))
-                ->helperText(__('Prévenus seulement dans le bilan.')),
+                ->label(__('filament-tma::recipients.secondary'))
+                ->helperText(__('filament-tma::recipients.secondary_help')),
         ];
     }
 
     /** La liste des principaux d'un mouvement (une publication…), parmi une partie des personnes possibles. */
     public static function primaries(string $name, \Closure $options, ?\Closure $project = null): Select
     {
-        return self::field($name, null, $options, $project)->label(__('Destinataires principaux'));
+        return self::field($name, null, $options, $project)->label(__('filament-tma::recipients.main'));
     }
 
     /**
@@ -85,16 +85,16 @@ final class RecipientsFields
             ->options($options)
             ->hintActions([
                 Action::make('everyone_'.$name)
-                    ->label(__('Tout le monde'))
+                    ->label(__('filament-tma::recipients.everyone'))
                     ->icon('heroicon-m-user-group')
                     ->action(fn (Get $get, Set $set, Select $component) => $add($get, $set, Addressables::everyone($component->getOptions()))),
                 Action::make('team_'.$name)
-                    ->label(__('Toute l’équipe projet'))
+                    ->label(__('filament-tma::recipients.whole_project_team'))
                     ->icon('heroicon-m-users')
                     ->visible(fn (Get $get, ?Model $record): bool => $project !== null && $project($get, $record) !== null)
                     ->action(fn (Get $get, Set $set, ?Model $record, Select $component) => $add($get, $set, self::teamKeys($project($get, $record), $component->getOptions()))),
                 Action::make('clear_'.$name)
-                    ->label(__('Vider'))
+                    ->label(__('filament-tma::recipients.clear'))
                     ->icon('heroicon-m-x-mark')
                     ->color('danger')
                     ->action(fn (Set $set) => $set($name, [])),

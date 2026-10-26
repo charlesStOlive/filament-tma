@@ -105,7 +105,7 @@ class MySupportWidget extends TableWidget
         $ongoing = $user === null ? null : (static::ongoingTasks($user)->count() ?: null);
 
         return $table
-            ->heading(fn (): string => $this->isTab(self::PROJECTS) ? __('Mes projets') : __('Mes tickets en cours'))
+            ->heading(fn (): string => $this->isTab(self::PROJECTS) ? __('filament-tma::widgets.support.my_projects') : __('filament-tma::widgets.support.my_tickets'))
             ->description(fn (): string => $this->description($user))
             ->query(fn (): Builder => $this->isTab(self::PROJECTS)
                 ? static::projects($user)->limit(static::LIMIT)
@@ -119,50 +119,50 @@ class MySupportWidget extends TableWidget
             ->recordUrl(fn (Model $record): ?string => $this->url($record))
             ->columns([
                 // Les tickets.
-                TextColumn::make('title')->label(__('Ticket'))
+                TextColumn::make('title')->label(__('filament-tma::widgets.support.columns.ticket'))
                     // Chez le Support, le nom court du client (« EDM »).
                     ->description(fn (Ticket $record): string => $record->number.(Tma::isMaster() ? ' · '.Terms::clientOrInstance($record->source_instance_uid) : ''), position: 'above')
                     ->weight(FontWeight::Medium)
                     ->limit(70)
                     ->wrap()
                     ->visible(fn (): bool => ! $this->isTab(self::PROJECTS)),
-                TextColumn::make('recipient_role')->label(__('Destinataire'))->badge()
+                TextColumn::make('recipient_role')->label(__('filament-tma::widgets.support.columns.recipient'))->badge()
                     ->state(fn (Ticket $record): ?RecipientRole => $record->recipients
                         ->sortBy(fn (Recipient $recipient): int => $recipient->role === RecipientRole::Primary ? 0 : 1)
                         ->first()?->role)
                     ->visible(fn (): bool => ! $this->isTab(self::PROJECTS)),
-                TextColumn::make('state')->label(__('État'))->badge()
+                TextColumn::make('state')->label(__('filament-tma::common.state'))->badge()
                     ->visible(fn (): bool => ! $this->isTab(self::PROJECTS)),
-                TextColumn::make('waiting_on')->label(__('En attente de'))->badge()->placeholder('—')
+                TextColumn::make('waiting_on')->label(__('filament-tma::common.waiting_for'))->badge()->placeholder('—')
                     ->state(fn (Ticket $record): ?string => $record->waitingOnFor($user))
                     ->color(fn (Ticket $record): string => match (true) {
-                        $record->waitingOnFor($user) === __('Vous') => 'warning',
+                        $record->waitingOnFor($user) === __('filament-tma::common.you') => 'warning',
                         $record->sideInCharge() === Side::Handler => 'info',
                         default => 'gray',
                     })
                     ->visible(fn (): bool => ! $this->isTab(self::PROJECTS)),
                 // Les projets.
-                TextColumn::make('project')->label(__('Projet'))
+                TextColumn::make('project')->label(__('filament-tma::common.project'))
                     ->state(fn (Project $record): string => $record->title)
                     ->description(fn (Project $record): ?string => Tma::isMaster() ? $record->targetInstance?->name : null, position: 'above')
                     ->weight(FontWeight::Medium)
                     ->limit(70)
                     ->wrap()
                     ->visible(fn (): bool => $this->isTab(self::PROJECTS)),
-                TextColumn::make('estimate')->label(__('Fourchette'))
+                TextColumn::make('estimate')->label(__('filament-tma::common.estimate'))
                     ->state(fn (Project $record): ?string => $record->estimateLabel())
                     ->placeholder('—')
                     ->visible(fn (): bool => $this->isTab(self::PROJECTS)),
-                TextColumn::make('time')->label(__('Temps passé'))
+                TextColumn::make('time')->label(__('filament-tma::common.time_spent'))
                     ->state(fn (Project $record): string => Duration::format($record->timeTotals()['total_minutes']))
                     ->color(fn (Project $record): ?string => $record->isOverEstimate($record->timeTotals()['total_minutes']) ? 'danger' : null)
                     ->weight(FontWeight::SemiBold)
                     ->visible(fn (): bool => $this->isTab(self::PROJECTS)),
-                TextColumn::make('ongoing_tasks_count')->label(__('Tâches en cours'))
+                TextColumn::make('ongoing_tasks_count')->label(__('filament-tma::widgets.support.columns.tasks_in_progress'))
                     ->badge()
                     ->color(fn (Project $record): string => $record->ongoing_tasks_count > 0 ? 'info' : 'gray')
                     ->visible(fn (): bool => $this->isTab(self::PROJECTS)),
-                TextColumn::make('questions')->label(__('Questions pour vous'))
+                TextColumn::make('questions')->label(__('filament-tma::widgets.support.columns.questions'))
                     ->state(fn (Project $record): ?int => $this->questionsByProject($user)->get($record->getKey()))
                     ->badge()
                     ->color('warning')
@@ -171,7 +171,7 @@ class MySupportWidget extends TableWidget
             ])
             ->recordActions([
                 Action::make('open')
-                    ->label(__('Ouvrir'))
+                    ->label(__('filament-tma::common.open'))
                     ->icon('heroicon-m-arrow-right')
                     ->button()
                     ->outlined()
@@ -180,30 +180,30 @@ class MySupportWidget extends TableWidget
             ])
             ->headerActions([
                 ActionGroup::make([
-                    $this->tabAction(self::TICKETS, __('Tickets'), 'heroicon-m-lifebuoy')
+                    $this->tabAction(self::TICKETS, __('filament-tma::common.tickets'), 'heroicon-m-lifebuoy')
                         ->badge($awaiting = $user === null ? null : (static::tickets($user)->awaiting($user)->count() ?: null))
                         ->badgeColor('warning')
-                        ->tooltip($awaiting !== null ? __('Le nombre : ceux qui vous attendent') : null),
-                    $this->tabAction(self::PROJECTS, __('Projets'), 'heroicon-m-folder')
+                        ->tooltip($awaiting !== null ? __('filament-tma::widgets.support.badge.tickets') : null),
+                    $this->tabAction(self::PROJECTS, __('filament-tma::widgets.support.projects'), 'heroicon-m-folder')
                         ->badge($questions ?: $ongoing)
                         ->badgeColor($questions > 0 ? 'warning' : 'info')
                         ->tooltip(match (true) {
-                            $questions > 0 => __('Le nombre : les questions du Support qui vous attendent'),
-                            $ongoing !== null => __('Le nombre : leurs tâches en cours'),
+                            $questions > 0 => __('filament-tma::widgets.support.badge.questions'),
+                            $ongoing !== null => __('filament-tma::widgets.support.badge.tasks'),
                             default => null,
                         }),
                 ])->buttonGroup()
                     ->visible(fn (): bool => count(static::tabs()) > 1),
                 Action::make('all')
-                    ->label(fn (): string => $this->isTab(self::PROJECTS) ? __('Tous les projets') : __('Tous les tickets'))
+                    ->label(fn (): string => $this->isTab(self::PROJECTS) ? __('filament-tma::widgets.support.all_projects') : __('filament-tma::widgets.support.all_tickets'))
                     ->link()
                     ->url(fn (): string => $this->isTab(self::PROJECTS) ? ProjectResource::getUrl('index') : TicketResource::getUrl('index')),
             ])
             ->emptyStateIcon(fn (): string => $this->isTab(self::PROJECTS) ? 'heroicon-o-folder' : 'heroicon-o-lifebuoy')
-            ->emptyStateHeading(fn (): string => $this->isTab(self::PROJECTS) ? __('Aucun projet en cours') : __('Aucun ticket en cours'))
+            ->emptyStateHeading(fn (): string => $this->isTab(self::PROJECTS) ? __('filament-tma::widgets.support.empty.projects') : __('filament-tma::widgets.support.empty.tickets'))
             ->emptyStateDescription(fn (): string => $this->isTab(self::PROJECTS)
-                ? __('Les projets où vous participez apparaîtront ici.')
-                : __('Les tickets dont vous êtes destinataire apparaîtront ici.'));
+                ? __('filament-tma::widgets.support.empty.projects_help')
+                : __('filament-tma::widgets.support.empty.tickets_help'));
     }
 
     /** Un bouton du groupe d'onglets : en couleur quand il est montré ; il change l'onglet sans appel de serveur à part. */
@@ -220,8 +220,8 @@ class MySupportWidget extends TableWidget
     protected function description(?Authenticatable $user): string
     {
         return $this->isTab(self::PROJECTS)
-            ? __('Ceux où vous participez ; le temps passé, en jours et heures.')
-            : __('Ceux dont vous êtes destinataire ; ceux qui vous attendent d’abord.');
+            ? __('filament-tma::widgets.support.description.projects')
+            : __('filament-tma::widgets.support.description.tickets');
     }
 
     /** « + 3 autres tickets », en lien vers la liste, quand il y en a plus que `LIMIT`. */
@@ -232,8 +232,8 @@ class MySupportWidget extends TableWidget
 
         return $more <= 0 ? null : view('filament-tma::widgets.more-rows', [
             'label' => $projects
-                ? trans_choice('+ :n autre projet|+ :n autres projets', $more, ['n' => $more])
-                : trans_choice('+ :n autre ticket|+ :n autres tickets', $more, ['n' => $more]),
+                ? trans_choice('filament-tma::widgets.support.more.projects', $more, ['n' => $more])
+                : trans_choice('filament-tma::widgets.support.more.tickets', $more, ['n' => $more]),
             'url' => $projects ? ProjectResource::getUrl('index') : TicketResource::getUrl('index'),
         ]);
     }

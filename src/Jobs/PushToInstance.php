@@ -78,7 +78,7 @@ class PushToInstance implements ShouldBeUniqueUntilProcessing, ShouldQueue
 
     public function failed(?\Throwable $e): void
     {
-        $message = $e?->getMessage() ?? __('Erreur inconnue');
+        $message = $e?->getMessage() ?? __('filament-tma::sync.errors.unknown');
 
         $this->ticket->forceFill(['sync_status' => SyncStatus::Error, 'last_sync_error' => $message])->saveQuietly();
 

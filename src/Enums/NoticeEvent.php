@@ -25,17 +25,17 @@ enum NoticeEvent: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Turn => __('Un ticket vous attend'),
-            self::Progress => __('Suivi'),
-            self::Message => __('Nouveau message'),
-            self::Note => __('Nouvelle note'),
-            self::Task => __('Tâche projet'),
-            self::Recipient => __('Vous êtes destinataire'),
-            self::Stale => __('Rappel : rien ne bouge'),
-            self::Reminder => __('Relance'),
-            self::AutoCloseWarning => __('Avertissement de clôture'),
-            self::AutoClosed => __('Clôture automatique'),
-            self::Question => __('Question du Support'),
+            self::Turn => __('filament-tma::enums.notice_event.ticket_waiting'),
+            self::Progress => __('filament-tma::common.follow_up'),
+            self::Message => __('filament-tma::common.new_message'),
+            self::Note => __('filament-tma::enums.notice_event.new_note'),
+            self::Task => __('filament-tma::enums.notice_event.project_task'),
+            self::Recipient => __('filament-tma::enums.notice_event.recipient'),
+            self::Stale => __('filament-tma::enums.notice_event.stale'),
+            self::Reminder => __('filament-tma::common.reminder'),
+            self::AutoCloseWarning => __('filament-tma::enums.notice_event.closing_warning'),
+            self::AutoClosed => __('filament-tma::enums.notice_event.auto_close'),
+            self::Question => __('filament-tma::common.support_question'),
         };
     }
 }

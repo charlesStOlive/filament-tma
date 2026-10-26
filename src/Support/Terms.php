@@ -22,7 +22,7 @@ final class Terms
 
     public static function support(): string
     {
-        return __('Support');
+        return __('filament-tma::common.support');
     }
 
     /**
@@ -57,12 +57,12 @@ final class Terms
     public static function correspondents(?string $instanceUid = null): string
     {
         if (Tma::isClient()) {
-            return __('Correspondants du Support');
+            return __('filament-tma::terms.correspondents.support');
         }
 
         $client = $instanceUid === null ? null : self::clientOrInstance($instanceUid);
 
-        return $client === null ? __('Correspondants du client') : __('Correspondants :client', ['client' => $client]);
+        return $client === null ? __('filament-tma::terms.correspondents.client') : __('filament-tma::terms.correspondents.named', ['client' => $client]);
     }
 
     /** « Publier chez EDM » : le maître ouvre un ticket ou une tâche à l'application cliente. */
@@ -70,13 +70,13 @@ final class Terms
     {
         $client = self::client($instanceUid);
 
-        return $client === null ? __('Publier chez le client') : __('Publier chez :client', ['client' => $client]);
+        return $client === null ? __('filament-tma::terms.publish.client') : __('filament-tma::terms.publish.named', ['client' => $client]);
     }
 
     /** Le nom de l'application cliente d'une personne qui n'est pas d'ici : « EDM », sinon le nom de l'application. */
     public static function clientOrInstance(string $instanceUid): string
     {
-        return self::client($instanceUid) ?? Instance::query()->where('uid', $instanceUid)->value('name') ?? __('Client');
+        return self::client($instanceUid) ?? Instance::query()->where('uid', $instanceUid)->value('name') ?? __('filament-tma::common.client');
     }
 
     /** Après la modification d'une application (son nom court a pu changer). */

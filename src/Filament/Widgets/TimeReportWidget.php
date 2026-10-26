@@ -67,21 +67,21 @@ class TimeReportWidget extends TableWidget
     {
         return $table
             ->records(fn (): array => $this->rows())
-            ->heading(__('Suivi des temps'))
-            ->description(fn (): string => __(':month : :total au total.', ['month' => $this->monthLabel(), 'total' => Duration::format($this->monthTotal())]))
+            ->heading(__('filament-tma::widgets.time_report.heading'))
+            ->description(fn (): string => __('filament-tma::widgets.time_report.total', ['month' => $this->monthLabel(), 'total' => Duration::format($this->monthTotal())]))
             ->paginated(false)
             ->recordUrl(fn (array $record): ?string => $record['url'])
             ->columns([
-                TextColumn::make('title')->label(__('TMA et projets'))
+                TextColumn::make('title')->label(__('filament-tma::widgets.time_report.scope'))
                     ->description(fn (array $record): ?string => $record['context'], position: 'above')
                     ->description(fn (array $record): HtmlString => $this->items($record))
                     ->weight(FontWeight::Medium)
                     ->wrap(),
-                TextColumn::make('minutes')->label(__('Temps du mois'))
+                TextColumn::make('minutes')->label(__('filament-tma::widgets.time_report.month_time'))
                     ->formatStateUsing(fn (int $state): string => Duration::format($state))
                     ->weight(FontWeight::SemiBold)
                     ->alignEnd(),
-                TextColumn::make('total')->label(__('Cumul / fourchette'))
+                TextColumn::make('total')->label(__('filament-tma::widgets.time_report.cumulative'))
                     ->state(fn (array $record): ?string => $record['total'] === null ? null
                         : Duration::format($record['total']).($record['estimate'] !== null ? ' / '.$record['estimate'] : ''))
                     ->color(fn (array $record): ?string => $record['over'] ? 'danger' : 'gray')
@@ -90,30 +90,30 @@ class TimeReportWidget extends TableWidget
             ])
             ->headerActions([
                 Action::make('previousMonth')
-                    ->label(__('Mois précédent'))
-                    ->tooltip(__('Mois précédent'))
+                    ->label(__('filament-tma::widgets.time_report.previous'))
+                    ->tooltip(__('filament-tma::widgets.time_report.previous'))
                     ->iconButton()
                     ->icon('heroicon-m-chevron-left')
                     ->disabled(fn (): bool => ! $this->hasMonthBefore())
                     ->action(fn () => $this->showMonth($this->shiftMonth(-1))),
                 Action::make('currentMonth')
                     ->label(fn (): string => $this->monthLabel())
-                    ->tooltip(__('Revenir au mois en cours'))
+                    ->tooltip(__('filament-tma::widgets.time_report.current'))
                     ->button()
                     ->outlined()
                     ->color('gray')
                     ->size(Size::Small)
                     ->action(fn () => $this->showMonth(static::currentMonth())),
                 Action::make('nextMonth')
-                    ->label(__('Mois suivant'))
-                    ->tooltip(__('Mois suivant'))
+                    ->label(__('filament-tma::widgets.time_report.next'))
+                    ->tooltip(__('filament-tma::widgets.time_report.next'))
                     ->iconButton()
                     ->icon('heroicon-m-chevron-right')
                     ->disabled(fn (): bool => $this->month() >= static::currentMonth())
                     ->action(fn () => $this->showMonth($this->shiftMonth(1))),
             ])
             ->emptyStateIcon('heroicon-o-clock')
-            ->emptyStateHeading(fn (): string => __('Aucun temps en :month', ['month' => mb_strtolower($this->monthLabel())]))
+            ->emptyStateHeading(fn (): string => __('filament-tma::widgets.time_report.empty', ['month' => mb_strtolower($this->monthLabel())]))
             ->emptyStateDescription(null);
     }
 
@@ -141,7 +141,7 @@ class TimeReportWidget extends TableWidget
 
         $tma = $tickets->groupBy(fn (array $spent): string => $spent['subject']->source_instance_uid)
             ->map(fn (Collection $spent, string $uid): array => [
-                'title' => __('TMA'),
+                'title' => __('filament-tma::widgets.time_report.tma'),
                 'context' => Tma::isMaster() ? Terms::clientOrInstance($uid) : null,
                 'minutes' => (int) $spent->sum('minutes'),
                 'items' => $this->itemsOf($spent),
@@ -160,7 +160,7 @@ class TimeReportWidget extends TableWidget
                 $total = $project?->timeTotals()['total_minutes'];
 
                 return [
-                    'title' => $project?->title ?? __('Sans projet'),
+                    'title' => $project?->title ?? __('filament-tma::common.no_project'),
                     'context' => Tma::isMaster() ? $project?->targetInstance?->name : null,
                     'minutes' => (int) $spent->sum('minutes'),
                     'items' => $this->itemsOf($spent),
@@ -223,7 +223,7 @@ class TimeReportWidget extends TableWidget
         $lines = $items->take(self::ITEMS)->map(fn (array $item): string => e($item['label']).' · <strong>'.e(Duration::format($item['minutes'])).'</strong>');
 
         if ($items->count() > self::ITEMS) {
-            $lines->push(e(trans_choice('et :n autre|et :n autres', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
+            $lines->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
         }
 
         return new HtmlString($lines->implode('<br>'));

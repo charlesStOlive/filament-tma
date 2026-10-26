@@ -28,7 +28,7 @@
                         href="{{ $gallery[$position]['src'] }}"
                         target="_blank"
                         rel="noopener"
-                        title="{{ __('Voir l’image') }}"
+                        title="{{ __('filament-tma::attachments.view_image') }}"
                         class="fi-tma-attachment fi-tma-attachment--image"
                         x-on:click.prevent="$dispatch('tma-lightbox', { images: @js($gallery), index: {{ $position }} })"
                     >

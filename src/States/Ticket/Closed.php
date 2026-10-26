@@ -10,7 +10,7 @@ class Closed extends TicketState
 
     public function getLabel(): string
     {
-        return __('Clos');
+        return __('filament-tma::states.ticket.closed.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Closed extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Terminé. C’est l’état qui ouvre la facturation complète.');
+        return __('filament-tma::states.ticket.closed.description');
     }
 
     public function inHandsOf(): ?Side

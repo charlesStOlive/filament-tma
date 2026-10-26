@@ -16,10 +16,10 @@ enum SyncStatus: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Local => __('Non partagé'),
-            self::Pending => __('En attente de synchronisation'),
-            self::Synced => __('Synchronisé'),
-            self::Error => __('Synchronisation en erreur'),
+            self::Local => __('filament-tma::enums.sync_status.local'),
+            self::Pending => __('filament-tma::enums.sync_status.pending'),
+            self::Synced => __('filament-tma::enums.sync_status.synced'),
+            self::Error => __('filament-tma::enums.sync_status.failed'),
         };
     }
 

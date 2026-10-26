@@ -19,17 +19,17 @@ final class RemoteBackend implements Backend
 
     public function list(array $filters): array
     {
-        return Http::call(__('Support'), fn () => Http::to($this->token)->get($this->url('tickets'), array_filter($filters, fn ($v) => $v !== null && $v !== false)))->json('data', []);
+        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->get($this->url('tickets'), array_filter($filters, fn ($v) => $v !== null && $v !== false)))->json('data', []);
     }
 
     public function show(string $ref): array
     {
-        return Http::call(__('Support'), fn () => Http::to($this->token)->get($this->url('tickets/'.rawurlencode($ref))))->json('data', []);
+        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->get($this->url('tickets/'.rawurlencode($ref))))->json('data', []);
     }
 
     public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal, ?string $entry = null): array
     {
-        return Http::call(__('Support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/time'), [
+        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/time'), [
             'minutes' => $minutes,
             'worked_on' => $workedOn,
             'summary' => $summary,
@@ -41,7 +41,7 @@ final class RemoteBackend implements Backend
 
     public function comment(string $ref, string $body, bool $note): array
     {
-        return Http::call(__('Support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/entries'), [
+        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/entries'), [
             'body' => $body,
             'note' => $note,
         ]))->json('data', []);

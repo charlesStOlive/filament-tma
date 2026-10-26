@@ -10,7 +10,7 @@ class PendingValidation extends TicketState
 
     public function getLabel(): string
     {
-        return __('Résolu');
+        return __('filament-tma::states.ticket.pending_validation.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class PendingValidation extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Le travail est fait : le demandeur confirme, ou renvoie la demande.');
+        return __('filament-tma::states.ticket.pending_validation.description');
     }
 
     public function inHandsOf(): ?Side

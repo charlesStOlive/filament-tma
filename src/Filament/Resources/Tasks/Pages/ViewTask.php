@@ -52,7 +52,7 @@ class ViewTask extends ViewRecord
 
     protected function sideTabLabel(): string
     {
-        return __('Tâche');
+        return __('filament-tma::tasks.model.title');
     }
 
     protected function sideTabIcon(): string
@@ -71,14 +71,14 @@ class ViewTask extends ViewRecord
             ...TaskMoveAction::all(),
             NotificationActions::informByMail(),
             Action::make('createTicket')
-                ->label(__('Créer un ticket'))
+                ->label(__('filament-tma::tasks.actions.create_ticket'))
                 ->icon('heroicon-m-lifebuoy')
                 ->color('gray')
                 ->url(fn (ProjectTask $record): string => TicketResource::getUrl('create', ['task' => $record->getKey()]))
                 ->visible(fn (ProjectTask $record): bool => $record->isShared() && TicketResource::canCreate()),
             // Un membre du Support, dans l'application cliente : le ticket se prépare chez le Support, lié à la tâche.
             Action::make('createTicketAtSupport')
-                ->label(__('Créer un ticket chez le Support'))
+                ->label(__('filament-tma::tasks.actions.create_ticket_heading'))
                 ->icon('heroicon-m-arrow-top-right-on-square')
                 ->color('gray')
                 ->url(fn (ProjectTask $record): ?string => MasterLinks::createTicket($record), shouldOpenInNewTab: true)
@@ -87,7 +87,7 @@ class ViewTask extends ViewRecord
             ActionGroup::make([
                 EditAction::make(),
                 Action::make('resync')
-                    ->label(__('Renvoyer à l’application'))
+                    ->label(__('filament-tma::common.resend_to_application'))
                     ->icon('heroicon-m-arrow-path')
                     ->visible(fn (ProjectTask $record): bool => Tma::isMaster() && $record->isShared() && TmaGate::allows(auth()->user(), TmaGate::SYNC, $record))
                     ->action(function (ProjectTask $record): void {
@@ -95,7 +95,7 @@ class ViewTask extends ViewRecord
                         rescue(function () use ($record): void {
                             PushToInstance::dispatch($record);
                         });
-                        Notification::make()->success()->title(__('Envoi demandé'))->send();
+                        Notification::make()->success()->title(__('filament-tma::common.send_requested'))->send();
                     }),
                 TaskDeleteActions::make(),
             ]),

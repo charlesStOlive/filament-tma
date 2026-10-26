@@ -16,14 +16,14 @@
 @section('content')
     @if ($tone === 'action')
         @include('filament-tma::mail.partials.box', [
-            'label' => __('À faire'),
-            'text' => $data['action'] ?? __('Ce ticket attend votre action.'),
-            'note' => $closesOn ? __('Sans réponse, le ticket sera clos automatiquement le :date.', ['date' => $closesOn]) : null,
+            'label' => __('filament-tma::notifications.digest.todo'),
+            'text' => $data['action'] ?? __('filament-tma::notifications.mail.waiting_action'),
+            'note' => $closesOn ? __('filament-tma::notifications.mail.closing', ['date' => $closesOn]) : null,
         ])
     @elseif ($kind === 'task')
         @include('filament-tma::mail.partials.box', [
-            'label' => __('Pour information'),
-            'text' => __('Aucune action n’est attendue de votre part.'),
+            'label' => __('filament-tma::notifications.mail.for_information'),
+            'text' => __('filament-tma::notifications.weekly.no_action'),
         ])
     @endif
 

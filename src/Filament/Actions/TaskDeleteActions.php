@@ -28,10 +28,10 @@ final class TaskDeleteActions
         return DeleteAction::make()
             ->visible(fn (ProjectTask $record): bool => app(TaskWorkflow::class)->canDelete($record, Context::current()))
             ->modalIcon('heroicon-o-exclamation-triangle')
-            ->modalHeading(fn (ProjectTask $record): string => __('Supprimer la tâche :number ?', ['number' => $record->number]))
+            ->modalHeading(fn (ProjectTask $record): string => __('filament-tma::tasks.delete.heading', ['number' => $record->number]))
             ->modalDescription(fn (ProjectTask $record): string => self::warning(collect([$record])))
-            ->modalSubmitActionLabel(__('Supprimer définitivement'))
-            ->successNotificationTitle(fn (ProjectTask $record): string => __('Tâche :number supprimée', ['number' => $record->number]))
+            ->modalSubmitActionLabel(__('filament-tma::tasks.delete.submit'))
+            ->successNotificationTitle(fn (ProjectTask $record): string => __('filament-tma::tasks.delete.done', ['number' => $record->number]))
             ->using(function (ProjectTask $record, DeleteAction $action): bool {
                 try {
                     app(TaskWorkflow::class)->delete($record, Context::current());
@@ -47,15 +47,15 @@ final class TaskDeleteActions
     public static function bulk(): BulkAction
     {
         return BulkAction::make('deleteTasks')
-            ->label(__('Supprimer'))
+            ->label(__('filament-tma::common.delete'))
             ->icon('heroicon-m-trash')
             ->color('danger')
             ->visible(fn (): bool => Tma::isMaster())
             ->requiresConfirmation()
             ->modalIcon('heroicon-o-exclamation-triangle')
-            ->modalHeading(fn (Collection $records): string => trans_choice('Supprimer la tâche sélectionnée ?|Supprimer les :count tâches sélectionnées ?', $records->count(), ['count' => $records->count()]))
+            ->modalHeading(fn (Collection $records): string => trans_choice('filament-tma::tasks.delete.bulk_heading', $records->count(), ['count' => $records->count()]))
             ->modalDescription(fn (Collection $records): string => self::warning($records))
-            ->modalSubmitActionLabel(__('Supprimer définitivement'))
+            ->modalSubmitActionLabel(__('filament-tma::tasks.delete.submit'))
             ->deselectRecordsAfterCompletion()
             ->action(function (Collection $records): void {
                 $workflow = app(TaskWorkflow::class);
@@ -73,7 +73,7 @@ final class TaskDeleteActions
 
                 Notification::make()
                     ->{$refused === [] ? 'success' : 'warning'}()
-                    ->title(trans_choice(':count tâche supprimée|:count tâches supprimées', $deleted, ['count' => $deleted]))
+                    ->title(trans_choice('filament-tma::tasks.delete.bulk_done', $deleted, ['count' => $deleted]))
                     ->body($refused === [] ? null : implode("\n", $refused))
                     ->send();
             });
@@ -94,25 +94,25 @@ final class TaskDeleteActions
         $one = $tasks->count() === 1;
 
         $parts = array_filter([
-            $messages > 0 ? trans_choice(':count message|:count messages', $messages, ['count' => $messages]) : null,
-            $notes > 0 ? trans_choice(':count note|:count notes', $notes, ['count' => $notes]) : null,
-            $minutes > 0 ? __(':time de temps saisi', ['time' => Duration::format($minutes)]) : null,
+            $messages > 0 ? trans_choice('filament-tma::tasks.delete.messages', $messages, ['count' => $messages]) : null,
+            $notes > 0 ? trans_choice('filament-tma::tasks.delete.notes', $notes, ['count' => $notes]) : null,
+            $minutes > 0 ? __('filament-tma::tasks.delete.time', ['time' => Duration::format($minutes)]) : null,
         ]);
 
         $lines = [$parts === []
-            ? ($one ? __('Elle n’a encore ni message, ni note, ni temps saisi.') : __('Elles n’ont encore ni message, ni note, ni temps saisi.'))
-            : ($one ? __('Partent avec elle : :what.', ['what' => self::join($parts)]) : __('Partent avec elles : :what.', ['what' => self::join($parts)]))];
+            ? ($one ? __('filament-tma::tasks.delete.nothing_one') : __('filament-tma::tasks.delete.nothing_many'))
+            : ($one ? __('filament-tma::tasks.delete.goes_with_one', ['what' => self::join($parts)]) : __('filament-tma::tasks.delete.goes_with_many', ['what' => self::join($parts)]))];
 
         $shared = $tasks->filter(fn (ProjectTask $task): bool => $task->isShared());
 
         if ($shared->isNotEmpty()) {
             $clients = self::join($shared->map(fn (ProjectTask $task): string => Terms::clientOrInstance($task->target_instance_uid))->unique()->values()->all());
             $lines[] = $one
-                ? __('Elle est publiée : elle disparaît aussi chez :client.', ['client' => $clients])
-                : trans_choice('Une est publiée : elle disparaît aussi chez :client.|:count sont publiées : elles disparaissent aussi chez :client.', $shared->count(), ['count' => $shared->count(), 'client' => $clients]);
+                ? __('filament-tma::tasks.delete.published_one', ['client' => $clients])
+                : trans_choice('filament-tma::tasks.delete.published_many', $shared->count(), ['count' => $shared->count(), 'client' => $clients]);
         }
 
-        $lines[] = __('Les tickets ouverts depuis une tâche restent, sans lien. La suppression ne se défait pas.');
+        $lines[] = __('filament-tma::tasks.delete.warning');
 
         return implode(' ', $lines);
     }
@@ -122,7 +122,7 @@ final class TaskDeleteActions
     {
         $last = array_pop($items);
 
-        return $items === [] ? (string) $last : implode(', ', $items).' '.__('et').' '.$last;
+        return $items === [] ? (string) $last : implode(', ', $items).' '.__('filament-tma::tasks.delete.and').' '.$last;
     }
 
     private static function reason(AuthorizationException|ValidationException $e): string

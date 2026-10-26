@@ -60,20 +60,20 @@
             <span class="fi-tma-lightbox-count" x-show="images.length > 1" x-text="(index + 1) + ' / ' + images.length"></span>
 
             <div class="fi-tma-lightbox-tools">
-                <button type="button" x-on:click="zoomed = ! zoomed" x-bind:title="zoomed ? @js(__('Ajuster à l’écran')) : @js(__('Taille réelle'))" x-bind:aria-label="zoomed ? @js(__('Ajuster à l’écran')) : @js(__('Taille réelle'))">
+                <button type="button" x-on:click="zoomed = ! zoomed" x-bind:title="zoomed ? @js(__('filament-tma::attachments.lightbox.fit')) : @js(__('filament-tma::attachments.lightbox.actual_size'))" x-bind:aria-label="zoomed ? @js(__('filament-tma::attachments.lightbox.fit')) : @js(__('filament-tma::attachments.lightbox.actual_size'))">
                     <x-filament::icon icon="heroicon-m-magnifying-glass-plus" x-show="! zoomed" />
                     <x-filament::icon icon="heroicon-m-magnifying-glass-minus" x-show="zoomed" x-cloak />
                 </button>
-                <button type="button" x-on:click="fullscreen()" title="{{ __('Plein écran') }}" aria-label="{{ __('Plein écran') }}">
+                <button type="button" x-on:click="fullscreen()" title="{{ __('filament-tma::attachments.lightbox.fullscreen') }}" aria-label="{{ __('filament-tma::attachments.lightbox.fullscreen') }}">
                     <x-filament::icon icon="heroicon-m-arrows-pointing-out" />
                 </button>
-                <a x-bind:href="current.src" target="_blank" rel="noopener" title="{{ __('Ouvrir dans un onglet') }}" aria-label="{{ __('Ouvrir dans un onglet') }}">
+                <a x-bind:href="current.src" target="_blank" rel="noopener" title="{{ __('filament-tma::attachments.lightbox.open_tab') }}" aria-label="{{ __('filament-tma::attachments.lightbox.open_tab') }}">
                     <x-filament::icon icon="heroicon-m-arrow-top-right-on-square" />
                 </a>
-                <a x-bind:href="current.download" title="{{ __('Télécharger') }}" aria-label="{{ __('Télécharger') }}">
+                <a x-bind:href="current.download" title="{{ __('filament-tma::attachments.lightbox.download') }}" aria-label="{{ __('filament-tma::attachments.lightbox.download') }}">
                     <x-filament::icon icon="heroicon-m-arrow-down-tray" />
                 </a>
-                <button type="button" x-on:click="close()" title="{{ __('Fermer (Échap)') }}" aria-label="{{ __('Fermer') }}">
+                <button type="button" x-on:click="close()" title="{{ __('filament-tma::attachments.lightbox.close') }}" aria-label="{{ __('filament-tma::common.close') }}">
                     <x-filament::icon icon="heroicon-m-x-mark" />
                 </button>
             </div>
@@ -83,10 +83,10 @@
             <img x-bind:src="current.src" x-bind:alt="current.name" x-on:click="zoomed = ! zoomed">
         </div>
 
-        <button type="button" class="fi-tma-lightbox-nav fi-tma-lightbox-prev" x-show="images.length > 1" x-on:click="go(-1)" title="{{ __('Image précédente') }}" aria-label="{{ __('Image précédente') }}">
+        <button type="button" class="fi-tma-lightbox-nav fi-tma-lightbox-prev" x-show="images.length > 1" x-on:click="go(-1)" title="{{ __('filament-tma::attachments.lightbox.previous') }}" aria-label="{{ __('filament-tma::attachments.lightbox.previous') }}">
             <x-filament::icon icon="heroicon-m-chevron-left" />
         </button>
-        <button type="button" class="fi-tma-lightbox-nav fi-tma-lightbox-next" x-show="images.length > 1" x-on:click="go(1)" title="{{ __('Image suivante') }}" aria-label="{{ __('Image suivante') }}">
+        <button type="button" class="fi-tma-lightbox-nav fi-tma-lightbox-next" x-show="images.length > 1" x-on:click="go(1)" title="{{ __('filament-tma::attachments.lightbox.next') }}" aria-label="{{ __('filament-tma::attachments.lightbox.next') }}">
             <x-filament::icon icon="heroicon-m-chevron-right" />
         </button>
     </div>

@@ -62,7 +62,7 @@ class ViewTicket extends ViewRecord
     protected function resyncAction(): Action
     {
         return Action::make('resync')
-            ->label(__('Renvoyer à l’application'))
+            ->label(__('filament-tma::common.resend_to_application'))
             ->icon('heroicon-m-arrow-path')
             ->visible(fn (Ticket $record): bool => Tma::isMaster()
                 && $record->isShared()
@@ -76,7 +76,7 @@ class ViewTicket extends ViewRecord
                 $record->refresh();
                 Notification::make()
                     ->{$record->sync_status === SyncStatus::Error ? 'danger' : 'success'}()
-                    ->title($record->sync_status === SyncStatus::Error ? $record->last_sync_error : __('Envoi demandé'))
+                    ->title($record->sync_status === SyncStatus::Error ? $record->last_sync_error : __('filament-tma::common.send_requested'))
                     ->send();
             });
     }

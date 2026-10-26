@@ -14,7 +14,7 @@
 <span class="fi-tma-entry-move">
     — {{ $moveLabels[$transition->move] ?? $transition->move }}
     @if ($byOther)
-        <span class="fi-tma-entry-instance">{{ __('par :name', ['name' => $actor?->name ?? __('Système')]) }}</span>
+        <span class="fi-tma-entry-instance">{{ __('filament-tma::timeline.by', ['name' => $actor?->name ?? __('filament-tma::common.system')]) }}</span>
     @endif
     @if ($transition->from_state)
         <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>

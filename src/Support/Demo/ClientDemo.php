@@ -196,7 +196,7 @@ final class ClientDemo extends Scenario
             ->values();
 
         if ($correspondents->isEmpty()) {
-            throw new RuntimeException(__('Personne ici n’est correspondant du Support (droit tma.ticket.correspond).'));
+            throw new RuntimeException(__('filament-tma::commands.demo.no_correspondent'));
         }
 
         return [$correspondents, $agent];

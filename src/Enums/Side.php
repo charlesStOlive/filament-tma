@@ -17,8 +17,8 @@ enum Side: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Requester => __('Demandeur'),
-            self::Handler => __('Équipe support'),
+            self::Requester => __('filament-tma::common.requester'),
+            self::Handler => __('filament-tma::enums.side.master'),
         };
     }
 }

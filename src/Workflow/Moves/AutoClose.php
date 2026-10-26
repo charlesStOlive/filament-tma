@@ -22,7 +22,7 @@ class AutoClose extends Move
 
     public function label(): string
     {
-        return __('Clos automatiquement (sans réponse)');
+        return __('filament-tma::workflow.ticket.auto_close.label');
     }
 
     public function from(): array
@@ -47,7 +47,7 @@ class AutoClose extends Move
 
     public function reason(array $data): ?string
     {
-        return __('Clos automatiquement : aucune activité depuis :days jours.', ['days' => config('filament-tma.auto_close.after_days')]);
+        return __('filament-tma::workflow.ticket.auto_close.message', ['days' => config('filament-tma.auto_close.after_days')]);
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

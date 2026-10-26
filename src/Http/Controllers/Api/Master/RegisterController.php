@@ -25,10 +25,10 @@ class RegisterController
         try {
             $answer = (new InstanceClient($instance->refresh()))->ping();
             $callback = ($answer['instance_uid'] ?? null) === $instance->uid;
-            $error = $callback ? null : __('L’application répond, mais avec un autre identifiant (:uid).', ['uid' => $answer['instance_uid'] ?? '?']);
+            $error = $callback ? null : __('filament-tma::sync.errors.wrong_uid', ['uid' => $answer['instance_uid'] ?? '?']);
         } catch (SyncException $e) {
             $callback = false;
-            $error = __(':message Vérifiez l’adresse de l’application dans sa fiche, chez le Support (:url).', ['message' => $e->getMessage(), 'url' => $instance->url]);
+            $error = __('filament-tma::sync.errors.check_url', ['message' => $e->getMessage(), 'url' => $instance->url]);
         }
 
         return response()->json([

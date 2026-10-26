@@ -24,7 +24,7 @@
             </p>
             @if (($meta ?? []) !== [] || ($late ?? false))
                 <p style="margin: 2px 0 0 0; font-size: 13px; line-height: 19px; color: #6B7280;">
-                    {{ implode(' · ', $meta ?? []) }}@if ($late ?? false)@if (($meta ?? []) !== []) · @endif<span style="color: #B91C1C; font-weight: bold;">{{ __('en retard') }}</span>@endif
+                    {{ implode(' · ', $meta ?? []) }}@if ($late ?? false)@if (($meta ?? []) !== []) · @endif<span style="color: #B91C1C; font-weight: bold;">{{ __('filament-tma::notifications.digest.overdue') }}</span>@endif
                 </p>
             @endif
             @foreach ($lines ?? [] as $line)

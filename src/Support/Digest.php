@@ -74,13 +74,13 @@ final class Digest
         $questions = Questions::openFor($user)->map(fn (Entry $question): array => [
             'ref' => $question->subject->number,
             'title' => $question->subject->title,
-            'state' => __('Question du Support'),
+            'state' => __('filament-tma::common.support_question'),
             'since' => $question->created_at,
             'late' => now()->diffInDays($question->created_at, true) > $lateAfter,
             'url' => rescue(fn (): string => TaskResource::getUrl('view', ['record' => $question->subject], panel: Filament::getCurrentOrDefaultPanel()?->getId()).'#tma-entry-'.$question->getKey(), null, false),
             'closes_on' => null,
             'lines' => [[
-                'line' => __(':who vous demande :', ['who' => $question->author === null ? __('Le Support')
+                'line' => __('filament-tma::notifications.digest.asks', ['who' => $question->author === null ? __('filament-tma::notifications.the_support')
                     : $question->author->name.(($team = $question->author->team()) !== null ? " ({$team})" : '')]),
                 'excerpt' => Str::limit(Str::squish(Html::toText($question->body)), 300),
             ]],

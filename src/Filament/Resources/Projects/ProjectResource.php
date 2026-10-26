@@ -72,12 +72,12 @@ class ProjectResource extends Resource implements HasKnowledgeBase
 
     public static function getModelLabel(): string
     {
-        return __('projet');
+        return __('filament-tma::projects.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('projets');
+        return __('filament-tma::projects.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -122,14 +122,14 @@ class ProjectResource extends Resource implements HasKnowledgeBase
     public static function formFields(): array
     {
         return [
-            TextInput::make('title')->label(__('Titre'))->required()->maxLength(255)->columnSpanFull(),
-            Select::make('target_instance_uid')->label(__('Application destinataire'))
+            TextInput::make('title')->label(__('filament-tma::common.title'))->required()->maxLength(255)->columnSpanFull(),
+            Select::make('target_instance_uid')->label(__('filament-tma::projects.fields.instance'))
                 ->options(fn (): array => Instance::query()->active()->orderBy('name')->pluck('name', 'uid')->all())
                 ->required()
                 ->live()
                 ->disabled(fn (?Model $record): bool => $record instanceof Project && $record->tasks()->exists())
-                ->helperText(__('Toutes les tâches du projet vont à cette application.'))
-                ->hintAction(Help::action('tma.projets', __('Les projets'))),
+                ->helperText(__('filament-tma::projects.fields.instance_help'))
+                ->hintAction(Help::action('tma.projets', __('filament-tma::common.projects_help'))),
             ...self::detailFields(
                 fn (Get $get, ?Model $record): ?string => $get('target_instance_uid') ?? ($record instanceof Project ? $record->target_instance_uid : null),
                 fn (?Model $record): ?Project => $record instanceof Project ? $record : null,
@@ -147,25 +147,25 @@ class ProjectResource extends Resource implements HasKnowledgeBase
     public static function detailFields(\Closure $instanceUid, \Closure $project): array
     {
         return [
-            Textarea::make('description')->label(__('Description'))->rows(3)->columnSpanFull(),
+            Textarea::make('description')->label(__('filament-tma::common.description'))->rows(3)->columnSpanFull(),
             Grid::make(2)->columnSpanFull()->schema([
-                TextInput::make('estimate_min_days')->label(__('Fourchette : au moins'))
-                    ->numeric()->minValue(0)->step(0.5)->suffix(__('j'))
-                    ->helperText(__('En jours (une journée : :day) ; 0,5 pour une demi-journée.', ['day' => Duration::format(Duration::dayMinutes(), Duration::HOURS)]))
-                    ->hintAction(Help::action('tma.projets.fourchette', __('La fourchette'))),
-                TextInput::make('estimate_max_days')->label(__('au plus'))
-                    ->numeric()->minValue(0)->step(0.5)->suffix(__('j'))
+                TextInput::make('estimate_min_days')->label(__('filament-tma::projects.fields.estimate_min'))
+                    ->numeric()->minValue(0)->step(0.5)->suffix(__('filament-tma::common.units.days_short'))
+                    ->helperText(__('filament-tma::projects.fields.estimate_help', ['day' => Duration::format(Duration::dayMinutes(), Duration::HOURS)]))
+                    ->hintAction(Help::action('tma.projets.fourchette', __('filament-tma::projects.help.estimate'))),
+                TextInput::make('estimate_max_days')->label(__('filament-tma::projects.fields.estimate_max'))
+                    ->numeric()->minValue(0)->step(0.5)->suffix(__('filament-tma::common.units.days_short'))
                     ->rule(fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
                         if (filled($value) && filled($get('estimate_min_days')) && (float) $value < (float) $get('estimate_min_days')) {
-                            $fail(__('Le haut de la fourchette ne peut pas être sous le bas.'));
+                            $fail(__('filament-tma::projects.errors.estimate_order'));
                         }
                     }),
             ]),
-            Select::make('member_keys')->label(__('Participants'))
+            Select::make('member_keys')->label(__('filament-tma::projects.fields.participants'))
                 ->multiple()
                 ->searchable()
                 ->options(fn (Get $get, ?Model $record): array => self::memberOptions($instanceUid($get, $record), $project($record)))
-                ->helperText(__('En plus des destinataires de ses tâches, qui y participent d’office.'))
+                ->helperText(__('filament-tma::projects.fields.participants_help'))
                 ->columnSpanFull(),
         ];
     }
@@ -183,7 +183,7 @@ class ProjectResource extends Resource implements HasKnowledgeBase
 
         foreach ($project?->members ?? [] as $actor) {
             if (! array_key_exists($key = Addressables::keyFor($actor), $known)) {
-                $groups[__('Autres participants')][$key] = Addressables::label($actor);
+                $groups[__('filament-tma::projects.fields.other_participants')][$key] = Addressables::label($actor);
             }
         }
 
@@ -268,7 +268,7 @@ class ProjectResource extends Resource implements HasKnowledgeBase
         $project = fn (Model $record): ?Project => $record instanceof ProjectTask ? $record->project : ($record instanceof Project ? $record : null);
 
         return Action::make('editProject')
-            ->label(__('Modifier le projet'))
+            ->label(__('filament-tma::common.edit_project'))
             ->icon('heroicon-m-pencil-square')
             ->slideOver()
             ->modalWidth('lg')
@@ -277,13 +277,13 @@ class ProjectResource extends Resource implements HasKnowledgeBase
             ->modalDescription(fn (Model $record): ?string => Tma::isMaster() ? $project($record)->targetInstance?->name : null)
             ->fillForm(fn (Model $record): array => self::formData($project($record)))
             ->schema(fn (Model $record): array => [
-                TextInput::make('title')->label(__('Titre'))->required()->maxLength(255),
+                TextInput::make('title')->label(__('filament-tma::common.title'))->required()->maxLength(255),
                 ...self::detailFields(fn (): string => $project($record)->target_instance_uid, fn (): ?Project => $project($record)),
             ])
-            ->modalSubmitActionLabel(__('Enregistrer'))
+            ->modalSubmitActionLabel(__('filament-tma::common.save'))
             ->action(function (Model $record, array $data) use ($project): void {
                 self::updateProject($project($record), $data);
-                Notification::make()->success()->title(__('Projet enregistré'))->send();
+                Notification::make()->success()->title(__('filament-tma::projects.notifications.saved'))->send();
             });
     }
 
@@ -294,7 +294,7 @@ class ProjectResource extends Resource implements HasKnowledgeBase
     public static function resyncAction(): Action
     {
         return Action::make('resync')
-            ->label(__('Renvoyer à l’application'))
+            ->label(__('filament-tma::common.resend_to_application'))
             ->icon('heroicon-m-arrow-path')
             ->color('gray')
             ->visible(fn (Project $record): bool => Tma::isMaster() && TmaGate::allows(auth()->user(), TmaGate::SYNC, new ProjectTask))
@@ -303,10 +303,10 @@ class ProjectResource extends Resource implements HasKnowledgeBase
                 $sent = Resync::push(Resync::subjects(project: $record));
 
                 Notification::make()->success()
-                    ->title(__('Envoi demandé'))
+                    ->title(__('filament-tma::common.send_requested'))
                     ->body($sent > 0
-                        ? trans_choice('Le projet repart, avec :n tâche publiée.|Le projet repart, avec ses :n tâches publiées.', $sent, ['n' => $sent])
-                        : __('Le projet repart (il n’a pas de tâche publiée).'))
+                        ? trans_choice('filament-tma::projects.notifications.resent', $sent, ['n' => $sent])
+                        : __('filament-tma::projects.notifications.resent_empty'))
                     ->send();
             });
     }
@@ -315,27 +315,27 @@ class ProjectResource extends Resource implements HasKnowledgeBase
     {
         return $schema->components([
             Section::make()->columnSpanFull()->columns(4)->schema([
-                TextEntry::make('targetInstance.name')->label(__('Application'))->visible(fn (): bool => Tma::isMaster()),
-                TextEntry::make('tasks_count')->label(__('Tâches'))
-                    ->state(fn (Project $record): string => __(':done / :total terminées', [
+                TextEntry::make('targetInstance.name')->label(__('filament-tma::common.application'))->visible(fn (): bool => Tma::isMaster()),
+                TextEntry::make('tasks_count')->label(__('filament-tma::projects.tasks.heading'))
+                    ->state(fn (Project $record): string => __('filament-tma::projects.columns.progress', [
                         'done' => $record->tasks()->where('state', 'done')->count(),
                         'total' => $record->tasks()->count(),
                     ])),
-                TextEntry::make('estimate')->label(__('Fourchette'))
+                TextEntry::make('estimate')->label(__('filament-tma::common.estimate'))
                     ->state(fn (Project $record): ?string => $record->estimateLabel())
-                    ->placeholder(__('Pas de fourchette'))
-                    ->hintAction(Help::action('tma.projets.fourchette', __('La fourchette'))),
-                TextEntry::make('time')->label(__('Temps passé'))
+                    ->placeholder(__('filament-tma::projects.columns.no_estimate'))
+                    ->hintAction(Help::action('tma.projets.fourchette', __('filament-tma::projects.help.estimate'))),
+                TextEntry::make('time')->label(__('filament-tma::common.time_spent'))
                     ->state(fn (Project $record): string => Duration::format($record->timeTotals()['total_minutes']))
                     ->color(fn (Project $record): ?string => $record->isOverEstimate($record->timeTotals()['total_minutes']) ? 'danger' : null)
                     ->weight(FontWeight::SemiBold)
-                    ->helperText(__('La somme du temps de ses tâches.'))
-                    ->hintAction(Help::action('tma.projets', __('Le temps d’un projet'))),
-                TextEntry::make('participants')->label(__('Participants'))
+                    ->helperText(__('filament-tma::projects.columns.time_help'))
+                    ->hintAction(Help::action('tma.projets', __('filament-tma::projects.help.time'))),
+                TextEntry::make('participants')->label(__('filament-tma::projects.fields.participants'))
                     ->state(fn (Project $record): array => $record->participants()->map(fn (Actor $actor): string => Addressables::label($actor))->all())
                     ->badge()->color('gray')->placeholder('—')
                     ->columnSpanFull(),
-                TextEntry::make('description')->label(__('Description'))->placeholder('—')->columnSpanFull(),
+                TextEntry::make('description')->label(__('filament-tma::common.description'))->placeholder('—')->columnSpanFull(),
             ]),
         ]);
     }
@@ -360,39 +360,39 @@ class ProjectResource extends Resource implements HasKnowledgeBase
             ->columns([
                 Split::make([
                     Stack::make([
-                        TextColumn::make('title')->label(__('Titre'))->searchable()->sortable()
+                        TextColumn::make('title')->label(__('filament-tma::common.title'))->searchable()->sortable()
                             ->weight(FontWeight::SemiBold)->wrap()
                             ->url(fn (Project $record): ?string => static::canView($record) ? static::getUrl('view', ['record' => $record]) : null),
-                        TextColumn::make('excerpt')->label(__('Description'))
+                        TextColumn::make('excerpt')->label(__('filament-tma::common.description'))
                             ->state(fn (Project $record): ?string => filled($record->description) ? Str::limit($record->description, 140) : null)
                             ->color('gray')->size(TextSize::Small)->wrap(),
-                        TextColumn::make('participants')->label(__('Participants'))
+                        TextColumn::make('participants')->label(__('filament-tma::projects.fields.participants'))
                             ->state(fn (Project $record): array => $record->participants()->map(fn (Actor $actor): string => Addressables::label($actor))->all())
                             ->badge()->color('gray')->size(TextSize::ExtraSmall)
                             ->limitList(6)->expandableLimitedList(),
                     ])->space(1),
                     Stack::make([
-                        TextColumn::make('estimate')->label(__('Fourchette'))
-                            ->state(fn (Project $record): string => $record->estimateLabel() ?? __('Pas de fourchette'))
-                            ->tooltip(__('Fourchette'))
+                        TextColumn::make('estimate')->label(__('filament-tma::common.estimate'))
+                            ->state(fn (Project $record): string => $record->estimateLabel() ?? __('filament-tma::projects.columns.no_estimate'))
+                            ->tooltip(__('filament-tma::common.estimate'))
                             ->icon('heroicon-m-scale')
                             ->color(fn (Project $record): string => $record->estimateLabel() === null ? 'gray' : 'primary'),
-                        TextColumn::make('time')->label(__('Temps'))
+                        TextColumn::make('time')->label(__('filament-tma::common.time'))
                             ->state(fn (Project $record): string => Duration::format($record->timeTotals()['total_minutes']))
-                            ->tooltip(__('Temps passé'))
+                            ->tooltip(__('filament-tma::common.time_spent'))
                             ->icon('heroicon-m-clock')->weight(FontWeight::SemiBold)
                             ->color(fn (Project $record): ?string => $record->isOverEstimate($record->timeTotals()['total_minutes']) ? 'danger' : null),
-                        TextColumn::make('tasks_count')->label(__('Tâches'))->sortable()
-                            ->formatStateUsing(fn (Project $record): string => __(':done / :total terminées', ['done' => $record->done_tasks_count, 'total' => $record->tasks_count]))
+                        TextColumn::make('tasks_count')->label(__('filament-tma::projects.tasks.heading'))->sortable()
+                            ->formatStateUsing(fn (Project $record): string => __('filament-tma::projects.columns.progress', ['done' => $record->done_tasks_count, 'total' => $record->tasks_count]))
                             ->color('gray')->size(TextSize::ExtraSmall),
-                        TextColumn::make('targetInstance.name')->label(__('Application'))
+                        TextColumn::make('targetInstance.name')->label(__('filament-tma::common.application'))
                             ->icon('heroicon-m-computer-desktop')->color('gray')->size(TextSize::ExtraSmall)
                             ->visible(fn (): bool => Tma::isMaster()),
                     ])->space(1)->grow(false)
                         // Des largeurs fixes : d'une ligne à l'autre, la fourchette et les tâches restent alignées.
                         ->extraAttributes(['style' => 'width: 12rem']),
                     Stack::make([
-                        TextColumn::make('ongoing')->label(__('En cours'))
+                        TextColumn::make('ongoing')->label(__('filament-tma::common.in_progress'))
                             ->state(fn (Project $record): HtmlString => self::ongoingLinks($record))
                             ->html()
                             ->size(TextSize::Small),
@@ -400,13 +400,13 @@ class ProjectResource extends Resource implements HasKnowledgeBase
                 ])->from('md'),
             ])
             ->filters([
-                SelectFilter::make('target_instance_uid')->label(__('Application'))
+                SelectFilter::make('target_instance_uid')->label(__('filament-tma::common.application'))
                     ->visible(fn (): bool => Tma::isMaster())
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all()),
             ])
             ->recordActions([
-                ViewAction::make()->iconButton()->tooltip(__('Ouvrir')),
-                static::editAction()->iconButton()->tooltip(__('Modifier le projet')),
+                ViewAction::make()->iconButton()->tooltip(__('filament-tma::common.open')),
+                static::editAction()->iconButton()->tooltip(__('filament-tma::common.edit_project')),
             ]);
     }
 
@@ -422,7 +422,7 @@ class ProjectResource extends Resource implements HasKnowledgeBase
             ->values();
 
         if ($ongoing->isEmpty()) {
-            return new HtmlString('<span class="fi-tma-entry-instance">'.e(__('Aucune tâche en cours')).'</span>');
+            return new HtmlString('<span class="fi-tma-entry-instance">'.e(__('filament-tma::projects.columns.no_task_in_progress')).'</span>');
         }
 
         $listUrl = TaskResource::getUrl('index', ['filters' => [
@@ -435,10 +435,10 @@ class ProjectResource extends Resource implements HasKnowledgeBase
             : e($task->number.' · '.Str::limit($task->title, 40)));
 
         if ($ongoing->count() > self::ONGOING_LINKS) {
-            $lines->push('<a href="'.e($listUrl).'" class="fi-link">'.e(trans_choice('et :n autre|et :n autres', $ongoing->count() - self::ONGOING_LINKS, ['n' => $ongoing->count() - self::ONGOING_LINKS])).'</a>');
+            $lines->push('<a href="'.e($listUrl).'" class="fi-link">'.e(trans_choice('filament-tma::common.and_others', $ongoing->count() - self::ONGOING_LINKS, ['n' => $ongoing->count() - self::ONGOING_LINKS])).'</a>');
         }
 
-        return new HtmlString('<a href="'.e($listUrl).'" class="fi-link font-semibold">'.e(trans_choice(':n tâche en cours|:n tâches en cours', $ongoing->count(), ['n' => $ongoing->count()])).'</a><br>'.$lines->implode('<br>'));
+        return new HtmlString('<a href="'.e($listUrl).'" class="fi-link font-semibold">'.e(trans_choice('filament-tma::projects.columns.tasks_in_progress', $ongoing->count(), ['n' => $ongoing->count()])).'</a><br>'.$lines->implode('<br>'));
     }
 
     public static function getRelations(): array

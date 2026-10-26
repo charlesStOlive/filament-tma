@@ -13,5 +13,5 @@
         : 0;
 @endphp
 @if ($minutes > 0)
-    <x-filament::badge color="gray" size="sm" icon="heroicon-m-clock" :tooltip="__('Temps saisi sur ce message')">{{ Duration::format($minutes) }}</x-filament::badge>
+    <x-filament::badge color="gray" size="sm" icon="heroicon-m-clock" :tooltip="__('filament-tma::timeline.time.on_message')">{{ Duration::format($minutes) }}</x-filament::badge>
 @endif

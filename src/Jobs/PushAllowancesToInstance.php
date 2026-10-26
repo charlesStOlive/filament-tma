@@ -54,7 +54,7 @@ class PushAllowancesToInstance implements ShouldBeUnique, ShouldQueue
             ->map(fn (Allowance $allowance): array => AllowanceMeter::status($allowance))
             ->values()->all();
 
-        Http::call(__('Envoi des forfaits'), fn () => Http::to($this->instance->token)->post($this->instance->apiUrl('allowances'), ['data' => $statuses]));
+        Http::call(__('filament-tma::sync.operations.push_allowances'), fn () => Http::to($this->instance->token)->post($this->instance->apiUrl('allowances'), ['data' => $statuses]));
     }
 
     /** Toutes les applications concernées par un forfait, ou par une saisie. */

@@ -226,7 +226,7 @@ class TicketWorkflow
         $context = $context->forSubject($ticket);
 
         if (! $this->allows($ticket, $move, $context)) {
-            throw new AuthorizationException(__('Ce passage n’est pas possible pour ce ticket.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.ticket_move'));
         }
 
         $data = Validator::make($data, $move->rules($ticket))->validate();
@@ -292,11 +292,11 @@ class TicketWorkflow
     public function createForClient(Instance $instance, array $requester, array $attributes, Context $context): Ticket
     {
         if (! Tma::isMaster()) {
-            throw new AuthorizationException(__('Seul le Support prépare un ticket pour un client.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.support_prepares'));
         }
 
         if (! $context->isSystem() && ! $this->mayCreate($context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.cannot_create_ticket'));
         }
 
         $actor = Actor::fromInstance($instance->uid, (string) $requester['id'], (string) $requester['name'], $requester['email'] ?? null);
@@ -333,11 +333,11 @@ class TicketWorkflow
     public function create(array $attributes, Context $context): Ticket
     {
         if (Tma::isMaster()) {
-            throw new AuthorizationException(__('Dans le Support, un ticket se prépare pour un client.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.prepare_for_client'));
         }
 
         if (! $context->isSystem() && ! $this->mayCreate($context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas créer de ticket.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.cannot_create_ticket'));
         }
 
         $ticket = Ticket::create([

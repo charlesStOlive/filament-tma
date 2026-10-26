@@ -70,17 +70,17 @@ class TicketResource extends Resource implements HasKnowledgeBase
         TmaGate::FORCE_CLOSE, TmaGate::FORCE_RETURN,
     ];
 
-    /** @var array<string, string> */
+    /** @var array<string, string> Des clés de traduction : filament-permission-manager les traduit à l'affichage. */
     protected static array $permissionLabels = [
-        TmaGate::CORRESPOND => 'Correspondant du Support : faire une demande et la transmettre (client)',
-        TmaGate::HANDLE => 'Membre du Support : traiter les demandes (maître)',
-        TmaGate::FORCE_CLOSE => 'Forçage : forcer la clôture d’un ticket',
-        TmaGate::FORCE_RETURN => 'Forçage : reprendre la main sans attendre le demandeur (maître)',
-        TmaGate::NOTE => 'Écrire des notes et les archiver',
-        TmaGate::TIME => 'Saisir et modifier du temps (maître)',
-        TmaGate::SYNC => 'Relancer une synchronisation en erreur (maître)',
-        TmaGate::REMIND => 'Relancer qui a la main',
-        TmaGate::NOTIFY => 'Envoyer maintenant les notifications groupées',
+        TmaGate::CORRESPOND => 'filament-tma::permissions.ticket.correspond',
+        TmaGate::HANDLE => 'filament-tma::permissions.ticket.handle',
+        TmaGate::FORCE_CLOSE => 'filament-tma::permissions.ticket.force_close',
+        TmaGate::FORCE_RETURN => 'filament-tma::permissions.ticket.force_return',
+        TmaGate::NOTE => 'filament-tma::permissions.note',
+        TmaGate::TIME => 'filament-tma::permissions.time',
+        TmaGate::SYNC => 'filament-tma::permissions.sync',
+        TmaGate::REMIND => 'filament-tma::permissions.ticket.remind',
+        TmaGate::NOTIFY => 'filament-tma::permissions.ticket.notify',
     ];
 
     /** @var array<string, string> */
@@ -94,12 +94,12 @@ class TicketResource extends Resource implements HasKnowledgeBase
 
     public static function getModelLabel(): string
     {
-        return __('ticket');
+        return __('filament-tma::tickets.model.singular');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('tickets');
+        return __('filament-tma::tickets.model.plural');
     }
 
     public static function getNavigationGroup(): string|UnitEnum|null
@@ -162,50 +162,50 @@ class TicketResource extends Resource implements HasKnowledgeBase
         return $table
             ->defaultSort('last_activity_at', 'desc')
             ->columns([
-                TextColumn::make('number')->label(__('N°'))->searchable()->sortable(),
-                TextColumn::make('sourceInstance.name')->label(__('Application'))
+                TextColumn::make('number')->label(__('filament-tma::common.number'))->searchable()->sortable(),
+                TextColumn::make('sourceInstance.name')->label(__('filament-tma::common.application'))
                     ->visible(fn (): bool => Tma::isMaster())->toggleable(),
-                TextColumn::make('title')->label(__('Titre'))->searchable()->limit(60)->wrap(),
-                TextColumn::make('state')->label(__('État'))->badge(),
-                TextColumn::make('waiting_on')->label(__('En attente de'))->badge()->placeholder('—')
+                TextColumn::make('title')->label(__('filament-tma::common.title'))->searchable()->limit(60)->wrap(),
+                TextColumn::make('state')->label(__('filament-tma::common.state'))->badge(),
+                TextColumn::make('waiting_on')->label(__('filament-tma::common.waiting_for'))->badge()->placeholder('—')
                     ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
                     ->color(fn (Ticket $record): string => match (true) {
-                        $record->waitingOnFor(auth()->user()) === __('Vous') => 'warning',
+                        $record->waitingOnFor(auth()->user()) === __('filament-tma::common.you') => 'warning',
                         $record->sideInCharge() === Side::Handler => 'info',
                         default => 'gray',
                     }),
-                TextColumn::make('priority')->label(__('Priorité'))->badge()->sortable(),
+                TextColumn::make('priority')->label(__('filament-tma::common.priority'))->badge()->sortable(),
                 // Quand le Support écrit au client, sa personne n'est pas demandeur : on le dit dessous.
-                TextColumn::make('requester.name')->label(__('Demandeur'))->toggleable()
+                TextColumn::make('requester.name')->label(__('filament-tma::common.requester'))->toggleable()
                     ->description(fn (Ticket $record): ?string => match (true) {
-                        $record->opening->fromSupport() => __('adressé par le Support'),
-                        $record->opening === TicketOpening::OnBehalf => __('en son nom, par le Support'),
+                        $record->opening->fromSupport() => __('filament-tma::tickets.addressed_by_support'),
+                        $record->opening === TicketOpening::OnBehalf => __('filament-tma::tickets.on_their_behalf'),
                         default => null,
                     }),
-                TextColumn::make('assignee.name')->label(__('Contact au Support'))->placeholder('—')->toggleable(),
-                TextColumn::make('sync_status')->label(__('Synchro'))->badge()
+                TextColumn::make('assignee.name')->label(__('filament-tma::common.support_contact'))->placeholder('—')->toggleable(),
+                TextColumn::make('sync_status')->label(__('filament-tma::common.sync'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('last_activity_at')->label(__('Dernière activité'))->since()->sortable(),
+                TextColumn::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->since()->sortable(),
             ])
             ->filters([
                 // Les valeurs d'office sont celles d'un raccourci de la liste (`ListTickets::shortcuts()`) : « Mes
                 // demandes » dans une application cliente, « Actifs » ailleurs et pour un membre du Support.
-                Filter::make('awaiting')->label(__('En attente de moi'))->toggle()
+                Filter::make('awaiting')->label(__('filament-tma::tickets.filters.waiting_for_me'))->toggle()
                     ->query(fn (Builder $query): Builder => $query->awaiting(auth()->user())),
-                Filter::make('mine')->label(__('Mes demandes'))->toggle()
+                Filter::make('mine')->label(__('filament-tma::tickets.filters.my_requests'))->toggle()
                     ->default(fn (): bool => static::showsOwnRequestsFirst())
                     ->query(fn (Builder $query): Builder => $query->whereIn('requester_actor_id', Actor::query()
                         ->where('instance_uid', Tma::instanceUid())
                         ->where('user_id', auth()->id())
                         ->select('id'))),
-                StateFusionSelectFilter::make('state')->label(__('État'))->multiple()
+                StateFusionSelectFilter::make('state')->label(__('filament-tma::common.state'))->multiple()
                     ->default(TicketState::active()),
-                SelectFilter::make('priority')->label(__('Priorité'))->options(Priority::class)->multiple(),
-                SelectFilter::make('source_instance_uid')->label(__('Application'))
+                SelectFilter::make('priority')->label(__('filament-tma::common.priority'))->options(Priority::class)->multiple(),
+                SelectFilter::make('source_instance_uid')->label(__('filament-tma::common.application'))
                     ->visible(fn (): bool => Tma::isMaster())
                     ->options(fn (): array => Instance::query()->orderBy('name')->pluck('name', 'uid')->all()),
-                SelectFilter::make('sync_status')->label(__('Synchro'))->options(SyncStatus::class)
+                SelectFilter::make('sync_status')->label(__('filament-tma::common.sync'))->options(SyncStatus::class)
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable()),
             ])
             ->recordActions([

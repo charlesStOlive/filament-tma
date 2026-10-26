@@ -14,7 +14,7 @@ class AutoPublish extends Publish
 
     public function label(): string
     {
-        return __('Publication programmée');
+        return __('filament-tma::common.scheduled_publication');
     }
 
     public function sides(): array

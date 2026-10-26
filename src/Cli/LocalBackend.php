@@ -115,7 +115,7 @@ final class LocalBackend implements Backend
         $timeline = app(Timeline::class);
 
         if (! $timeline->canEdit($entry, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez plus modifier cette entrée.'));
+            throw new AuthorizationException(__('filament-tma::common.cannot_edit_entry'));
         }
 
         // Les fichiers arrivent en base64 : rangés d'abord, ils comptent pour une note sans texte.
@@ -131,7 +131,7 @@ final class LocalBackend implements Backend
         $tasks = in_array($type, ['all', 'tasks'], true) && $this->can('viewAny', ProjectTask::class) ? $this->tasks($filters) : collect();
 
         if (! $this->can('viewAny', Ticket::class) && ! $this->can('viewAny', ProjectTask::class)) {
-            throw new AuthorizationException(__('Vous n’avez pas accès à ces tickets.'));
+            throw new AuthorizationException(__('filament-tma::commands.backend.no_access'));
         }
 
         return $tickets->concat($tasks)
@@ -196,7 +196,7 @@ final class LocalBackend implements Backend
         $context = $this->context();
 
         if (filled($summary) && filled($entry)) {
-            throw ValidationException::withMessages(['entry_ulid' => __('Un résumé écrit un nouveau message : ne désignez pas en plus un message existant.')]);
+            throw ValidationException::withMessages(['entry_ulid' => __('filament-tma::commands.backend.summary_and_entry')]);
         }
 
         $on = filled($entry) ? $this->entryOf($ticket, (string) $entry) : null;
@@ -254,7 +254,7 @@ final class LocalBackend implements Backend
         $this->assertCanLog($ticket);
         $context = $this->context();
         $time = $ticket->timeEntries()->where('ulid', strtolower($ulid))->first()
-            ?? throw new InvalidArgumentException(__('Saisie de temps introuvable sur :ref : :time', ['ref' => $ticket->number, 'time' => $ulid]));
+            ?? throw new InvalidArgumentException(__('filament-tma::commands.backend.time_not_found', ['ref' => $ticket->number, 'time' => $ulid]));
 
         Auditor::as($context, function () use ($ticket, $time, $data, $context): void {
             if (! empty($data['delete'])) {
@@ -282,7 +282,7 @@ final class LocalBackend implements Backend
     private function assertCanLog(Ticket|ProjectTask $ticket): void
     {
         if (! app(TimeLog::class)->canLog($ticket, $this->context())) {
-            throw new AuthorizationException(__('Vous ne pouvez pas saisir de temps sur ce ticket.'));
+            throw new AuthorizationException(__('filament-tma::common.cannot_log_time'));
         }
     }
 
@@ -290,7 +290,7 @@ final class LocalBackend implements Backend
     private function entryOf(Ticket|ProjectTask $ticket, string $ulid): Entry
     {
         return $ticket->entries()->visibleTo($this->user)->where('ulid', strtolower($ulid))->first()
-            ?? throw new InvalidArgumentException(__('Message ou note introuvable sur :ref : :entry', ['ref' => $ticket->number, 'entry' => $ulid]));
+            ?? throw new InvalidArgumentException(__('filament-tma::commands.backend.entry_not_found', ['ref' => $ticket->number, 'entry' => $ulid]));
     }
 
     public function comment(string $ref, string $body, bool $note): array
@@ -309,13 +309,13 @@ final class LocalBackend implements Backend
             ->concat(ProjectTask::query()->where('number', $ref)->orWhere('ulid', strtolower($ref))->get());
 
         if ($matches->count() > 1) {
-            throw new InvalidArgumentException(__('Plusieurs tickets portent le numéro :ref : donnez son ulid.', ['ref' => $ref]));
+            throw new InvalidArgumentException(__('filament-tma::commands.backend.ambiguous', ['ref' => $ref]));
         }
 
-        $ticket = $matches->first() ?? throw new InvalidArgumentException(__('Ticket ou tâche introuvable : :ref', ['ref' => $ref]));
+        $ticket = $matches->first() ?? throw new InvalidArgumentException(__('filament-tma::commands.backend.not_found', ['ref' => $ref]));
 
         if ($this->scope !== null && $ticket->clientInstanceUid() !== $this->scope) {
-            throw new InvalidArgumentException(__('Ticket ou tâche introuvable : :ref', ['ref' => $ref]));
+            throw new InvalidArgumentException(__('filament-tma::commands.backend.not_found', ['ref' => $ref]));
         }
 
         $this->authorize('view', $ticket);
@@ -333,7 +333,7 @@ final class LocalBackend implements Backend
     private function authorize(string $ability, mixed $subject): void
     {
         if (! $this->can($ability, $subject)) {
-            throw new AuthorizationException(__('Vous n’avez pas accès à ces tickets.'));
+            throw new AuthorizationException(__('filament-tma::commands.backend.no_access'));
         }
     }
 

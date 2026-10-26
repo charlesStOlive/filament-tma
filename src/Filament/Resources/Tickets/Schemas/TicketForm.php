@@ -43,17 +43,17 @@ class TicketForm
                 ->required()
                 ->live()
                 ->helperText(fn (Get $get): ?string => TicketOpening::tryFrom((string) $get('opening'))?->getDescription())
-                ->hintAction(Help::action('tma.tickets.prepares', __('Trois façons d’écrire au client')))
+                ->hintAction(Help::action('tma.tickets.prepares', __('filament-tma::tickets.help.three_ways')))
                 ->visible(fn (string $operation): bool => Tma::isMaster() && $operation === 'create')
                 ->columnSpanFull(),
             Grid::make(3)->columnSpanFull()
                 ->visible(fn (string $operation): bool => Tma::isMaster() && $operation === 'create')
                 ->schema([
-                    Select::make('instance_uid')->label(__('Application du client'))
+                    Select::make('instance_uid')->label(__('filament-tma::tickets.fields.client_application'))
                         ->options(fn (): array => Instance::query()->active()->orderBy('name')->pluck('name', 'uid')->all())
                         ->required()
                         ->live()
-                        ->hintAction(Help::action('tma.tickets.prepares', __('Préparer un ticket pour un client'))),
+                        ->hintAction(Help::action('tma.tickets.prepares', __('filament-tma::tickets.help.prepare_for_client'))),
                     Select::make('requester_id')->label(fn (Get $get): string => (TicketOpening::tryFrom((string) $get('opening')) ?? TicketOpening::OnBehalf)->requesterLabel())
                         ->options(function (Get $get): array {
                             $instance = Instance::forUid($get('instance_uid'));
@@ -63,32 +63,32 @@ class TicketForm
                                 [],
                             );
                         })
-                        ->helperText(__('Les utilisateurs de l’application qui ont accès au Support.'))
+                        ->helperText(__('filament-tma::tickets.fields.requester_help'))
                         ->searchable()
                         ->required()
-                        ->hintAction(Help::action('tma.tickets.prepares', __('Qui peut-on choisir ?'))),
-                    DateTimePicker::make('publish_at')->label(__('Publication programmée'))
-                        ->helperText(__('Pour « Enregistrer le brouillon » ; vide, vous publierez à la main.'))
+                        ->hintAction(Help::action('tma.tickets.prepares', __('filament-tma::tickets.help.who_can_be_chosen'))),
+                    DateTimePicker::make('publish_at')->label(__('filament-tma::common.scheduled_publication'))
+                        ->helperText(__('filament-tma::tickets.fields.publish_at_help'))
                         ->minDate(now())->seconds(false)
-                        ->hintAction(Help::action('tma.tickets.prepares', __('Quand le client le verra-t-il ?'))),
+                        ->hintAction(Help::action('tma.tickets.prepares', __('filament-tma::tickets.help.when_client_sees'))),
                 ]),
             TextInput::make('title')
-                ->label(__('Titre'))
+                ->label(__('filament-tma::common.title'))
                 ->required()
                 ->maxLength(255)
                 ->columnSpanFull(),
             Grid::make(2)->schema([
                 Select::make('priority')
-                    ->label(__('Priorité'))
+                    ->label(__('filament-tma::common.priority'))
                     ->options(Priority::class)
                     ->default(Priority::Normal->value)
                     ->required()
-                    ->hintAction(Help::action('tma.tickets.priorite-echeance', __('À quoi sert la priorité ?'))),
+                    ->hintAction(Help::action('tma.tickets.priorite-echeance', __('filament-tma::tickets.help.priority'))),
             ])->columnSpanFull(),
             RichEditor::make('description')
-                ->label(__('Description'))
+                ->label(__('filament-tma::common.description'))
                 ->disabled(fn (string $operation, ?Ticket $record): bool => self::demandLocked($operation, $record))
-                ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('Mise en forme du texte')))
+                ->hintAction(Help::action('tma.chronologie.mise-en-forme', __('filament-tma::common.text_formatting')))
                 ->toolbarButtons([
                     ['bold', 'italic', 'underline', 'strike', 'link'],
                     ['h2', 'h3', 'bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -96,9 +96,9 @@ class TicketForm
                 ])
                 ->columnSpanFull(),
             Attachments::field(SpatieMediaLibraryFileUpload::make('attachments'))
-                ->label(__('Pièces jointes'))
+                ->label(__('filament-tma::common.attachments'))
                 ->disabled(fn (string $operation, ?Ticket $record): bool => self::demandLocked($operation, $record))
-                ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
+                ->hintAction(Help::action('tma.chronologie.fichiers', __('filament-tma::common.files_help')))
                 ->collection(Ticket::ATTACHMENTS_COLLECTION)
                 ->disk(config('filament-tma.attachments.disk', 'local'))
                 ->visibility('private')

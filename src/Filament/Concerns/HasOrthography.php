@@ -98,8 +98,8 @@ trait HasOrthography
         $this->unmountAction();
 
         Notification::make()->success()
-            ->title(__('Correction appliquée'))
-            ->body(__('Relisez le texte, puis envoyez-le ou enregistrez.'))
+            ->title(__('filament-tma::messages.orthography.applied'))
+            ->body(__('filament-tma::messages.orthography.applied_body'))
             ->send();
     }
 
@@ -164,8 +164,8 @@ trait HasOrthography
         $model = Str::ucfirst(static::getResource()::getModelLabel());
 
         return match (true) {
-            $record === null => $model.' — '.__('création'),
-            $schema === 'composer' => __('Message — :number', ['number' => $record->number]),
+            $record === null => $model.' — '.__('filament-tma::messages.orthography.creation'),
+            $schema === 'composer' => __('filament-tma::messages.orthography.message_subject', ['number' => $record->number]),
             default => $model.' '.$record->number,
         };
     }

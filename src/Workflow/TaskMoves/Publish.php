@@ -33,7 +33,7 @@ class Publish extends TaskMove
 
     public function description(): ?string
     {
-        return __('La tâche devient visible dans l’application du client.');
+        return __('filament-tma::workflow.task.publish.description');
     }
 
     public function icon(): ?string
@@ -70,8 +70,8 @@ class Publish extends TaskMove
 
         return [
             RecipientsFields::primaries('recipients', fn (): array => array_diff_key(Addressables::options($task->target_instance_uid), [Terms::support() => true]), fn () => $task->project)
-                ->label(__('Destinataires principaux chez le client'))
-                ->helperText(__('Prévenus de la publication, puis de tout ce qui arrive à la tâche.'))
+                ->label(__('filament-tma::workflow.task.publish.recipients'))
+                ->helperText(__('filament-tma::workflow.task.publish.recipients_help'))
                 ->required(),
         ];
     }

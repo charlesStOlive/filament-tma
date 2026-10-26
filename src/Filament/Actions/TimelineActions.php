@@ -31,9 +31,9 @@ final class TimelineActions
     public static function agentTime(): Action
     {
         return Action::make('agentTime')
-            ->label(__('Saisir du temps'))
+            ->label(__('filament-tma::common.log_time'))
             ->icon('heroicon-m-clock')
-            ->modalDescription(__('Enregistré chez le Support, en votre nom ; ici, seuls les totaux s’affichent.'))
+            ->modalDescription(__('filament-tma::timeline.time.logged_for_you'))
             ->visible(fn (Trackable $record): bool => Context::current()->forSubject($record)->isAgent())
             ->schema(fn (Trackable $record): array => TimeEntryForm::components(fn (): Trackable => $record))
             ->action(function (Trackable $record, array $data, Action $action): void {
@@ -45,7 +45,7 @@ final class TimelineActions
                     $action->halt();
                 }
 
-                Notification::make()->success()->title(__('Temps enregistré chez le Support'))->send();
+                Notification::make()->success()->title(__('filament-tma::common.time_logged_at_support'))->send();
             });
     }
 
@@ -58,7 +58,7 @@ final class TimelineActions
     public static function logAgentTime(Trackable $record, array $data): array
     {
         $agent = Context::current()->forSubject($record)->agent
-            ?? throw new AuthorizationException(__('Réservé aux membres du Support.'));
+            ?? throw new AuthorizationException(__('filament-tma::common.support_members_only'));
         $on = filled($data['entry_id'] ?? null) ? $record->entries()->find($data['entry_id']) : null;
 
         return app(MasterClient::class)->agentTime(
@@ -75,8 +75,8 @@ final class TimelineActions
     public static function attachmentsField(): FileUpload
     {
         return Attachments::field(FileUpload::make('attachments'))
-            ->label(__('Pièces jointes'))
-            ->hintAction(Help::action('tma.chronologie.fichiers', __('Quels fichiers ?')))
+            ->label(__('filament-tma::common.attachments'))
+            ->hintAction(Help::action('tma.chronologie.fichiers', __('filament-tma::common.files_help')))
             ->multiple()
             ->disk(config('filament-tma.attachments.disk', 'local'))
             ->directory('tma-uploads')

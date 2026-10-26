@@ -25,20 +25,20 @@ class AllowanceThresholdNotification extends Notification implements ShouldQueue
     {
         $s = $this->event->status;
         $what = match (true) {
-            $this->event->isExceeded() => __('dépassé (:threshold %)', ['threshold' => $this->event->threshold]),
-            $this->event->isExhausted() => __('entièrement consommé'),
-            default => __('consommé à :threshold %', ['threshold' => $this->event->threshold]),
+            $this->event->isExceeded() => __('filament-tma::notifications.allowance.exceeded', ['threshold' => $this->event->threshold]),
+            $this->event->isExhausted() => __('filament-tma::notifications.allowance.used_up'),
+            default => __('filament-tma::notifications.allowance.reached', ['threshold' => $this->event->threshold]),
         };
 
         return (new MailMessage)
-            ->subject(__('Forfait :label : :what', ['label' => $s['label'], 'what' => $what]))
-            ->greeting(__('Bonjour,'))
-            ->line(__('Le forfait « :label » est :what sur la période :period.', ['label' => $s['label'], 'what' => $what, 'period' => $s['period_key']]))
-            ->line(__('Alloué : :allocated · consommé : :consumed · restant : :remaining:overage.', [
+            ->subject(__('filament-tma::notifications.allowance.subject', ['label' => $s['label'], 'what' => $what]))
+            ->greeting(__('filament-tma::notifications.allowance.greeting'))
+            ->line(__('filament-tma::notifications.allowance.line', ['label' => $s['label'], 'what' => $what, 'period' => $s['period_key']]))
+            ->line(__('filament-tma::notifications.allowance.figures', [
                 'allocated' => Duration::format($s['allocated_minutes']),
                 'consumed' => Duration::format($s['consumed_minutes']),
                 'remaining' => Duration::format($s['remaining_minutes']),
-                'overage' => $s['overage_minutes'] > 0 ? ' · '.__('dépassement : :o', ['o' => Duration::format($s['overage_minutes'])]) : '',
+                'overage' => $s['overage_minutes'] > 0 ? ' · '.__('filament-tma::notifications.allowance.overage', ['o' => Duration::format($s['overage_minutes'])]) : '',
             ]));
     }
 }

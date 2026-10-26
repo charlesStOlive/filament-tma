@@ -47,24 +47,24 @@ class WeeklyDigest extends Notification implements ShouldQueue
         $projects = collect(self::groups($own))
             ->map($describe)
             ->groupBy(fn (array $task): string => (string) ($task['project'] ?? ''))
-            ->map(fn (Collection $tasks, string $project): array => ['title' => $project !== '' ? $project : __('Sans projet'), 'tasks' => $tasks->all()])
+            ->map(fn (Collection $tasks, string $project): array => ['title' => $project !== '' ? $project : __('filament-tma::common.no_project'), 'tasks' => $tasks->all()])
             ->values()->all();
         $copyGroups = array_map($describe, self::groups($copies));
         $count = count(self::groups($own)) + count($copyGroups);
 
         return (new MailMessage)
-            ->subject(trans_choice('Bilan de la semaine : :n tâche de vos projets|Bilan de la semaine : :n tâches de vos projets', $count, ['n' => $count]))
+            ->subject(trans_choice('filament-tma::notifications.weekly.subject', $count, ['n' => $count]))
             ->view(['filament-tma::mail.weekly', 'filament-tma::mail.weekly-text'], [
                 'brand' => MailBrand::for('task'),
-                'kicker' => __('Tâches projet · bilan de la semaine'),
-                'heading' => __('Ce qui a avancé sur vos projets'),
-                'preheader' => __('Pour information : aucune action n’est attendue de votre part.'),
+                'kicker' => __('filament-tma::notifications.weekly.kicker'),
+                'heading' => __('filament-tma::notifications.weekly.title'),
+                'preheader' => __('filament-tma::notifications.weekly.intro'),
                 'boxText' => $asked->isEmpty()
-                    ? __('Aucune action n’est attendue de votre part.')
-                    : trans_choice(':n question du Support attend votre réponse (elle est dans votre bilan du matin) ; le reste est pour information.|:n questions du Support attendent votre réponse (elles sont dans votre bilan du matin) ; le reste est pour information.', $asked->sum(), ['n' => $asked->sum()]),
+                    ? __('filament-tma::notifications.weekly.no_action')
+                    : trans_choice('filament-tma::notifications.weekly.questions', $asked->sum(), ['n' => $asked->sum()]),
                 'projects' => $projects,
                 'copies' => $copyGroups,
-                'reason' => __('Vous recevez le bilan de la semaine des tâches projet.'),
+                'reason' => __('filament-tma::notifications.weekly.footer'),
             ]);
     }
 
@@ -76,10 +76,10 @@ class WeeklyDigest extends Notification implements ShouldQueue
         }
 
         return array_filter([
-            __('État') => $task->state->getLabel(),
-            __('Échéance') => $task->due_on?->format('d/m/Y'),
-            __('Temps passé') => (int) $task->time_total_minutes > 0 ? Duration::format((int) $task->time_total_minutes) : null,
-            __('À vous de répondre') => $questions > 0 ? trans_choice(':n question|:n questions', $questions, ['n' => $questions]) : null,
+            __('filament-tma::common.state') => $task->state->getLabel(),
+            __('filament-tma::notifications.weekly.due') => $task->due_on?->format('d/m/Y'),
+            __('filament-tma::common.time_spent') => (int) $task->time_total_minutes > 0 ? Duration::format((int) $task->time_total_minutes) : null,
+            __('filament-tma::notifications.weekly.your_turn') => $questions > 0 ? trans_choice('filament-tma::notifications.weekly.question_count', $questions, ['n' => $questions]) : null,
         ], fn (?string $value): bool => filled($value));
     }
 }

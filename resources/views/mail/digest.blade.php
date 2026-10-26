@@ -12,7 +12,7 @@
 @section('content')
     @if ($todo !== [])
         @include('filament-tma::mail.partials.box', [
-            'label' => __('À faire'),
+            'label' => __('filament-tma::notifications.digest.todo'),
             'text' => $todoText,
         ])
         @foreach ($todo as $group)
@@ -25,8 +25,8 @@
                     'late' => $item['late'],
                     'meta' => array_values(array_filter([
                         $item['state'],
-                        $item['since'] ? __('depuis le :date', ['date' => $item['since']]) : null,
-                        $item['closes_on'] ? __('clos sans réponse le :date', ['date' => $item['closes_on']]) : null,
+                        $item['since'] ? __('filament-tma::notifications.digest.since', ['date' => $item['since']]) : null,
+                        $item['closes_on'] ? __('filament-tma::notifications.digest.auto_closed', ['date' => $item['closes_on']]) : null,
                     ])),
                     'lines' => $item['lines'],
                 ])
@@ -35,14 +35,14 @@
     @endif
 
     @if ($news !== [])
-        @include('filament-tma::mail.partials.section', ['title' => __('Nouveautés'), 'hint' => __('Depuis le dernier bilan, là où vous êtes destinataire principal.')])
+        @include('filament-tma::mail.partials.section', ['title' => __('filament-tma::notifications.digest.news'), 'hint' => __('filament-tma::notifications.digest.news_help')])
         @foreach ($news as $group)
             @include('filament-tma::mail.partials.group', $group)
         @endforeach
     @endif
 
     @if ($copies !== [])
-        @include('filament-tma::mail.partials.section', ['title' => __('En copie'), 'hint' => __('Pour information : là où vous êtes destinataire secondaire.'), 'muted' => true])
+        @include('filament-tma::mail.partials.section', ['title' => __('filament-tma::notifications.digest.copy'), 'hint' => __('filament-tma::notifications.digest.copy_help'), 'muted' => true])
         @foreach ($copies as $group)
             @include('filament-tma::mail.partials.group', [...$group, 'muted' => true])
         @endforeach

@@ -52,7 +52,7 @@ final class Notifier
     private const OUTCOMES = ['validate', 'refuse', 'cancel', 'force-close', 'auto-close'];
 
     /** Les noms des champs d'une tâche, pour dire ce qui a changé. */
-    private const TASK_FIELDS = ['title' => 'titre', 'description' => 'description', 'starts_on' => 'début', 'due_on' => 'échéance', 'project_id' => 'projet'];
+    private const TASK_FIELDS = ['title', 'description', 'starts_on', 'due_on', 'project_id'];
 
     private static bool $muted = false;
 
@@ -171,8 +171,8 @@ final class Notifier
             foreach (self::holders($subject) as $user) {
                 if (! $author?->isUser($user)) {
                     self::send($user, NoticeEvent::Reminder, $subject, $key, [
-                        'line' => __(':who vous relance : ce ticket attend votre retour.', ['who' => $who]),
-                        'headline' => __('Relance : ce ticket attend votre retour'),
+                        'line' => __('filament-tma::notifications.remind.line', ['who' => $who]),
+                        'headline' => __('filament-tma::notifications.remind.title'),
                         'excerpt' => $excerpt,
                         ...self::expectedNow($subject, $user),
                     ], RecipientRole::Primary, NoticeTone::Action, forceMail: true);
@@ -183,8 +183,8 @@ final class Notifier
         }
 
         $line = $entry->isNote()
-            ? __(':who a écrit une note.', ['who' => $who])
-            : __(':who a écrit un message.', ['who' => $who]);
+            ? __('filament-tma::notifications.entry.note', ['who' => $who])
+            : __('filament-tma::notifications.entry.message', ['who' => $who]);
 
         foreach (app(Recipients::class)->local($subject) as ['user' => $user, 'role' => $role]) {
             if (! $author?->isUser($user)) {
@@ -211,7 +211,7 @@ final class Notifier
                 continue;
             }
 
-            $line = $by !== null ? __(':who vous a ajouté(e) aux destinataires principaux.', ['who' => self::who($by)]) : __('Vous êtes désormais destinataire principal.');
+            $line = $by !== null ? __('filament-tma::notifications.recipient.added_by', ['who' => self::who($by)]) : __('filament-tma::notifications.recipient.added');
 
             self::send($user, NoticeEvent::Recipient, $subject, 'recipient:'.$subject->getMorphClass().':'.$subject->getKey().':'.$actor->getKey().':'.now()->getTimestamp(), ['line' => $line], $role, NoticeTone::Info);
         }
@@ -232,15 +232,15 @@ final class Notifier
         $lines = [];
 
         if ($fields !== []) {
-            $lines[] = __('Le Support a modifié la tâche (:fields).', ['fields' => implode(', ', array_map(fn (string $field): string => __(self::TASK_FIELDS[$field] ?? $field), $fields))]);
+            $lines[] = __('filament-tma::notifications.task.changed', ['fields' => implode(', ', array_map(fn (string $field): string => in_array($field, self::TASK_FIELDS, true) ? __("filament-tma::notifications.task_fields.{$field}") : $field, $fields))]);
         }
 
         $minutes = (int) $task->time_total_minutes;
 
         if ($minutesBefore !== null && $minutes !== $minutesBefore) {
             $lines[] = $minutes > $minutesBefore
-                ? __('Temps passé sur la tâche : :total (+ :added).', ['total' => Duration::format($minutes), 'added' => Duration::format($minutes - $minutesBefore)])
-                : __('Temps passé sur la tâche : :total.', ['total' => Duration::format($minutes)]);
+                ? __('filament-tma::notifications.task.time_added', ['total' => Duration::format($minutes), 'added' => Duration::format($minutes - $minutesBefore)])
+                : __('filament-tma::notifications.task.time_total', ['total' => Duration::format($minutes)]);
         }
 
         if ($lines === []) {
@@ -266,11 +266,11 @@ final class Notifier
             $date = Dates::format($closesOn, 'd/m/Y', $user);
 
             self::send($user, NoticeEvent::AutoCloseWarning, $ticket, 'auto-close-warning:'.$ticket->getKey().':'.($ticket->auto_close_warned_at?->getTimestamp() ?? now()->getTimestamp()), [
-                'line' => __('Ce ticket attend votre retour : sans activité de votre part, il sera clos automatiquement le :date.', ['date' => $date]),
-                'headline' => __('Sans réponse, ce ticket sera clos le :date', ['date' => $date]),
-                'action' => __('Répondre, ou écrire une simple note, suffit à le garder ouvert.'),
+                'line' => __('filament-tma::notifications.closing.line', ['date' => $date]),
+                'headline' => __('filament-tma::notifications.closing.title', ['date' => $date]),
+                'action' => __('filament-tma::notifications.closing.hint'),
                 'closes_on' => $closesOn->format(\DateTimeInterface::ATOM),
-                'button' => __('Ouvrir le ticket'),
+                'button' => __('filament-tma::notifications.open_ticket'),
             ], RecipientRole::Primary, NoticeTone::Action);
         }
     }
@@ -289,9 +289,9 @@ final class Notifier
 
         $period = (int) config('filament-tma.notifications.stale.after_days', 7);
         $line = match (true) {
-            $subject instanceof ProjectTask => __('Rien n’a bougé sur cette tâche depuis :days jours.', ['days' => $days]),
-            $subject instanceof Ticket && $subject->state instanceof Submitted => __('Cette demande attend la première réponse du Support depuis :days jours.', ['days' => $days]),
-            default => __('Ce ticket attend votre retour depuis :days jours.', ['days' => $days]),
+            $subject instanceof ProjectTask => __('filament-tma::notifications.stale.task', ['days' => $days]),
+            $subject instanceof Ticket && $subject->state instanceof Submitted => __('filament-tma::notifications.stale.submitted', ['days' => $days]),
+            default => __('filament-tma::notifications.stale.waiting', ['days' => $days]),
         };
         $sent = 0;
 
@@ -364,11 +364,11 @@ final class Notifier
         $who = self::who($transition->actor);
         $line = match ($transition->move) {
             // La tâche est le travail du Support : le client la suit, il n'a rien à en faire.
-            'publish', 'auto-publish' => $task->project_id !== null ? __('Le Support a ajouté cette tâche au projet.') : __('Le Support a ouvert cette tâche.'),
-            'complete' => __(':who a terminé la tâche.', ['who' => $who]),
-            'cancel' => __(':who a annulé la tâche.', ['who' => $who]),
-            'reopen' => __(':who a rouvert la tâche.', ['who' => $who]),
-            default => __(':who : « :move ».', ['who' => $who, 'move' => rescue(fn (): string => app(TaskWorkflow::class)->move($transition->move)->labelFor($task), $transition->move, false)]),
+            'publish', 'auto-publish' => $task->project_id !== null ? __('filament-tma::notifications.task.added_to_project') : __('filament-tma::notifications.task.opened'),
+            'complete' => __('filament-tma::notifications.task.completed', ['who' => $who]),
+            'cancel' => __('filament-tma::notifications.task.cancelled', ['who' => $who]),
+            'reopen' => __('filament-tma::notifications.task.reopened', ['who' => $who]),
+            default => __('filament-tma::notifications.task.moved', ['who' => $who, 'move' => rescue(fn (): string => app(TaskWorkflow::class)->move($transition->move)->labelFor($task), $transition->move, false)]),
         };
 
         foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
@@ -399,16 +399,16 @@ final class Notifier
             foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
                 self::send($user, $entry->isNote() ? NoticeEvent::Note : NoticeEvent::Message, $task, $key, [
                     'line' => match (true) {
-                        $entry->isNote() => __(':who a écrit une note sur la tâche.', ['who' => $who]),
-                        $answers => __(':who a répondu à la question du Support.', ['who' => $who]),
-                        default => __(':who a commenté la tâche.', ['who' => $who]),
+                        $entry->isNote() => __('filament-tma::notifications.task.note', ['who' => $who]),
+                        $answers => __('filament-tma::notifications.task.answered_question', ['who' => $who]),
+                        default => __('filament-tma::notifications.task.commented', ['who' => $who]),
                     },
                     'headline' => $answers
-                        ? __(':who a répondu à votre question', ['who' => self::who($author, short: true)])
-                        : __(':who a commenté la tâche', ['who' => self::who($author, short: true)]),
+                        ? __('filament-tma::notifications.task.answered_title', ['who' => self::who($author, short: true)])
+                        : __('filament-tma::notifications.task.commented_title', ['who' => self::who($author, short: true)]),
                     'excerpt' => $excerpt,
-                    'action' => __('Lui répondre dans la tâche, si besoin.'),
-                    'button' => __('Ouvrir la tâche'),
+                    'action' => __('filament-tma::notifications.task.reply_hint'),
+                    'button' => __('filament-tma::notifications.open_task'),
                 ], $role, NoticeTone::Action);
             }
 
@@ -423,11 +423,11 @@ final class Notifier
 
         $informed = ! empty($entry->meta['notify']);
         $line = match (true) {
-            $informed => __(':who vous informe :', ['who' => $who]),
-            $entry->isNote() => __(':who a écrit une note.', ['who' => $who]),
-            $entry->parent?->isQuestion() && $author?->instance_uid === $task->clientInstanceUid() => __(':who a répondu à la question du Support.', ['who' => $who]),
-            $entry->parent?->isQuestion() => __(':who a ajouté un message à la question du Support.', ['who' => $who]),
-            default => __(':who a écrit un message.', ['who' => $who]),
+            $informed => __('filament-tma::notifications.task.informs', ['who' => $who]),
+            $entry->isNote() => __('filament-tma::notifications.entry.note', ['who' => $who]),
+            $entry->parent?->isQuestion() && $author?->instance_uid === $task->clientInstanceUid() => __('filament-tma::notifications.task.answered_question', ['who' => $who]),
+            $entry->parent?->isQuestion() => __('filament-tma::notifications.task.question_message', ['who' => $who]),
+            default => __('filament-tma::notifications.entry.message', ['who' => $who]),
         };
 
         foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
@@ -436,7 +436,7 @@ final class Notifier
                     'line' => $line,
                     'excerpt' => $informed ? null : $excerpt,
                     'message' => $informed ? Html::toText($entry->body) : null,
-                    'headline' => $informed ? __('Le Support vous informe') : null,
+                    'headline' => $informed ? __('filament-tma::notifications.task.informs_title') : null,
                 ], $role, NoticeTone::Info, forceMail: $informed && $role === RecipientRole::Primary);
             }
         }
@@ -455,15 +455,15 @@ final class Notifier
 
         foreach ($addressees as $user) {
             self::send($user, NoticeEvent::Question, $task, $key, [
-                'line' => __(':who vous pose une question.', ['who' => $who]),
-                'headline' => __('Le Support vous pose une question'),
+                'line' => __('filament-tma::notifications.question.line', ['who' => $who]),
+                'headline' => __('filament-tma::notifications.question.title'),
                 'excerpt' => $excerpt,
-                'action' => __('Répondre à la question, dans la tâche.'),
-                'button' => __('Répondre'),
+                'action' => __('filament-tma::notifications.question.hint_task'),
+                'button' => __('filament-tma::common.reply'),
             ], RecipientRole::Primary, NoticeTone::Action);
         }
 
-        $line = __(':who a posé une question à :names.', ['who' => $who, 'names' => implode(', ', Questions::names($question))]);
+        $line = __('filament-tma::notifications.question.asked', ['who' => $who, 'names' => implode(', ', Questions::names($question))]);
 
         foreach (app(Recipients::class)->local($task) as ['user' => $user, 'role' => $role]) {
             if (! $addressees->has((string) $user->getAuthIdentifier()) && ! $question->author?->isUser($user)) {
@@ -483,7 +483,7 @@ final class Notifier
 
         foreach (Questions::addressees($question) as $user) {
             self::send($user, NoticeEvent::Question, $task, "question-withdrawn:{$question->ulid}", [
-                'line' => __('Le Support a retiré sa question : plus besoin d’y répondre.'),
+                'line' => __('filament-tma::notifications.question.withdrawn'),
                 'excerpt' => self::excerpt($question->body),
             ], RecipientRole::Primary, NoticeTone::Info);
         }
@@ -582,47 +582,47 @@ final class Notifier
 
         return match ($move) {
             'transmit' => [
-                'headline' => __('Nouvelle demande de :who', ['who' => $who]),
-                'action' => __('Prendre la demande en main : y répondre, poser une question, la mettre en pause ou la refuser.'),
-                'button' => __('Ouvrir la demande'),
+                'headline' => __('filament-tma::notifications.ticket.new_request', ['who' => $who]),
+                'action' => __('filament-tma::notifications.ticket.new_request_hint'),
+                'button' => __('filament-tma::notifications.open_request'),
             ],
             'answer' => [
-                'headline' => __(':who a répondu', ['who' => $who]),
-                'action' => __('Reprendre le traitement avec cette réponse.'),
-                'button' => __('Ouvrir le ticket'),
+                'headline' => __('filament-tma::notifications.ticket.answered_title', ['who' => $who]),
+                'action' => __('filament-tma::notifications.ticket.answered_hint'),
+                'button' => __('filament-tma::notifications.open_ticket'),
             ],
             'reopen' => [
-                'headline' => __(':who vous renvoie la demande', ['who' => $who]),
-                'action' => __('Reprendre le traitement : le résultat ne convient pas encore.'),
-                'button' => __('Ouvrir le ticket'),
+                'headline' => __('filament-tma::notifications.ticket.reopened_title', ['who' => $who]),
+                'action' => __('filament-tma::notifications.ticket.reopened_hint'),
+                'button' => __('filament-tma::notifications.open_ticket'),
             ],
             'resume', 'auto-resume' => [
-                'headline' => __('Fin de la pause : la demande reprend'),
-                'action' => __('Reprendre le traitement de la demande.'),
-                'button' => __('Ouvrir le ticket'),
+                'headline' => __('filament-tma::notifications.ticket.resumed_title'),
+                'action' => __('filament-tma::notifications.ticket.resumed_hint'),
+                'button' => __('filament-tma::notifications.open_ticket'),
             ],
             'publish', 'auto-publish' => match ($ticket->opening) {
                 TicketOpening::Outreach => [
-                    'headline' => __('Le Support vous écrit et attend votre réponse'),
+                    'headline' => __('filament-tma::notifications.ticket.addressed_title'),
                     ...self::expectedNow($ticket, $user, AwaitingRequester::class),
                 ],
                 TicketOpening::OnBehalf => [
-                    'headline' => __('Le Support a ouvert un ticket en votre nom'),
-                    'action' => __('En prendre connaissance : le Support y répond.'),
-                    'button' => __('Voir le ticket'),
+                    'headline' => __('filament-tma::notifications.ticket.on_behalf_title'),
+                    'action' => __('filament-tma::notifications.ticket.on_behalf_hint'),
+                    'button' => __('filament-tma::notifications.view_ticket'),
                 ],
                 default => [
-                    'headline' => __('Le Support a ouvert un ticket pour vous'),
-                    'action' => __('En prendre connaissance.'),
-                    'button' => __('Voir le ticket'),
+                    'headline' => __('filament-tma::notifications.ticket.notice_title'),
+                    'action' => __('filament-tma::notifications.ticket.notice_hint'),
+                    'button' => __('filament-tma::notifications.view_ticket'),
                 ],
             },
             'request-answer', 'submit-for-validation' => [
-                'headline' => $move === 'request-answer' ? __('Le Support attend votre réponse') : __('Votre demande est résolue : à confirmer'),
+                'headline' => $move === 'request-answer' ? __('filament-tma::notifications.ticket.awaiting_title') : __('filament-tma::notifications.ticket.resolved_title'),
                 ...self::expectedNow($ticket, $user, $move === 'request-answer' ? AwaitingRequester::class : PendingValidation::class),
             ],
             default => [
-                'headline' => __('Ce ticket attend votre action'),
+                'headline' => __('filament-tma::notifications.ticket.waiting_title'),
                 ...self::expectedNow($ticket, $user),
             ],
         };
@@ -643,9 +643,9 @@ final class Notifier
 
         return [
             ...match ($state) {
-                AwaitingRequester::class => ['action' => __('Répondre à la question, dans le ticket.'), 'button' => __('Répondre')],
-                PendingValidation::class => ['action' => __('Vérifier le résultat, puis confirmer pour clore le ticket, ou le renvoyer au Support.'), 'button' => __('Vérifier et confirmer')],
-                default => ['action' => __('Donner suite à la demande.'), 'button' => __('Ouvrir le ticket')],
+                AwaitingRequester::class => ['action' => __('filament-tma::notifications.ticket.hint_question'), 'button' => __('filament-tma::common.reply')],
+                PendingValidation::class => ['action' => __('filament-tma::notifications.ticket.hint_validate'), 'button' => __('filament-tma::notifications.ticket.validate_action')],
+                default => ['action' => __('filament-tma::notifications.ticket.hint_default'), 'button' => __('filament-tma::notifications.open_ticket')],
             },
             'closes_on' => $closesOn?->format(\DateTimeInterface::ATOM),
         ];
@@ -674,13 +674,13 @@ final class Notifier
     private static function who(?Actor $actor, bool $short = false): string
     {
         if ($actor === null) {
-            return __('Le Support');
+            return __('filament-tma::notifications.the_support');
         }
 
         $team = $actor->team();
 
         if ($short && $team !== null && Tma::isClient()) {
-            return __('Le Support');
+            return __('filament-tma::notifications.the_support');
         }
 
         return $team !== null ? "{$actor->name} ({$team})" : (string) $actor->name;
@@ -692,27 +692,27 @@ final class Notifier
         $replace = ['who' => self::who($transition->actor)];
 
         return match (true) {
-            $transition->move === 'request-answer' => $holds ? __(':who attend votre réponse.', $replace) : __(':who a demandé des précisions.', $replace),
-            $transition->move === 'submit-for-validation' => $holds ? __(':who a résolu votre demande.', $replace) : __(':who a marqué la demande comme résolue.', $replace),
-            $transition->move === 'transmit' => $holds ? __(':who vous a transmis une demande.', $replace) : __(':who a transmis la demande au Support.', $replace),
-            $transition->move === 'answer' => __(':who a répondu.', $replace),
-            $transition->move === 'reopen' => $holds ? __(':who vous renvoie la demande : le résultat ne convient pas encore.', $replace) : __(':who a renvoyé la demande.', $replace),
-            $transition->move === 'pause' => __(':who a mis la demande en pause.', $replace),
-            in_array($transition->move, ['resume', 'auto-resume'], true) => __('La demande reprend.'),
-            $transition->move === 'validate' => __(':who a confirmé la solution : le ticket est clos.', $replace),
-            $transition->move === 'force-close' => __(':who a forcé la clôture du ticket.', $replace),
-            $transition->move === 'force-return' => __(':who a repris la main sans attendre la réponse.', $replace),
-            $transition->move === 'take-over' => $holds ? __('Vous avez pris la main : c’est vous que le Support attend.') : __(':who a pris la main : le Support attend désormais sa réponse.', $replace),
-            $transition->move === 'cancel' => __(':who a retiré la demande.', $replace),
-            $transition->move === 'refuse' => __(':who a refusé la demande.', $replace),
-            $transition->move === 'auto-close' => __('Restée sans réponse, la demande a été close automatiquement.'),
+            $transition->move === 'request-answer' => $holds ? __('filament-tma::notifications.moves.awaiting', $replace) : __('filament-tma::notifications.moves.request_answer', $replace),
+            $transition->move === 'submit-for-validation' => $holds ? __('filament-tma::notifications.moves.resolved_yours', $replace) : __('filament-tma::notifications.moves.resolved', $replace),
+            $transition->move === 'transmit' => $holds ? __('filament-tma::notifications.moves.transmitted_to_you', $replace) : __('filament-tma::notifications.moves.transmitted', $replace),
+            $transition->move === 'answer' => __('filament-tma::notifications.moves.answered', $replace),
+            $transition->move === 'reopen' => $holds ? __('filament-tma::notifications.moves.reopened_yours', $replace) : __('filament-tma::notifications.moves.reopened', $replace),
+            $transition->move === 'pause' => __('filament-tma::notifications.moves.paused', $replace),
+            in_array($transition->move, ['resume', 'auto-resume'], true) => __('filament-tma::notifications.moves.resumed'),
+            $transition->move === 'validate' => __('filament-tma::notifications.moves.validated', $replace),
+            $transition->move === 'force-close' => __('filament-tma::notifications.moves.force_closed', $replace),
+            $transition->move === 'force-return' => __('filament-tma::notifications.moves.force_returned', $replace),
+            $transition->move === 'take-over' => $holds ? __('filament-tma::notifications.moves.took_over_you') : __('filament-tma::notifications.moves.took_over', $replace),
+            $transition->move === 'cancel' => __('filament-tma::notifications.moves.cancelled', $replace),
+            $transition->move === 'refuse' => __('filament-tma::notifications.moves.refused', $replace),
+            $transition->move === 'auto-close' => __('filament-tma::notifications.moves.auto_closed'),
             in_array($transition->move, ['publish', 'auto-publish'], true) => match ($ticket->opening) {
-                TicketOpening::OnBehalf => __('Le Support a ouvert ce ticket en votre nom : il y répond.'),
-                TicketOpening::Outreach => __(':who vous écrit et attend votre réponse.', $replace),
-                TicketOpening::Notice => __(':who vous informe : pas de réponse attendue.', $replace),
-                default => __('Le Support a ouvert ce ticket pour vous.'),
+                TicketOpening::OnBehalf => __('filament-tma::notifications.moves.opened_on_behalf'),
+                TicketOpening::Outreach => __('filament-tma::notifications.moves.opened_addressed', $replace),
+                TicketOpening::Notice => __('filament-tma::notifications.moves.opened_notice', $replace),
+                default => __('filament-tma::notifications.moves.opened_for_you'),
             },
-            default => __(':who : « :move ».', [...$replace, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($transition->move)->labelFor($ticket), $transition->move, false)]),
+            default => __('filament-tma::notifications.task.moved', [...$replace, 'move' => rescue(fn (): string => app(TicketWorkflow::class)->move($transition->move)->labelFor($ticket), $transition->move, false)]),
         };
     }
 

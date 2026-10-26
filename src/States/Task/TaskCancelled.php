@@ -8,7 +8,7 @@ class TaskCancelled extends TaskState
 
     public function getLabel(): string
     {
-        return __('Annulée');
+        return __('filament-tma::states.task.cancelled.label');
     }
 
     public function getColor(): string
@@ -23,7 +23,7 @@ class TaskCancelled extends TaskState
 
     public function getDescription(): ?string
     {
-        return __('Abandonnée, avec son historique.');
+        return __('filament-tma::states.task.cancelled.description');
     }
 
     public function isFinal(): bool

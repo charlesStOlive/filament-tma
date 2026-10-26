@@ -52,14 +52,14 @@ final class Questions
     public function ask(ProjectTask $task, ?string $body, array $to, Context $context, array $uploads = []): Entry
     {
         if (! $this->canAsk($task, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas poser de question sur cette tâche.'));
+            throw new AuthorizationException(__('filament-tma::questions.errors.cannot_ask'));
         }
 
         // Des clés numériques : PHP en fait des entiers, on les garde en texte.
         $to = array_values(array_intersect(array_map('strval', array_keys(self::addressables($task))), array_map('strval', $to)));
 
         if ($to === []) {
-            throw ValidationException::withMessages(['to' => __('Choisissez à qui poser la question.')]);
+            throw ValidationException::withMessages(['to' => __('filament-tma::questions.errors.choose_recipients')]);
         }
 
         return app(Timeline::class)->add($task, EntryType::Comment, $body, $context, meta: ['question' => ['to' => $to]], uploads: $uploads);
@@ -81,7 +81,7 @@ final class Questions
     public function answer(Entry $question, ?string $body, Context $context, array $uploads = []): Entry
     {
         if (! $this->canAnswer($question, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas répondre à cette question.'));
+            throw new AuthorizationException(__('filament-tma::questions.errors.cannot_answer'));
         }
 
         return app(Timeline::class)->add($question->subject, EntryType::Comment, $body, $context, $question, uploads: $uploads);
@@ -99,7 +99,7 @@ final class Questions
     public function withdraw(Entry $question, Context $context): Entry
     {
         if (! $this->canWithdraw($question, $context)) {
-            throw new AuthorizationException(__('Cette question ne se retire plus.'));
+            throw new AuthorizationException(__('filament-tma::questions.errors.cannot_withdraw'));
         }
 
         DB::transaction(function () use ($question): void {
@@ -187,7 +187,7 @@ final class Questions
             ->filter(fn (Recipient $r): bool => $r->actor !== null && $r->actor->instance_uid === $task->clientInstanceUid() && ! Addressables::isGateway($r->actor))
             ->sortBy(fn (Recipient $r): string => ($r->role === RecipientRole::Primary ? '0' : '1').$r->actor->name)
             ->mapWithKeys(fn (Recipient $r): array => [(string) $r->actor->remote_id => $r->role === RecipientRole::Secondary
-                ? __(':name (en copie)', ['name' => $r->actor->name])
+                ? __('filament-tma::questions.in_copy', ['name' => $r->actor->name])
                 : (string) $r->actor->name])
             ->all();
     }

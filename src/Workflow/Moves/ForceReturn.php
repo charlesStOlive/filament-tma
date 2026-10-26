@@ -27,12 +27,12 @@ class ForceReturn extends Move
 
     public function label(): string
     {
-        return __('Forcer le retour');
+        return __('filament-tma::workflow.ticket.force_return.label');
     }
 
     public function description(): ?string
     {
-        return __('Hors du tour : la main revient au Support sans attendre le demandeur.');
+        return __('filament-tma::workflow.ticket.force_return.description');
     }
 
     public function color(): string
@@ -72,7 +72,7 @@ class ForceReturn extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->reasonField(false, help: ['tma.tickets.forcages', __('Quand forcer le retour ?')])];
+        return [$this->reasonField(false, help: ['tma.tickets.forcages', __('filament-tma::workflow.ticket.force_return.help')])];
     }
 
     public function requiresConfirmation(): bool

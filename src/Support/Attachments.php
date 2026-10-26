@@ -105,13 +105,13 @@ final class Attachments
         $detected = (string) MimeTypes::getDefault()->guessMimeType($path);
 
         if (! self::accepts($detected, $fileName)) {
-            return __('Ce type de fichier n’est pas accepté : :name.', ['name' => $fileName]);
+            return __('filament-tma::attachments.errors.type', ['name' => $fileName]);
         }
 
         $type = self::typeOf($detected, $fileName);
 
         return match (true) {
-            $type === self::MARKDOWN => str_contains((string) file_get_contents($path), "\0") ? __('Ce fichier Markdown n’est pas du texte : :name.', ['name' => $fileName]) : null,
+            $type === self::MARKDOWN => str_contains((string) file_get_contents($path), "\0") ? __('filament-tma::attachments.errors.markdown', ['name' => $fileName]) : null,
             in_array($type, array_column(self::OFFICE, 0), true), in_array($type, self::OPEN_DOCUMENT, true) => self::documentProblem($path, $type, $fileName),
             default => null,
         };
@@ -238,24 +238,24 @@ final class Attachments
         $zip = new \ZipArchive;
 
         if ($zip->open($path, \ZipArchive::RDONLY) !== true) {
-            return __('Ce document est illisible : :name.', ['name' => $fileName]);
+            return __('filament-tma::attachments.errors.unreadable', ['name' => $fileName]);
         }
 
         try {
             if ($zip->numFiles > self::MAX_ENTRIES) {
-                return __('Ce document est trop gros une fois décompressé : :name.', ['name' => $fileName]);
+                return __('filament-tma::attachments.errors.too_big', ['name' => $fileName]);
             }
 
             $unpacked = 0;
             $maxUnpacked = (int) config('filament-tma.attachments.max_unpacked_mb', 250) * 1024 * 1024;
-            $active = __('Ce document contient des macros ou du contenu actif, refusé pour la sécurité : :name. Enregistrez-le sans macro (.docx, .xlsx, .pptx).', ['name' => $fileName]);
+            $active = __('filament-tma::attachments.errors.macros', ['name' => $fileName]);
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $entry = $zip->statIndex($i);
                 $unpacked += (int) $entry['size'];
 
                 if ($unpacked > $maxUnpacked) {
-                    return __('Ce document est trop gros une fois décompressé : :name.', ['name' => $fileName]);
+                    return __('filament-tma::attachments.errors.too_big', ['name' => $fileName]);
                 }
 
                 if (preg_match(self::ACTIVE_CONTENT, strtolower((string) $entry['name']))) {
@@ -278,7 +278,7 @@ final class Attachments
                 return $active;
             }
 
-            return str_contains($contentTypes, $main) ? null : __('Ce document n’est pas ce que dit son extension : :name.', ['name' => $fileName]);
+            return str_contains($contentTypes, $main) ? null : __('filament-tma::attachments.errors.extension', ['name' => $fileName]);
         } finally {
             $zip->close();
         }

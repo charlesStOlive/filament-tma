@@ -31,7 +31,7 @@ class EditTask extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [...$this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]), OnDemandAction::make(), ViewAction::make(), TaskDeleteActions::make()];
+        return [...$this->orthographyActions('form', ['title' => __('filament-tma::common.title'), 'description' => __('filament-tma::common.description')]), OnDemandAction::make(), ViewAction::make(), TaskDeleteActions::make()];
     }
 
     protected function mutateFormDataBeforeFill(array $data): array

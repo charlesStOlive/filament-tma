@@ -211,7 +211,7 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     public function waitingOn(): ?string
     {
         return match ($this->sideInCharge()) {
-            Side::Requester => __('Demandeur'),
+            Side::Requester => __('filament-tma::common.requester'),
             Side::Handler => Terms::support(),
             null => null,
         };
@@ -224,8 +224,8 @@ class Ticket extends Model implements HasMedia, HasRichContent, Trackable
     public function waitingOnFor(?Authenticatable $user): ?string
     {
         return match ($this->sideInCharge()) {
-            Side::Requester => $this->requester?->isUser($user) ? __('Vous') : ($this->requester?->name ?? $this->waitingOn()),
-            Side::Handler => $this->assignee?->isUser($user) ? __('Vous') : $this->waitingOn(),
+            Side::Requester => $this->requester?->isUser($user) ? __('filament-tma::common.you') : ($this->requester?->name ?? $this->waitingOn()),
+            Side::Handler => $this->assignee?->isUser($user) ? __('filament-tma::common.you') : $this->waitingOn(),
             null => null,
         };
     }

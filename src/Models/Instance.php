@@ -97,7 +97,7 @@ class Instance extends Model
             $email = $base.'-'.strtolower(substr($this->uid, -6)).'@tma.local';
         }
 
-        $user = ServiceAccount::user($email, __('Application :name (TMA)', ['name' => $this->name]));
+        $user = ServiceAccount::user($email, __('filament-tma::instances.service_account_name', ['name' => $this->name]));
         $this->forceFill(['api_user_id' => $user->getAuthIdentifier()])->save();
         $this->setRelation('apiUser', $user);
 

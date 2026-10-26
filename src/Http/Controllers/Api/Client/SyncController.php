@@ -48,7 +48,7 @@ class SyncController
 
         // Un ticket inconnu ici ne peut être qu'un ticket préparé par le maître pour nous, et publié.
         $preparedByMaster = ! Tma::isHere($request->input('ticket.created_on_instance_uid')) && $request->input('ticket.state') !== 'draft';
-        abort_if($before === null && ! $preparedByMaster, 404, __('Ticket inconnu de cette application.'));
+        abort_if($before === null && ! $preparedByMaster, 404, __('filament-tma::sync.errors.unknown_ticket'));
 
         $warnedBefore = $before?->auto_close_warned_at;
 

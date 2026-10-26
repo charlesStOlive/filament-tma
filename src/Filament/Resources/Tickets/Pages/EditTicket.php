@@ -33,7 +33,7 @@ class EditTicket extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            ...$this->orthographyActions('form', ['title' => __('Titre'), 'description' => __('Description')]),
+            ...$this->orthographyActions('form', ['title' => __('filament-tma::common.title'), 'description' => __('filament-tma::common.description')]),
             ViewAction::make(),
             DeleteAction::make(),
         ];

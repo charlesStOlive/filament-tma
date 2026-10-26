@@ -27,7 +27,7 @@ class Cancel extends Move
 
     public function label(): string
     {
-        return __('Retirer la demande');
+        return __('filament-tma::workflow.ticket.cancel.label');
     }
 
     public function color(): string

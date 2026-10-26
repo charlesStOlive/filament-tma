@@ -36,7 +36,7 @@ class Publish extends Move
 
     public function description(): ?string
     {
-        return __('Le ticket devient visible dans l’application du client.');
+        return __('filament-tma::workflow.ticket.publish.description');
     }
 
     public function icon(): ?string

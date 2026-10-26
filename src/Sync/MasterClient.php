@@ -24,7 +24,7 @@ final class MasterClient
         $token = config('filament-tma.master.token');
 
         if (! Tma::serviceDeskAvailable() || blank($token)) {
-            throw new SyncException(__('Le Support n’est pas configuré (TMA_MASTER_URL, TMA_MASTER_TOKEN).'));
+            throw new SyncException(__('filament-tma::sync.errors.master_missing'));
         }
 
         return Http::to($token);
@@ -38,7 +38,7 @@ final class MasterClient
     /** @return array<string, mixed> */
     public function ping(): array
     {
-        return Http::call(__('Test de connexion au Support'), fn () => $this->http()->get($this->url('master/ping')))->json();
+        return Http::call(__('filament-tma::sync.operations.test_master'), fn () => $this->http()->get($this->url('master/ping')))->json();
     }
 
     /**
@@ -53,7 +53,7 @@ final class MasterClient
             ->map(fn (Entry $entry): array => Payload::entry($entry, withFiles: true))
             ->values()->all();
 
-        return Http::call(__('Transmission au Support'), fn () => $this->http()->post($this->url('tickets'), [
+        return Http::call(__('filament-tma::sync.operations.transmit'), fn () => $this->http()->post($this->url('tickets'), [
             'ticket' => Payload::ticket($ticket),
             'entries' => $entries,
             'transition' => Payload::transition($transition),
@@ -70,7 +70,7 @@ final class MasterClient
      */
     public function recipients(Trackable $subject, array $recipients, Context $context): array
     {
-        return Http::call(__('Support'), fn () => $this->http()->post($this->url(($subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$subject->ulid}/recipients"), [
+        return Http::call(__('filament-tma::common.support'), fn () => $this->http()->post($this->url(($subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$subject->ulid}/recipients"), [
             'recipients' => $recipients,
             'actor' => Payload::actor($context->actor),
         ]))->json();
@@ -86,7 +86,7 @@ final class MasterClient
     {
         $files = Payload::files($ticket);
 
-        return Http::call(__('Support'), fn () => $this->http()->patch($this->url("tickets/{$ticket->ulid}"), [
+        return Http::call(__('filament-tma::common.support'), fn () => $this->http()->patch($this->url("tickets/{$ticket->ulid}"), [
             'ticket' => Arr::only(Payload::ticket($ticket), ['title', 'description', 'priority']),
             'files' => $files,
             'file_uuids' => array_column($files, 'uuid'),
@@ -102,7 +102,7 @@ final class MasterClient
      */
     public function runMove(Ticket $ticket, string $move, array $data, Context $context, string $transitionUlid): array
     {
-        return Http::call(__('Support'), fn () => $this->http()->post($this->url("tickets/{$ticket->ulid}/moves"), [
+        return Http::call(__('filament-tma::common.support'), fn () => $this->http()->post($this->url("tickets/{$ticket->ulid}/moves"), [
             'move' => $move,
             'data' => $data,
             'actor' => Payload::actor($context->actor),
@@ -118,7 +118,7 @@ final class MasterClient
      */
     public function register(string $token): array
     {
-        return Http::call(__('Transmission du jeton au Support'), fn () => $this->http()->post($this->url('master/register'), [
+        return Http::call(__('filament-tma::sync.operations.transmit_token'), fn () => $this->http()->post($this->url('master/register'), [
             'token' => $token,
         ]))->json();
     }
@@ -132,7 +132,7 @@ final class MasterClient
      */
     public function agentMove(Agent $agent, Trackable $subject, string $move, array $data, ?string $transitionUlid = null): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/moves"), [
+        return Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/moves"), [
             'move' => $move,
             'data' => $data,
             'transition_ulid' => $transitionUlid,
@@ -147,7 +147,7 @@ final class MasterClient
      */
     public function agentEntry(Agent $agent, Trackable $subject, string $type, string $body, ?string $parentUlid, array $files = [], bool $private = false, bool $reminder = false): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/entries"), [
+        return Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/entries"), [
             'type' => $type,
             'body' => $body,
             'parent_ulid' => $parentUlid,
@@ -166,7 +166,7 @@ final class MasterClient
      */
     public function agentChangeEntry(Agent $agent, Trackable $subject, string $entryUlid, array $data): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/entries/{$entryUlid}"), $data))
+        return Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/entries/{$entryUlid}"), $data))
             ->json('data.snapshot');
     }
 
@@ -178,7 +178,7 @@ final class MasterClient
      */
     public function agentTime(Agent $agent, Trackable $subject, int $minutes, ?string $workedOn, bool $billable, ?string $message = null, ?string $entryUlid = null): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/time"), array_filter([
+        return Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->post($this->url("agent/tickets/{$subject->ulid}/time"), array_filter([
             'minutes' => $minutes,
             'worked_on' => $workedOn,
             'billable' => $billable,
@@ -194,7 +194,7 @@ final class MasterClient
      */
     public function agentTimeEntries(Agent $agent, Trackable $subject): array
     {
-        return (array) Http::call(__('Support'), fn () => $this->agentHttp($agent)->get($this->url("agent/tickets/{$subject->ulid}/time")))
+        return (array) Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->get($this->url("agent/tickets/{$subject->ulid}/time")))
             ->json('data.time_entries', []);
     }
 
@@ -207,14 +207,14 @@ final class MasterClient
      */
     public function agentChangeTime(Agent $agent, Trackable $subject, string $timeUlid, array $data): array
     {
-        return Http::call(__('Support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/time/{$timeUlid}"), $data))
+        return Http::call(__('filament-tma::common.support'), fn () => $this->agentHttp($agent)->patch($this->url("agent/tickets/{$subject->ulid}/time/{$timeUlid}"), $data))
             ->json('data.snapshot');
     }
 
     private function agentHttp(Agent $agent): PendingRequest
     {
         if (blank(config('filament-tma.master.url'))) {
-            throw new SyncException(__('Le Support n’est pas configuré (TMA_MASTER_URL).'));
+            throw new SyncException(__('filament-tma::sync.errors.master_url_missing'));
         }
 
         return Http::to($agent->token);
@@ -228,7 +228,7 @@ final class MasterClient
      */
     public function sendEntry(Entry $entry): array
     {
-        return (array) Http::call(__('Envoi au Support'), fn () => $this->http()->post(
+        return (array) Http::call(__('filament-tma::sync.operations.push_master'), fn () => $this->http()->post(
             $this->url(($entry->subject->kind() === 'task' ? 'tasks' : 'tickets')."/{$entry->subject->ulid}/entries"),
             Payload::entry($entry, withFiles: true),
         ))->json('entry');

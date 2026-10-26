@@ -37,12 +37,12 @@ class Transmit extends Move
 
     public function label(): string
     {
-        return __('Transmettre au Support');
+        return __('filament-tma::workflow.ticket.transmit.label');
     }
 
     public function description(): ?string
     {
-        return __('Le Support prend la suite : il fera autorité sur ce ticket.');
+        return __('filament-tma::workflow.ticket.transmit.description');
     }
 
     public function color(): string
@@ -94,8 +94,8 @@ class Transmit extends Move
 
         return count($contacts) < 2 ? [] : [
             Select::make('contact')
-                ->label(__('Contact au Support'))
-                ->helperText(__('La personne du Support qui suivra votre demande.'))
+                ->label(__('filament-tma::common.support_contact'))
+                ->helperText(__('filament-tma::workflow.ticket.transmit.contact_help'))
                 ->options($contacts)
                 ->required(),
         ];

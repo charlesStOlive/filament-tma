@@ -27,7 +27,7 @@ class Reopen extends Move
 
     public function label(): string
     {
-        return __('Retour au Support');
+        return __('filament-tma::workflow.ticket.reopen.label');
     }
 
     public function color(): string
@@ -62,7 +62,7 @@ class Reopen extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Ce qui ne va pas'), help: ['tma.tickets.validation', __('Confirmer ou renvoyer ?')])];
+        return [$this->messageField('message', __('filament-tma::workflow.ticket.reopen.message'), help: ['tma.tickets.validation', __('filament-tma::workflow.ticket.reopen.help')])];
     }
 
     public function reason(array $data): ?string

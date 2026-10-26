@@ -10,7 +10,7 @@ class AwaitingRequester extends TicketState
 
     public function getLabel(): string
     {
-        return __('En attente du demandeur');
+        return __('filament-tma::states.ticket.awaiting_requester.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class AwaitingRequester extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Le demandeur doit apporter des précisions.');
+        return __('filament-tma::states.ticket.awaiting_requester.description');
     }
 
     public function inHandsOf(): ?Side

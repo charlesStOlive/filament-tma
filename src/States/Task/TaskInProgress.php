@@ -8,7 +8,7 @@ class TaskInProgress extends TaskState
 
     public function getLabel(): string
     {
-        return __('En cours');
+        return __('filament-tma::common.in_progress');
     }
 
     public function getColor(): string
@@ -23,6 +23,6 @@ class TaskInProgress extends TaskState
 
     public function getDescription(): ?string
     {
-        return __('Mise à disposition du client et synchronisée.');
+        return __('filament-tma::states.task.in_progress.description');
     }
 }

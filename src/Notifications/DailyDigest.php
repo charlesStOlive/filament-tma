@@ -48,11 +48,11 @@ class DailyDigest extends Notification implements ShouldQueue
         $refs = collect($this->sections)->flatten(1)->pluck('ref')->all();
         [$attached, $news] = $own->partition(fn (Notice $notice): bool => in_array($notice->data['ref'] ?? null, $refs, true));
         $titles = [
-            'answer' => __('Vos demandes qui attendent votre réponse ou votre confirmation'),
-            'take' => __('Nouvelles demandes sans contact'),
-            'mine' => __('En cours chez vous'),
-            'resume' => __('Reprennent aujourd’hui'),
-            'questions' => __('Les questions du Support sur vos projets'),
+            'answer' => __('filament-tma::notifications.daily.sections.yours'),
+            'take' => __('filament-tma::notifications.daily.sections.unassigned'),
+            'mine' => __('filament-tma::notifications.daily.sections.handling'),
+            'resume' => __('filament-tma::notifications.daily.sections.resuming'),
+            'questions' => __('filament-tma::notifications.daily.sections.questions'),
         ];
 
         $todo = collect($this->sections)->map(fn (Collection $items, string $key): array => [
@@ -73,30 +73,30 @@ class DailyDigest extends Notification implements ShouldQueue
         $copyGroups = self::groups($copies);
 
         $summary = collect([
-            $count > 0 ? trans_choice(':n à faire|:n à faire', $count, ['n' => $count]).($late > 0 ? __(' (dont :n en retard)', ['n' => $late]) : '') : null,
-            $newsGroups !== [] ? trans_choice(':n nouveauté|:n nouveautés', count($newsGroups), ['n' => count($newsGroups)]) : null,
-            $copyGroups !== [] ? trans_choice(':n en copie|:n en copie', count($copyGroups), ['n' => count($copyGroups)]) : null,
+            $count > 0 ? trans_choice('filament-tma::notifications.daily.summary.todo', $count, ['n' => $count]).($late > 0 ? __('filament-tma::notifications.daily.summary.overdue', ['n' => $late]) : '') : null,
+            $newsGroups !== [] ? trans_choice('filament-tma::notifications.daily.summary.news', count($newsGroups), ['n' => count($newsGroups)]) : null,
+            $copyGroups !== [] ? trans_choice('filament-tma::notifications.daily.summary.copy', count($copyGroups), ['n' => count($copyGroups)]) : null,
         ])->filter()->implode(', ');
 
         return (new MailMessage)
-            ->subject(__('Bilan du matin : :summary', ['summary' => $summary]))
+            ->subject(__('filament-tma::notifications.daily.subject', ['summary' => $summary]))
             ->view(['filament-tma::mail.digest', 'filament-tma::mail.digest-text'], [
                 'brand' => MailBrand::for('ticket'),
-                'kicker' => __('Support · :date', ['date' => Dates::format(now(), 'd/m/Y', $user)]),
-                'heading' => __('Votre bilan du matin'),
+                'kicker' => __('filament-tma::notifications.daily.kicker', ['date' => Dates::format(now(), 'd/m/Y', $user)]),
+                'heading' => __('filament-tma::notifications.daily.title'),
                 'preheader' => ucfirst($summary).'.',
                 'todo' => $todo,
                 'todoText' => match (true) {
-                    $questions === 0 => trans_choice(':n ticket attend votre action.|:n tickets attendent votre action.', $tickets, ['n' => $tickets]),
-                    $tickets === 0 => trans_choice(':n question du Support attend votre réponse.|:n questions du Support attendent votre réponse.', $questions, ['n' => $questions]),
-                    default => __(':tickets et :questions attendent votre action.', [
-                        'tickets' => trans_choice(':n ticket|:n tickets', $tickets, ['n' => $tickets]),
-                        'questions' => trans_choice(':n question du Support|:n questions du Support', $questions, ['n' => $questions]),
+                    $questions === 0 => trans_choice('filament-tma::notifications.daily.intro.tickets', $tickets, ['n' => $tickets]),
+                    $tickets === 0 => trans_choice('filament-tma::notifications.daily.intro.questions', $questions, ['n' => $questions]),
+                    default => __('filament-tma::notifications.daily.intro.both', [
+                        'tickets' => trans_choice('filament-tma::notifications.daily.intro.ticket_count', $tickets, ['n' => $tickets]),
+                        'questions' => trans_choice('filament-tma::notifications.daily.intro.question_count', $questions, ['n' => $questions]),
                     ]),
                 },
                 'news' => $newsGroups,
                 'copies' => $copyGroups,
-                'reason' => __('Vous recevez le bilan du matin du Support.'),
+                'reason' => __('filament-tma::notifications.daily.footer'),
             ]);
     }
 }

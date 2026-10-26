@@ -30,7 +30,7 @@ class SubmitForValidation extends Move
 
     public function label(): string
     {
-        return __('Marquer comme résolu');
+        return __('filament-tma::workflow.ticket.submit_for_validation.label');
     }
 
     public function color(): string
@@ -65,7 +65,7 @@ class SubmitForValidation extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Ce qui a été fait'), false, ['tma.tickets.validation', __('Et ensuite ?')])];
+        return [$this->messageField('message', __('filament-tma::common.what_was_done'), false, ['tma.tickets.validation', __('filament-tma::workflow.ticket.submit_for_validation.help')])];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

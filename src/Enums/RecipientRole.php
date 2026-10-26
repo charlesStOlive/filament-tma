@@ -17,8 +17,8 @@ enum RecipientRole: string implements HasColor, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Primary => __('Principal'),
-            self::Secondary => __('Secondaire'),
+            self::Primary => __('filament-tma::enums.recipient_role.main'),
+            self::Secondary => __('filament-tma::enums.recipient_role.secondary'),
         };
     }
 

@@ -41,17 +41,17 @@ trait UsesTmaBackend
         $token = $this->option('token') ?: (string) (getenv('TMA_CLI_TOKEN') ?: config('filament-tma.cli.token', ''));
 
         if ($token === '') {
-            throw new RuntimeException(__('Jeton manquant : --token, ou TMA_CLI_TOKEN dans .env.'));
+            throw new RuntimeException(__('filament-tma::commands.backend.token_missing'));
         }
 
         if (Tma::isMaster() || $this->option('local')) {
-            $user = $this->userFromToken($token) ?? throw new RuntimeException(__('Jeton invalide ou expiré.'));
+            $user = $this->userFromToken($token) ?? throw new RuntimeException(__('filament-tma::commands.backend.token_invalid'));
 
             return new LocalBackend($user);
         }
 
         if (! Tma::serviceDeskAvailable()) {
-            throw new RuntimeException(__('Le maître n’est pas configuré (TMA_MASTER_URL).'));
+            throw new RuntimeException(__('filament-tma::commands.backend.master_missing'));
         }
 
         return new RemoteBackend($token);

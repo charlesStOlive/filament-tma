@@ -28,7 +28,7 @@ class AgentsRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('Membres du Support');
+        return __('filament-tma::instances.agents.heading');
     }
 
     public function isReadOnly(): bool
@@ -39,20 +39,20 @@ class AgentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->description(__('Les personnes du Support qui travaillent aussi depuis cette application.'))
+            ->description(__('filament-tma::instances.agents.description'))
             ->columns([
-                TextColumn::make('user.name')->label(__('Agent')),
-                TextColumn::make('user.email')->label(__('E-mail')),
-                TextColumn::make('linked_at')->label(__('Relié le'))->dateTime('d/m/Y H:i'),
+                TextColumn::make('user.name')->label(__('filament-tma::instances.agents.columns.agent')),
+                TextColumn::make('user.email')->label(__('filament-tma::instances.agents.columns.email')),
+                TextColumn::make('linked_at')->label(__('filament-tma::instances.agents.columns.linked_at'))->dateTime('d/m/Y H:i'),
             ])
             ->headerActions([
-                Help::title('tma.agents', __('Les membres du Support')),
+                Help::title('tma.agents', __('filament-tma::instances.agents.help')),
                 Action::make('linkAgent')
-                    ->label(__('Relier un agent'))
+                    ->label(__('filament-tma::instances.agents.link'))
                     ->icon('heroicon-m-user-plus')
-                    ->modalDescription(__('Il doit avoir un compte dans l’application, avec le même e-mail. Un jeton personnel, limité à cette application, lui est émis et envoyé à l’application.'))
+                    ->modalDescription(__('filament-tma::instances.agents.link_description'))
                     ->schema([
-                        Select::make('user_id')->label(__('Agent'))
+                        Select::make('user_id')->label(__('filament-tma::instances.agents.columns.agent'))
                             ->options(fn (): array => $this->agentCandidates())
                             ->searchable()
                             ->required(),
@@ -64,12 +64,12 @@ class AgentsRelationManager extends RelationManager
             ])
             ->recordActions([
                 Action::make('relink')
-                    ->label(__('Renvoyer'))
+                    ->label(__('filament-tma::instances.agents.resend'))
                     ->icon('heroicon-m-arrow-path')
-                    ->tooltip(__('Émettre un nouveau jeton et le renvoyer à l’application'))
+                    ->tooltip(__('filament-tma::instances.agents.resend_tooltip'))
                     ->action(fn (AgentLink $record) => $this->link($record->user)),
                 Action::make('unlink')
-                    ->label(__('Délier'))
+                    ->label(__('filament-tma::instances.agents.unlink'))
                     ->icon('heroicon-m-user-minus')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -79,7 +79,7 @@ class AgentsRelationManager extends RelationManager
                         ServiceAccount::revokeAgentToken($record->user, $instance->uid);
                         rescue(fn () => (new InstanceClient($instance))->unlinkAgent($record->user->email), report: false);
                         $record->delete();
-                        Notification::make()->success()->title(__('Agent délié'))->send();
+                        Notification::make()->success()->title(__('filament-tma::instances.agents.unlinked'))->send();
                     }),
             ]);
     }
@@ -119,6 +119,6 @@ class AgentsRelationManager extends RelationManager
             ['linked_at' => now()],
         );
 
-        Notification::make()->success()->title(__(':name intervient au nom du Support dans :app', ['name' => $user->name, 'app' => $instance->name]))->send();
+        Notification::make()->success()->title(__('filament-tma::instances.agents.acting_in', ['name' => $user->name, 'app' => $instance->name]))->send();
     }
 }

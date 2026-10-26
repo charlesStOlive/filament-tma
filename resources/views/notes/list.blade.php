@@ -16,7 +16,7 @@
     $notes = $subject->noteEntries(auth()->user(), withArchived: $showArchived);
     $archivedCount = $subject->entries()->notes()->visibleTo(auth()->user())->whereNotNull('archived_at')->count();
     $create = ($this->createNoteAction)([])
-        ->label($subject instanceof ProjectTask ? __('Note sur la tâche') : __('Note sur le ticket'))
+        ->label($subject instanceof ProjectTask ? __('filament-tma::notes.list.on_task') : __('filament-tma::notes.list.on_ticket'))
         ->size(Size::Small);
     $timezone = \CharlesStOlive\FilamentTma\Support\Dates::timezone();
 @endphp
@@ -28,7 +28,7 @@
         @endif
         @if ($archivedCount > 0)
             <x-filament::link tag="button" size="sm" color="gray" icon="heroicon-m-archive-box" wire:click="$toggle('showArchivedNotes')">
-                {{ $showArchived ? __('Masquer les archivées') : trans_choice('Voir l’archivée|Voir les :count archivées', $archivedCount, ['count' => $archivedCount]) }}
+                {{ $showArchived ? __('filament-tma::notes.list.hide_archived') : trans_choice('filament-tma::notes.list.show_archived', $archivedCount, ['count' => $archivedCount]) }}
             </x-filament::link>
         @endif
     </div>
@@ -42,24 +42,24 @@
             wire:click="mountAction('notes', @js(['entry' => $note->parent_id, 'note' => $note->getKey()]))"
         >
             <span class="fi-tma-notes-list-head">
-                <span class="fi-tma-note-number">{{ __('n° :number', ['number' => $note->number]) }}</span>
+                <span class="fi-tma-note-number">{{ __('filament-tma::notes.card.number', ['number' => $note->number]) }}</span>
                 @if ($note->private)
-                    <x-filament::icon icon="heroicon-m-lock-closed" class="fi-tma-note-chip-icon" :title="__('Visible de vous seul')" />
+                    <x-filament::icon icon="heroicon-m-lock-closed" class="fi-tma-note-chip-icon" :title="__('filament-tma::notes.card.private')" />
                 @endif
                 <strong class="fi-tma-notes-list-author">{{ $note->author?->name }}</strong>
                 <time datetime="{{ $note->created_at->toIso8601String() }}">{{ $note->created_at->timezone($timezone)->format('d/m H:i') }}</time>
             </span>
             <span class="fi-tma-notes-list-target">
                 @if ($note->parent)
-                    {{ __('Sur le message de :author du :date', ['author' => $note->parent->author?->name ?? '?', 'date' => $note->parent->created_at->timezone($timezone)->format('d/m')]) }}
+                    {{ __('filament-tma::notes.list.on_message', ['author' => $note->parent->author?->name ?? '?', 'date' => $note->parent->created_at->timezone($timezone)->format('d/m')]) }}
                 @else
-                    {{ $subject instanceof ProjectTask ? __('Sur la tâche') : __('Sur le ticket') }}
+                    {{ $subject instanceof ProjectTask ? __('filament-tma::notes.list.task') : __('filament-tma::notes.list.ticket') }}
                 @endif
                 @if ($note->isArchived())
-                    · {{ __('archivée') }}
+                    · {{ __('filament-tma::notes.list.archived') }}
                 @endif
                 @if ($note->private)
-                    · {{ __('visible de vous seul') }}
+                    · {{ __('filament-tma::notes.list.private') }}
                 @endif
             </span>
             @if (filled($text = Html::toText($note->body)))
@@ -68,11 +68,11 @@
             @if ($images > 0)
                 <span class="fi-tma-notes-list-images">
                     <x-filament::icon icon="heroicon-m-photo" class="fi-tma-note-chip-icon" />
-                    {{ trans_choice(':count image|:count images', $images, ['count' => $images]) }}
+                    {{ trans_choice('filament-tma::notes.list.images', $images, ['count' => $images]) }}
                 </span>
             @endif
         </button>
     @empty
-        <p class="fi-tma-timeline-empty">{{ $showArchived ? __('Aucune note.') : __('Aucune note pour l’instant.') }}</p>
+        <p class="fi-tma-timeline-empty">{{ $showArchived ? __('filament-tma::notes.list.empty') : __('filament-tma::notes.list.empty_yet') }}</p>
     @endforelse
 </div>

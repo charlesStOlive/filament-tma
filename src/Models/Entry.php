@@ -166,7 +166,7 @@ class Entry extends Model implements HasMedia, HasRichContent
     /** « Note n° 3 » ; avec son auteur : « Note n° 3 · Ada Lovelace ». */
     public function noteLabel(bool $withAuthor = false): string
     {
-        $label = __('Note n° :number', ['number' => $this->number]);
+        $label = __('filament-tma::notes.number_title', ['number' => $this->number]);
 
         return $withAuthor && $this->author !== null ? $label.' · '.$this->author->name : $label;
     }

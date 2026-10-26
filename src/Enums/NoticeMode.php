@@ -17,9 +17,9 @@ enum NoticeMode: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Immediate => __('Tout de suite'),
-            self::Grouped => __('Dans le bilan'),
-            self::Skipped => __('Non envoyée (sans bilan)'),
+            self::Immediate => __('filament-tma::enums.notice_mode.immediate'),
+            self::Grouped => __('filament-tma::enums.notice_mode.digest'),
+            self::Skipped => __('filament-tma::enums.notice_mode.none'),
         };
     }
 }

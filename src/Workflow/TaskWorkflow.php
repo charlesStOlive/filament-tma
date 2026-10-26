@@ -91,7 +91,7 @@ class TaskWorkflow
         $move = is_string($move) ? $this->move($move) : $move;
 
         if (! $this->allows($task, $move, $context)) {
-            throw new AuthorizationException(__('Ce passage n’est pas possible pour cette tâche.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.task_move'));
         }
 
         $data = Validator::make($data, $move->rules($task))->validate();
@@ -143,11 +143,11 @@ class TaskWorkflow
     public function create(array $attributes, Context $context): ProjectTask
     {
         if (! Tma::isMaster()) {
-            throw new AuthorizationException(__('Les tâches projet se créent chez le Support.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.tasks_at_support'));
         }
 
         if (! $context->isSystem() && Gate::getPolicyFor(ProjectTask::class) !== null && ! Gate::forUser($context->user)->allows('create', ProjectTask::class)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas créer de tâche.'));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.cannot_create_task'));
         }
 
         $project = filled($attributes['project_id'] ?? null) ? Project::query()->findOrFail($attributes['project_id']) : null;
@@ -189,11 +189,11 @@ class TaskWorkflow
     public function delete(ProjectTask $task, Context $context): void
     {
         if (! $this->canDelete($task, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas supprimer la tâche :number.', ['number' => $task->number]));
+            throw new AuthorizationException(__('filament-tma::workflow.errors.cannot_delete_task', ['number' => $task->number]));
         }
 
         if ($task->timeEntries()->whereNotNull('invoice_id')->exists()) {
-            throw ValidationException::withMessages(['task' => __('Du temps de la tâche :number est facturé : elle ne se supprime pas.', ['number' => $task->number])]);
+            throw ValidationException::withMessages(['task' => __('filament-tma::workflow.errors.task_billed', ['number' => $task->number])]);
         }
 
         DB::transaction(function () use ($task): void {

@@ -10,7 +10,7 @@ class Paused extends TicketState
 
     public function getLabel(): string
     {
-        return __('En pause');
+        return __('filament-tma::states.ticket.paused.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Paused extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Suspendu jusqu’à une date prévue, puis repris.');
+        return __('filament-tma::states.ticket.paused.description');
     }
 
     public function inHandsOf(): ?Side

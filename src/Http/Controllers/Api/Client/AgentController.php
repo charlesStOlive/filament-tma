@@ -26,7 +26,7 @@ class AgentController
         $model = Tma::userModel();
         $user = $model::query()->where('email', $data['email'])->first();
 
-        abort_if($user === null, 404, __('Aucun utilisateur :email dans :app : créez-le d’abord, avec ses rôles.', ['email' => $data['email'], 'app' => Tma::instanceName()]));
+        abort_if($user === null, 404, __('filament-tma::sync.errors.agent_missing', ['email' => $data['email'], 'app' => Tma::instanceName()]));
 
         Agent::query()->updateOrCreate(['user_id' => $user->getAuthIdentifier()], [
             'email' => $data['email'],

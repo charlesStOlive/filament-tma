@@ -12,7 +12,7 @@ class SyncException extends RuntimeException
     {
         $detail = $response->json('message') ?? $response->reason();
 
-        return new self(__(':what : l’autre application a répondu :status (:detail).', [
+        return new self(__('filament-tma::sync.errors.status', [
             'what' => $what,
             'status' => $response->status(),
             'detail' => $detail,
@@ -21,6 +21,6 @@ class SyncException extends RuntimeException
 
     public static function unreachable(string $what, \Throwable $previous): self
     {
-        return new self(__(':what : l’autre application ne répond pas.', ['what' => $what]), 0, $previous);
+        return new self(__('filament-tma::sync.errors.no_answer', ['what' => $what]), 0, $previous);
     }
 }

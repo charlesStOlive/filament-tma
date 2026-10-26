@@ -27,7 +27,7 @@ class Validate extends Move
 
     public function label(): string
     {
-        return __('Confirmer et clore');
+        return __('filament-tma::workflow.ticket.validate.label');
     }
 
     public function color(): string
@@ -62,7 +62,7 @@ class Validate extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('Un mot pour le Support (facultatif)'), required: false)];
+        return [$this->messageField('message', __('filament-tma::workflow.ticket.validate.message'), required: false)];
     }
 
     public function requiresConfirmation(): bool

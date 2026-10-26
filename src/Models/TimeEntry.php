@@ -63,13 +63,13 @@ class TimeEntry extends Model
             $onlyInvoiceLink = array_diff(array_keys($entry->getDirty()), ['invoice_type', 'invoice_id', 'invoiced_at', 'updated_at']) === [];
 
             if ($entry->getOriginal('invoice_id') !== null && ! $onlyInvoiceLink) {
-                throw new LogicException(__('Cette saisie est rattachée à une facture : elle ne se modifie plus.'));
+                throw new LogicException(__('filament-tma::time.errors.invoiced_no_edit'));
             }
         });
 
         static::deleting(function (TimeEntry $entry): void {
             if ($entry->isInvoiced()) {
-                throw new LogicException(__('Cette saisie est rattachée à une facture : elle ne se supprime plus.'));
+                throw new LogicException(__('filament-tma::time.errors.invoiced_no_delete'));
             }
         });
 

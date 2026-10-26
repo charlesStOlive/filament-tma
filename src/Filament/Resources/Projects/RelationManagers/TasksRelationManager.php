@@ -22,7 +22,7 @@ class TasksRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('Tâches');
+        return __('filament-tma::projects.tasks.heading');
     }
 
     public function isReadOnly(): bool
@@ -36,17 +36,17 @@ class TasksRelationManager extends RelationManager
             ->defaultSort('starts_on')
             ->recordUrl(fn (ProjectTask $record): ?string => TaskResource::canView($record) ? TaskResource::getUrl('view', ['record' => $record]) : null)
             ->columns([
-                TextColumn::make('number')->label(__('N°'))->sortable(),
-                TextColumn::make('title')->label(__('Titre'))->searchable()->wrap(),
-                TextColumn::make('state')->label(__('État'))->badge(),
-                TextColumn::make('starts_on')->label(__('Début'))->date('d/m/Y')->placeholder('—')->sortable(),
-                TextColumn::make('due_on')->label(__('Échéance prévue'))->date('d/m/Y')->placeholder('—')->sortable(),
-                TextColumn::make('time')->label(__('Temps'))
+                TextColumn::make('number')->label(__('filament-tma::common.number'))->sortable(),
+                TextColumn::make('title')->label(__('filament-tma::common.title'))->searchable()->wrap(),
+                TextColumn::make('state')->label(__('filament-tma::common.state'))->badge(),
+                TextColumn::make('starts_on')->label(__('filament-tma::common.start'))->date('d/m/Y')->placeholder('—')->sortable(),
+                TextColumn::make('due_on')->label(__('filament-tma::common.due_date'))->date('d/m/Y')->placeholder('—')->sortable(),
+                TextColumn::make('time')->label(__('filament-tma::common.time'))
                     ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
             ])
             ->headerActions([
                 Action::make('newTask')
-                    ->label(__('Nouvelle tâche'))
+                    ->label(__('filament-tma::projects.tasks.create'))
                     ->icon('heroicon-m-plus')
                     ->url(fn (): string => TaskResource::getUrl('create', ['project' => $this->getOwnerRecord()->getKey()]))
                     ->visible(fn (): bool => TaskResource::canCreate()),

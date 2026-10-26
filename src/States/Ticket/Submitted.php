@@ -10,7 +10,7 @@ class Submitted extends TicketState
 
     public function getLabel(): string
     {
-        return __('Nouveau');
+        return __('filament-tma::states.ticket.submitted.label');
     }
 
     public function getColor(): string
@@ -25,7 +25,7 @@ class Submitted extends TicketState
 
     public function getDescription(): ?string
     {
-        return __('Transmis au Support : attend sa première réponse.');
+        return __('filament-tma::states.ticket.submitted.description');
     }
 
     public function inHandsOf(): ?Side

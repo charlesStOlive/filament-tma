@@ -74,24 +74,24 @@ class ResetSchemaCommand extends Command
         $named = fn (string $name): bool => $files->contains(fn (string $file): bool => Str::endsWith($file, '_'.$name));
 
         if (($missing = array_values(array_filter(self::MIGRATIONS, fn (string $name): bool => ! $named($name)))) !== []) {
-            $this->components->error(__('Les migrations du module ne sont pas publiées (:names) : php artisan vendor:publish --tag=filament-tma-migrations', ['names' => implode(', ', $missing)]));
+            $this->components->error(__('filament-tma::commands.reset.unpublished', ['names' => implode(', ', $missing)]));
 
             return self::FAILURE;
         }
 
         if (($legacy = array_values(array_filter(self::LEGACY_MIGRATIONS, $named))) !== []) {
-            $this->components->error(__('Retirez d’abord de database/migrations les anciennes migrations du module : :names', ['names' => implode(', ', $legacy)]));
+            $this->components->error(__('filament-tma::commands.reset.old_migrations', ['names' => implode(', ', $legacy)]));
 
             return self::FAILURE;
         }
 
         $keep = ! $this->option('all');
         $question = $keep
-            ? __('Supprimer les tickets, tâches, messages, notes et temps du module et recréer ses tables (les applications reliées, les membres du Support et les forfaits restent) ?')
-            : __('Supprimer TOUTES les données du module, liaisons entre applications comprises, et recréer ses tables ?');
+            ? __('filament-tma::commands.reset.confirm_keep')
+            : __('filament-tma::commands.reset.confirm_all');
 
         if (app()->isProduction() && ! $this->option('force')) {
-            $this->components->error(__('En production, il faut --force.'));
+            $this->components->error(__('filament-tma::commands.reset.force_required'));
 
             return self::FAILURE;
         }
@@ -113,7 +113,7 @@ class ResetSchemaCommand extends Command
         $this->call('migrate', ['--force' => true]);
         $this->restore($kept);
 
-        $this->components->info(__('Schéma du module recréé.').($keep ? ' '.__('Gardés : :counts.', ['counts' => collect($kept)->map(fn (array $rows, string $table): string => $table.' '.count($rows))->implode(', ')]) : ''));
+        $this->components->info(__('filament-tma::commands.reset.done').($keep ? ' '.__('filament-tma::commands.reset.kept', ['counts' => collect($kept)->map(fn (array $rows, string $table): string => $table.' '.count($rows))->implode(', ')]) : ''));
 
         return self::SUCCESS;
     }

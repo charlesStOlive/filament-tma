@@ -67,7 +67,7 @@
             @php($transition = $row['item'])
             <article class="fi-tma-entry fi-tma-entry--move" wire:key="tma-move-{{ $transition->getKey() }}">
                 <header class="fi-tma-entry-header">
-                    <strong>{{ $transition->actor?->name ?? __('Système') }}</strong>
+                    <strong>{{ $transition->actor?->name ?? __('filament-tma::common.system') }}</strong>
                     @if ($team = $transition->actor?->team())
                         <x-filament::badge color="gray" size="sm" class="fi-tma-entry-instance">{{ $team }}</x-filament::badge>
                     @endif
@@ -83,7 +83,7 @@
             <div class="fi-tma-timeline-event">
                 <x-filament::icon icon="heroicon-m-arrow-path" class="fi-tma-timeline-event-icon" />
                 <span>
-                    <strong>{{ $transition->actor?->name ?? __('Système') }}</strong>
+                    <strong>{{ $transition->actor?->name ?? __('filament-tma::common.system') }}</strong>
                     @if ($team = $transition->actor?->team())
                         <span class="fi-tma-entry-instance">({{ $team }})</span>
                     @endif

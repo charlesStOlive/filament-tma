@@ -35,11 +35,11 @@ trait WritesMessages
     protected function reasonField(bool $required = true, ?string $label = null, ?array $help = null): Textarea
     {
         return Textarea::make('reason')
-            ->label($label ?? __('Motif'))
+            ->label($label ?? __('filament-tma::workflow.reason'))
             ->required($required)
             ->rows(3)
             ->maxLength(2000)
-            ->hintAction(Help::action(...($help ?? ['tma.tickets.annuler', __('Quand faut-il un motif ?')])));
+            ->hintAction(Help::action(...($help ?? ['tma.tickets.annuler', __('filament-tma::workflow.help.reason')])));
     }
 
     /** @return array<int, mixed> */
@@ -51,7 +51,7 @@ trait WritesMessages
             'max:500000',
             function (string $attribute, mixed $value, Closure $fail) use ($required): void {
                 if ($required && Html::isBlank((string) $value)) {
-                    $fail(__('Le message est vide.'));
+                    $fail(__('filament-tma::common.message_empty'));
                 }
             },
         ];

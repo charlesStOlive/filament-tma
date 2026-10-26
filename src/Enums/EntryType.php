@@ -22,8 +22,8 @@ enum EntryType: string implements HasColor, HasIcon, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Comment => __('Message'),
-            self::Note => __('Note'),
+            self::Comment => __('filament-tma::common.message'),
+            self::Note => __('filament-tma::enums.entry_type.note'),
         };
     }
 

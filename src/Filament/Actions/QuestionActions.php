@@ -31,16 +31,16 @@ final class QuestionActions
     public static function answer(): Action
     {
         return Action::make('answerQuestion')
-            ->label(__('Répondre'))
+            ->label(__('filament-tma::common.reply'))
             ->icon('heroicon-m-arrow-uturn-left')
-            ->modalHeading(__('Répondre à la question'))
+            ->modalHeading(__('filament-tma::questions.answer.label'))
             // Le texte de la question, pour l'avoir sous les yeux.
             ->modalDescription(fn (ProjectTask $record, array $arguments): ?string => ($question = self::question($record, $arguments)) !== null
                 ? Str::limit(Str::squish(Html::toText($question->body)), 300)
                 : null)
             ->modalWidth(Width::ThreeExtraLarge)
-            ->modalSubmitActionLabel(__('Envoyer la réponse'))
-            ->schema([NoteActions::bodyField(__('Votre réponse…'))->required(), TimelineActions::attachmentsField()])
+            ->modalSubmitActionLabel(__('filament-tma::questions.answer.submit'))
+            ->schema([NoteActions::bodyField(__('filament-tma::questions.answer.placeholder'))->required(), TimelineActions::attachmentsField()])
             ->visible(fn (ProjectTask $record, array $arguments): bool => ($question = self::question($record, $arguments)) !== null
                 && app(Questions::class)->canAnswer($question, Context::current()))
             ->action(function (ProjectTask $record, array $data, array $arguments, Action $action, Component $livewire): void {
@@ -50,26 +50,26 @@ final class QuestionActions
 
                 $record->refresh();
                 $livewire->dispatch('tma-timeline-changed');
-                Notification::make()->success()->title(__('Réponse envoyée'))->send();
+                Notification::make()->success()->title(__('filament-tma::questions.answer.sent'))->send();
             });
     }
 
     public static function withdraw(): Action
     {
         return Action::make('withdrawQuestion')
-            ->label(__('Retirer la question'))
+            ->label(__('filament-tma::questions.withdraw.label'))
             ->icon('heroicon-m-x-circle')
             ->requiresConfirmation()
-            ->modalHeading(__('Retirer la question ?'))
-            ->modalDescription(__('Plus personne n’aura à y répondre ; le client l’apprend dans la cloche. Le message reste dans l’historique.'))
-            ->modalSubmitActionLabel(__('Retirer'))
+            ->modalHeading(__('filament-tma::questions.withdraw.heading'))
+            ->modalDescription(__('filament-tma::questions.withdraw.description'))
+            ->modalSubmitActionLabel(__('filament-tma::common.withdraw'))
             ->visible(fn (ProjectTask $record, array $arguments): bool => ($question = self::question($record, $arguments)) !== null
                 && app(Questions::class)->canWithdraw($question, Context::current()))
             ->action(function (ProjectTask $record, array $arguments, Action $action, Component $livewire): void {
                 self::run($action, fn () => app(Questions::class)->withdraw(self::question($record, $arguments, orFail: true), Context::current()));
 
                 $livewire->dispatch('tma-timeline-changed');
-                Notification::make()->success()->title(__('Question retirée'))->send();
+                Notification::make()->success()->title(__('filament-tma::common.question_withdrawn'))->send();
             });
     }
 

@@ -31,20 +31,20 @@ enum TicketOpening: string implements HasDescription, HasIcon, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Request => __('Demande'),
-            self::OnBehalf => __('Au nom d’un client'),
-            self::Outreach => __('Je m’adresse au client'),
-            self::Notice => __('J’informe le client'),
+            self::Request => __('filament-tma::enums.ticket_opening.request.label'),
+            self::OnBehalf => __('filament-tma::enums.ticket_opening.on_behalf.label'),
+            self::Outreach => __('filament-tma::enums.ticket_opening.addressed.label'),
+            self::Notice => __('filament-tma::enums.ticket_opening.notice.label'),
         };
     }
 
     public function getDescription(): string
     {
         return match ($this) {
-            self::Request => __('Un correspondant fait sa demande.'),
-            self::OnBehalf => __('Sa demande, reçue autrement (un courriel…) : à vous d’y répondre.'),
-            self::Outreach => __('Une idée, une question, une proposition : vous attendez sa réponse.'),
-            self::Notice => __('Pour information, sans réponse attendue : le ticket est clos dès sa publication.'),
+            self::Request => __('filament-tma::enums.ticket_opening.request.description'),
+            self::OnBehalf => __('filament-tma::enums.ticket_opening.on_behalf.description'),
+            self::Outreach => __('filament-tma::enums.ticket_opening.addressed.description'),
+            self::Notice => __('filament-tma::enums.ticket_opening.notice.description'),
         };
     }
 
@@ -67,16 +67,16 @@ enum TicketOpening: string implements HasDescription, HasIcon, HasLabel
     /** La personne du client sur le ticket : « Demandeur », ou « Adressé à » quand le Support lui écrit. */
     public function requesterLabel(): string
     {
-        return $this->fromSupport() ? __('Adressé à') : __('Demandeur');
+        return $this->fromSupport() ? __('filament-tma::enums.ticket_opening.addressed_to') : __('filament-tma::common.requester');
     }
 
     /** L'en-tête de la demande, dans l'historique : « Demande », « Message du Support », « Information ». */
     public function badge(): string
     {
         return match ($this) {
-            self::Request, self::OnBehalf => __('Demande'),
-            self::Outreach => __('Message du Support'),
-            self::Notice => __('Information'),
+            self::Request, self::OnBehalf => __('filament-tma::enums.ticket_opening.request.label'),
+            self::Outreach => __('filament-tma::enums.ticket_opening.support_message'),
+            self::Notice => __('filament-tma::enums.ticket_opening.information'),
         };
     }
 

@@ -44,7 +44,7 @@ class TimeEntriesRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('Temps passé');
+        return __('filament-tma::common.time_spent');
     }
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
@@ -71,27 +71,27 @@ class TimeEntriesRelationManager extends RelationManager
             ->defaultSort('worked_on', 'desc')
             ->paginationMode(PaginationMode::Simple)
             ->paginated([10])
-            ->emptyStateHeading(__('Pas encore de temps saisi'))
+            ->emptyStateHeading(__('filament-tma::common.no_time_yet'))
             ->emptyStateIcon('heroicon-o-clock')
             ->columns([
                 Split::make([
-                    TextColumn::make('actor.name')->label(__('Intervenant'))->weight(FontWeight::Medium)->limit(24),
-                    TextColumn::make('worked_on')->label(__('Le'))->date('d/m')->color('gray')->grow(false),
-                    TextColumn::make('minutes')->label(__('Durée'))
+                    TextColumn::make('actor.name')->label(__('filament-tma::common.agent'))->weight(FontWeight::Medium)->limit(24),
+                    TextColumn::make('worked_on')->label(__('filament-tma::common.date_on'))->date('d/m')->color('gray')->grow(false),
+                    TextColumn::make('minutes')->label(__('filament-tma::common.duration'))
                         ->formatStateUsing(fn (int $state): string => Duration::format($state))
                         ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
                 ]),
-                TextColumn::make('details')->label(__('Détail'))
+                TextColumn::make('details')->label(__('filament-tma::common.detail'))
                     ->state(fn (TimeEntry $record): ?string => collect([
-                        $record->entry !== null ? __('Sur : :entry', ['entry' => TimeEntryForm::entryLabel($record->entry, short: true)]) : null,
-                        $record->billable ? null : __('Non facturable'),
-                        $record->isInvoiced() ? __('Facturée') : null,
+                        $record->entry !== null ? __('filament-tma::common.on_entry', ['entry' => TimeEntryForm::entryLabel($record->entry, short: true)]) : null,
+                        $record->billable ? null : __('filament-tma::common.not_billable'),
+                        $record->isInvoiced() ? __('filament-tma::common.billed') : null,
                     ])->filter()->implode(' · ') ?: null)
                     ->wrap()->color('gray')->size(TextSize::ExtraSmall),
             ])
             ->headerActions([
                 Action::make('logTime')
-                    ->label(__('Saisir du temps'))
+                    ->label(__('filament-tma::common.log_time'))
                     ->icon('heroicon-m-plus')
                     ->size(Size::Small)
                     ->schema(fn (Schema $schema) => $this->form($schema))
@@ -113,7 +113,7 @@ class TimeEntriesRelationManager extends RelationManager
             ->recordActions([
                 EditAction::make()
                     ->iconButton()
-                    ->tooltip(__('Modifier'))
+                    ->tooltip(__('filament-tma::common.edit'))
                     ->hidden(fn (TimeEntry $record): bool => $record->isInvoiced())
                     ->mutateRecordDataUsing(fn (array $data): array => [...$data, ...TimeEntryForm::fill((int) $data['minutes'])])
                     ->mutateDataUsing(function (array $data): array {
@@ -136,7 +136,7 @@ class TimeEntriesRelationManager extends RelationManager
                     ->after(fn () => $this->dispatch(self::TIMELINE_CHANGED)),
                 DeleteAction::make()
                     ->iconButton()
-                    ->tooltip(__('Supprimer'))
+                    ->tooltip(__('filament-tma::common.delete'))
                     ->hidden(fn (TimeEntry $record): bool => $record->isInvoiced())
                     ->after(fn () => $this->dispatch(self::TIMELINE_CHANGED)),
             ]);
@@ -150,12 +150,12 @@ class TimeEntriesRelationManager extends RelationManager
         $own = Duration::format(TimeTotals::for($subject)['total_minutes']);
 
         if (! $subject instanceof ProjectTask) {
-            return __('Ce ticket : :time', ['time' => $own]);
+            return __('filament-tma::tickets.time_totals.ticket', ['time' => $own]);
         }
 
         return $subject->project === null
-            ? __('Cette tâche : :time', ['time' => $own])
-            : __('Cette tâche : :time · Tout le projet : :project', ['time' => $own, 'project' => Duration::format($subject->project->timeTotals()['total_minutes'])]);
+            ? __('filament-tma::tickets.time_totals.task', ['time' => $own])
+            : __('filament-tma::tickets.time_totals.task_and_project', ['time' => $own, 'project' => Duration::format($subject->project->timeTotals()['total_minutes'])]);
     }
 
     private function getTicket(): Trackable

@@ -27,13 +27,13 @@ class ShowTicketCommand extends Command
             function (array $t): void {
                 $this->newLine();
                 $this->line("<options=bold>{$t['ref']} — {$t['title']}</>");
-                $this->line(__('État : :state (en attente de : :side) · priorité : :priority · temps : :time', [
+                $this->line(__('filament-tma::commands.show.state', [
                     'state' => $t['state_label'], 'side' => $t['waiting_on'] ?? $t['in_hands_of'] ?? '—', 'priority' => $t['priority'] ?? '—',
                     'time' => Duration::format((int) $t['time_minutes']),
                 ]));
                 $this->line($t['kind'] === 'task'
-                    ? __('Projet : :p · suivie par : :a', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
-                    : __('Demandeur : :r · contact au Support : :a', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
+                    ? __('filament-tma::commands.show.project', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])
+                    : __('filament-tma::commands.show.requester', ['r' => $t['requester'] ?? '—', 'a' => $t['assignee'] ?? '—']));
 
                 if (filled($t['url'] ?? null)) {
                     $this->line($t['url']);

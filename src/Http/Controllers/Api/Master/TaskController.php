@@ -63,7 +63,7 @@ class TaskController
             'private' => ['boolean'],
         ]);
 
-        abort_if($isNew && ! $task->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('Cette tâche est annulée.'));
+        abort_if($isNew && ! $task->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('filament-tma::sync.errors.task_cancelled'));
 
         $entry = DB::transaction(fn () => Mirror::entryFrom($instance->uid, $task, $request->all()));
 

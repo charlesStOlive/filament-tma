@@ -33,10 +33,10 @@ class ListTickets extends ListRecords
         $active = ['state' => ['values' => TicketState::active()]];
 
         return array_filter([
-            'awaiting' => ['label' => __('En attente de moi'), 'filters' => ['awaiting' => ['isActive' => true]]],
-            'mine' => Tma::isClient() ? ['label' => __('Mes demandes'), 'filters' => ['mine' => ['isActive' => true], ...$active]] : null,
-            'active' => ['label' => __('Actifs'), 'filters' => $active],
-            'all' => ['label' => __('Tous'), 'filters' => []],
+            'awaiting' => ['label' => __('filament-tma::tickets.filters.waiting_for_me'), 'filters' => ['awaiting' => ['isActive' => true]]],
+            'mine' => Tma::isClient() ? ['label' => __('filament-tma::tickets.filters.my_requests'), 'filters' => ['mine' => ['isActive' => true], ...$active]] : null,
+            'active' => ['label' => __('filament-tma::tickets.tabs.active'), 'filters' => $active],
+            'all' => ['label' => __('filament-tma::tickets.tabs.all'), 'filters' => []],
         ]);
     }
 
@@ -118,10 +118,10 @@ class ListTickets extends ListRecords
     {
         return [
             // La permission seule ne suffit pas : il faut pouvoir faire une demande (`TicketResource::canCreate()`).
-            CreateAction::make()->label(__('Nouvelle demande'))->visible(fn (): bool => TicketResource::canCreate()),
+            CreateAction::make()->label(__('filament-tma::tickets.actions.new_request'))->visible(fn (): bool => TicketResource::canCreate()),
             // Un membre du Support ne fait pas de demande ici : il la prépare chez le Support, pour un correspondant.
             Action::make('createAtSupport')
-                ->label(__('Nouvelle demande chez le Support'))
+                ->label(__('filament-tma::tickets.actions.new_request_heading'))
                 ->icon('heroicon-m-arrow-top-right-on-square')
                 ->url(fn (): ?string => MasterLinks::createTicket(), shouldOpenInNewTab: true)
                 ->visible(fn (): bool => MasterLinks::forAgent()),
@@ -129,7 +129,7 @@ class ListTickets extends ListRecords
                 NotificationActions::profileLink(),
                 NotificationActions::sendNow(),
             ])
-                ->label(__('Notifications'))
+                ->label(__('filament-tma::tickets.actions.notifications'))
                 ->icon('heroicon-o-bell')
                 ->color('gray')
                 ->button(),

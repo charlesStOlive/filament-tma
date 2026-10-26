@@ -42,7 +42,7 @@ final class MoveAction
                     $action->halt();
                 }
 
-                Notification::make()->success()->title(__('Ticket :number : :state', [
+                Notification::make()->success()->title(__('filament-tma::workflow.move_heading.ticket', [
                     'number' => $record->number,
                     'state' => $record->refresh()->state->getLabel(),
                 ]))->send();

@@ -139,8 +139,8 @@ final class Timeline
 
         if (! $this->canAdd($ticket, $type, $context, ! empty($meta['reminder']))) {
             throw new AuthorizationException($type === EntryType::Comment && $ticket instanceof Ticket
-                ? __('Sur un ticket, un message va toujours avec un passage (répondre, demander des précisions…) : écrivez plutôt une note.')
-                : __('Vous ne pouvez pas ajouter cette entrée à ce ticket.'));
+                ? __('filament-tma::common.ticket_message_needs_move')
+                : __('filament-tma::timeline.errors.cannot_add'));
         }
 
         $this->assertNotBlank($type, $body, count($uploads));
@@ -235,7 +235,7 @@ final class Timeline
         $private = $entry->isNote() ? $private : null;
 
         if (! $this->canEdit($entry, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez plus modifier cette entrée.'));
+            throw new AuthorizationException(__('filament-tma::common.cannot_edit_entry'));
         }
 
         $remainingFiles = $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)
@@ -265,7 +265,7 @@ final class Timeline
     public function archive(Entry $note, bool $archived, Context $context): Entry
     {
         if (! $this->canArchive($note, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas archiver cette note.'));
+            throw new AuthorizationException(__('filament-tma::timeline.errors.cannot_archive'));
         }
 
         $agentContext = $context->forSubject($note->subject);
@@ -283,7 +283,7 @@ final class Timeline
     public function delete(Entry $note, Context $context): Entry
     {
         if (! $this->canDelete($note, $context)) {
-            throw new AuthorizationException(__('Vous ne pouvez pas supprimer cette note.'));
+            throw new AuthorizationException(__('filament-tma::timeline.errors.cannot_delete'));
         }
 
         $agentContext = $context->forSubject($note->subject);
@@ -367,7 +367,7 @@ final class Timeline
             return;
         }
 
-        throw ValidationException::withMessages(['body' => $type === EntryType::Note ? __('La note est vide.') : __('Le message est vide.')]);
+        throw ValidationException::withMessages(['body' => $type === EntryType::Note ? __('filament-tma::timeline.errors.note_empty') : __('filament-tma::common.message_empty')]);
     }
 
     /** On répond à un message de premier niveau ; une note commente un message de premier niveau. */
@@ -380,7 +380,7 @@ final class Timeline
         }
 
         throw ValidationException::withMessages(['parent' => $type === EntryType::Note
-            ? __('Une note commente un message de premier niveau du même ticket, ou le ticket entier.')
-            : __('On ne répond qu’à un message de premier niveau du même ticket.')]);
+            ? __('filament-tma::timeline.errors.note_target')
+            : __('filament-tma::timeline.errors.reply_target')]);
     }
 }

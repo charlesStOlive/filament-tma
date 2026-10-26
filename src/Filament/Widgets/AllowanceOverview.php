@@ -34,12 +34,12 @@ class AllowanceOverview extends StatsOverviewWidget
             $percent = $s['percent'] ?? 0;
 
             return Stat::make(
-                __('Forfait :label (:period)', ['label' => $s['label'], 'period' => $s['period_key']]),
+                __('filament-tma::widgets.allowance.heading', ['label' => $s['label'], 'period' => $s['period_key']]),
                 Duration::format((int) $s['consumed_minutes']).' / '.Duration::format((int) $s['allocated_minutes']),
             )
                 ->description($s['overage_minutes'] > 0
-                    ? __('Dépassé de :o', ['o' => Duration::format((int) $s['overage_minutes'])])
-                    : __(':percent % consommé · reste :r', ['percent' => $percent, 'r' => Duration::format((int) $s['remaining_minutes'])]))
+                    ? __('filament-tma::widgets.allowance.exceeded', ['o' => Duration::format((int) $s['overage_minutes'])])
+                    : __('filament-tma::widgets.allowance.consumed', ['percent' => $percent, 'r' => Duration::format((int) $s['remaining_minutes'])]))
                 ->color(match (true) {
                     $percent >= 100 => 'danger',
                     $percent >= 80 => 'warning',

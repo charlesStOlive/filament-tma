@@ -10,7 +10,7 @@
 
 @section('content')
     @include('filament-tma::mail.partials.box', [
-        'label' => __('Pour information'),
+        'label' => __('filament-tma::notifications.mail.for_information'),
         'text' => $boxText,
     ])
 
@@ -28,7 +28,7 @@
     @endforeach
 
     @if ($copies !== [])
-        @include('filament-tma::mail.partials.section', ['title' => __('En copie'), 'hint' => __('Là où vous êtes destinataire secondaire.'), 'muted' => true])
+        @include('filament-tma::mail.partials.section', ['title' => __('filament-tma::notifications.digest.copy'), 'hint' => __('filament-tma::notifications.weekly.copy_help'), 'muted' => true])
         @foreach ($copies as $task)
             @include('filament-tma::mail.partials.group', [
                 'ref' => $task['ref'],

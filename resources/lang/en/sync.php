@@ -1,0 +1,36 @@
+<?php
+
+return [
+    'errors' => [
+        'request_locked' => 'A message followed the request: it can no longer be edited.',
+        'ticket_finished' => 'This ticket is finished.',
+        'task_cancelled' => 'This task is cancelled.',
+        'wrong_uid' => 'The application answers, but with another identifier (:uid).',
+        'check_url' => ':message Check the application’s address in its record, at the Support (:url).',
+        'agent_missing' => 'No user :email in :app: create it first, with its roles.',
+        'unknown_ticket' => 'Ticket unknown to this application.',
+        'master_missing' => 'The Support is not configured (TMA_MASTER_URL, TMA_MASTER_TOKEN).',
+        'master_url_missing' => 'The Support is not configured (TMA_MASTER_URL).',
+        'entry_other_ticket' => 'This entry belongs to another ticket.',
+        'message_locked' => 'Someone wrote after this message: it can no longer be edited.',
+        'file' => 'Unreadable or too big file: :name',
+        'status' => ':what: the other application answered :status (:detail).',
+        'no_answer' => ':what: the other application does not answer.',
+        'no_token' => 'The application :name has no token: fill it in under “Client applications”.',
+        'unknown' => 'Unknown error',
+    ],
+    'operations' => [
+        'test_master' => 'Connection test to the Support',
+        'transmit' => 'Sending to the Support',
+        'transmit_token' => 'Sending the token to the Support',
+        'push_master' => 'Sending to the Support',
+        'test' => 'Connection test',
+        'users' => 'Users of :name',
+        'push_ticket' => 'Sending ticket :number',
+        'push_project' => 'Sending project :title',
+        'link_agent' => 'Linking agent :email',
+        'unlink_agent' => 'Unlinking agent :email',
+        'push_files' => 'Sending files',
+        'push_allowances' => 'Sending allowances',
+    ],
+];

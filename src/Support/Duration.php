@@ -45,7 +45,7 @@ final class Duration
 
         return match ($unit) {
             self::DAYS => self::days($minutes / self::dayMinutes()),
-            self::MINUTES => $minutes.' min',
+            self::MINUTES => $minutes.' '.__('filament-tma::time.form.minutes_suffix'),
             self::HOURS => self::hours($minutes),
             default => self::daysAndHours($minutes),
         };
@@ -54,7 +54,7 @@ final class Duration
     /** « 0,5 j », « 2 j » : un nombre de jours (une estimation). */
     public static function days(float $days): string
     {
-        return self::number($days).' j';
+        return self::number($days).' '.__('filament-tma::common.units.days_short');
     }
 
     /**
@@ -66,8 +66,8 @@ final class Duration
         return match (true) {
             $min !== null && $max !== null && $min == $max => self::days($min),
             $min !== null && $max !== null => self::number($min).'–'.self::days($max),
-            $max !== null => __('jusqu’à :days', ['days' => self::days($max)]),
-            $min !== null => __('au moins :days', ['days' => self::days($min)]),
+            $max !== null => __('filament-tma::time.estimate.up_to', ['days' => self::days($max)]),
+            $min !== null => __('filament-tma::time.estimate.at_least', ['days' => self::days($min)]),
             default => null,
         };
     }
@@ -79,27 +79,27 @@ final class Duration
         $rest = $minutes % self::dayMinutes();
 
         $parts = array_filter([
-            $days > 0 ? $days.' j' : null,
+            $days > 0 ? $days.' '.__('filament-tma::common.units.days_short') : null,
             match (true) {
                 $rest >= 60 => self::hours($rest),
-                $rest > 0 => $rest.' min',
+                $rest > 0 => $rest.' '.__('filament-tma::time.form.minutes_suffix'),
                 default => null,
             },
         ]);
 
-        return $parts === [] ? '0 h' : implode(' ', $parts);
+        return $parts === [] ? '0 '.__('filament-tma::time.form.hours_suffix') : implode(' ', $parts);
     }
 
     /** « 2 h 30 ». */
     private static function hours(int $minutes): string
     {
-        return intdiv($minutes, 60).' h'.($minutes % 60 > 0 ? ' '.str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT) : '');
+        return intdiv($minutes, 60).' '.__('filament-tma::time.form.hours_suffix').($minutes % 60 > 0 ? ' '.str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT) : '');
     }
 
     /** @return array<string, string> */
     public static function units(): array
     {
-        return [self::MINUTES => __('minutes'), self::HOURS => __('heures'), self::DAYS => __('jours')];
+        return [self::MINUTES => __('filament-tma::time.units.minutes'), self::HOURS => __('filament-tma::common.units.hours'), self::DAYS => __('filament-tma::common.units.days')];
     }
 
     private static function number(float $value): string

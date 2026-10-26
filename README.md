@@ -350,6 +350,13 @@ php artisan tma:comment DES-0042 --body="…" [--note] [--json]
   entière. Sur une tâche projet, `--summary` écrit aussi le message qui la résume (`--internal` : une note) ; sur un
   ticket, le temps n'a pas de texte (un message y va toujours avec un passage).
 
+## Traductions
+
+Tous les textes passent par des clés `filament-tma::<fichier>.<clé>` (`resources/lang/fr` et `en`, un fichier par
+domaine : `tickets.php`, `notifications.php`…) ; le français est la langue de référence. Les libellés de droits
+(`$permissionLabels`) sont des clés que filament-permission-manager traduit à l'affichage. Une langue de plus : un
+dossier `resources/lang/<langue>` avec les mêmes fichiers. Voir `docs/specifications/cdc-localisation.md` de desapp.
+
 ## Tests
 
 Les tests vivent dans l'application hôte (Filbreeze : `tests/Feature/Tma`).

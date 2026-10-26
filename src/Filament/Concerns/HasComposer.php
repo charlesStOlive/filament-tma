@@ -63,7 +63,7 @@ trait HasComposer
                 RichEditor::make('body')
                     ->hiddenLabel()
                     ->visible(fn (): bool => $this->composerCanWrite())
-                    ->placeholder(__('Votre message…'))
+                    ->placeholder(__('filament-tma::common.your_message'))
                     ->toolbarButtons([
                         ['bold', 'italic', 'underline', 'strike', 'link'],
                         ['bulletList', 'orderedList', 'blockquote', 'codeBlock'],
@@ -100,25 +100,25 @@ trait HasComposer
     protected function composerActions(): array
     {
         $actions = [
-            ...$this->orthographyActions('composer', ['body' => __('Message')]),
+            ...$this->orthographyActions('composer', ['body' => __('filament-tma::common.message')]),
             Action::make('composerMessage')
-                ->label(__('Envoyer le message'))
+                ->label(__('filament-tma::messages.composer.send'))
                 ->icon('heroicon-m-paper-airplane')
                 ->color(fn (): string => $this->composerReplies() === [] ? 'primary' : 'gray')
                 ->visible(fn (): bool => $this->composerCanMessage())
                 ->action(fn () => $this->composerWrite()),
             Action::make('composerQuestion')
-                ->label(__('Poser une question'))
+                ->label(__('filament-tma::messages.composer.ask'))
                 ->icon('heroicon-m-question-mark-circle')
                 ->color('warning')
                 ->visible(fn (): bool => $this->composerCanAsk())
-                ->modalHeading(__('Poser la question au client'))
-                ->modalDescription(__('Votre message part dans la tâche comme une question : les personnes choisies l’apprennent comme un ticket qui les attend (la cloche, puis l’e-mail direct ou le bilan du matin), jusqu’à ce que quelqu’un du client y réponde.'))
-                ->modalSubmitActionLabel(__('Poser la question'))
+                ->modalHeading(__('filament-tma::messages.composer.ask_heading'))
+                ->modalDescription(__('filament-tma::messages.composer.ask_description'))
+                ->modalSubmitActionLabel(__('filament-tma::messages.composer.ask_submit'))
                 ->fillForm(fn (): array => ['to' => Questions::defaultAddressees($this->getRecord())])
                 ->schema(fn (): array => [
                     CheckboxList::make('to')
-                        ->label(__('À qui'))
+                        ->label(__('filament-tma::messages.composer.ask_to'))
                         ->options(fn (): array => Questions::addressables($this->getRecord()))
                         ->required(),
                 ])
@@ -188,18 +188,18 @@ trait HasComposer
 
         if (! $record instanceof Ticket) {
             return $this->composerCanAsk()
-                ? __('Tout le monde lira ce message, pour information. Vous attendez une réponse du client ? « Poser une question ».')
-                : __('Tout le monde lira ce message.');
+                ? __('filament-tma::messages.composer.hint.task')
+                : __('filament-tma::messages.composer.hint.default');
         }
 
         $replies = $this->composerReplies();
         $waitingOn = $record->waitingOnFor(auth()->user());
 
         return match (true) {
-            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'answer') => __(':support attend votre réponse.', ['support' => Terms::support()]),
-            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'validate') => __('Le travail est fait : confirmez pour clore, ou renvoyez la demande en disant ce qui ne va pas.'),
-            $replies !== [] => __('« Demander des précisions » ou « Marquer comme résolu » passe la main au demandeur. Pour un point d’étape, écrivez une note.'),
-            default => __('En attente de : :who. Ce n’est pas votre tour : vous pouvez écrire une note, ou modifier votre dernier message tant qu’il est le dernier.', ['who' => $waitingOn ?? '—']),
+            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'answer') => __('filament-tma::messages.composer.hint.support_waiting', ['support' => Terms::support()]),
+            collect($replies)->contains(fn (Move $move): bool => $move->key() === 'validate') => __('filament-tma::messages.composer.hint.validate'),
+            $replies !== [] => __('filament-tma::messages.composer.hint.support_moves'),
+            default => __('filament-tma::messages.composer.hint.not_your_turn', ['who' => $waitingOn ?? '—']),
         };
     }
 
@@ -233,7 +233,7 @@ trait HasComposer
 
             // La question, la réponse, ce qui ne va pas : sans texte, le passage n'a pas de sens.
             if (Html::isBlank($body) && in_array('required', (array) ($move->rules($ticket)[$move->replyField()] ?? []), true)) {
-                throw ValidationException::withMessages(['body' => __('Le message est vide.')]);
+                throw ValidationException::withMessages(['body' => __('filament-tma::common.message_empty')]);
             }
 
             $workflow->run($ticket, $move, [$move->replyField() => $body, 'files' => Uploads::toBase64($uploads)], $context);
@@ -255,6 +255,6 @@ trait HasComposer
         $this->composerRepliesCache = null;
         $this->getRecord()->refresh();
         $this->getSchema('composer')->fill();
-        Notification::make()->success()->title(__('Envoyé'))->send();
+        Notification::make()->success()->title(__('filament-tma::messages.composer.sent'))->send();
     }
 }

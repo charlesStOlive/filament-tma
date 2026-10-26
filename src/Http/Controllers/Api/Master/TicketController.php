@@ -119,7 +119,7 @@ class TicketController
         ]);
 
         abort_unless($workflow->mayEditDemand($ticket, $this->context($request, $instance)), 403,
-            __('Un message a suivi la demande : elle ne se modifie plus.'));
+            __('filament-tma::sync.errors.request_locked'));
 
         DB::transaction(function () use ($ticket, $request): void {
             $ticket->forceFill([
@@ -188,10 +188,10 @@ class TicketController
             'private' => ['boolean'],
         ]);
 
-        abort_if($isNew && ! $ticket->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('Ce ticket est terminé.'));
+        abort_if($isNew && ! $ticket->acceptsMessages() && $payload['type'] !== EntryType::Note->value, 422, __('filament-tma::sync.errors.ticket_finished'));
         // Le demandeur parle en répondant (un passage) ; à part, il n'écrit qu'une note ou une relance (addendum §3.2).
         abort_if($isNew && $payload['type'] === EntryType::Comment->value && empty($request->input('meta.reminder')), 403,
-            __('Sur un ticket, un message va toujours avec un passage (répondre, demander des précisions…) : écrivez plutôt une note.'));
+            __('filament-tma::common.ticket_message_needs_move'));
 
         $entry = DB::transaction(fn () => Mirror::entryFrom($instance->uid, $ticket, $request->all()));
 

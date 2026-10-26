@@ -15,7 +15,7 @@ class AutoResume extends Resume
 
     public function label(): string
     {
-        return __('Reprise à la date prévue');
+        return __('filament-tma::workflow.ticket.auto_resume.label');
     }
 
     public function from(): array

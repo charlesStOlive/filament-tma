@@ -25,9 +25,9 @@ class TicketInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make(__('Historique'))
+            Section::make(__('filament-tma::common.history'))
                 ->columnSpanFull()
-                ->headerActions([Help::title('tma.chronologie.notes', __('Messages et notes'))])
+                ->headerActions([Help::title('tma.chronologie.notes', __('filament-tma::common.messages_and_notes'))])
                 ->schema([
                     ViewEntry::make('timeline')
                         ->hiddenLabel()
@@ -40,9 +40,9 @@ class TicketInfolist
     /** Le nouveau message, sous l'historique (`Filament\Concerns\HasComposer`). */
     public static function composerSection(): Section
     {
-        return Section::make(__('Nouveau message'))
+        return Section::make(__('filament-tma::common.new_message'))
             ->columnSpanFull()
-            ->headerActions([Help::title('tma.chronologie', __('Qui répond ?'))])
+            ->headerActions([Help::title('tma.chronologie', __('filament-tma::tickets.help.who_answers'))])
             ->visible(fn ($livewire): bool => method_exists($livewire, 'hasComposer') && $livewire->hasComposer())
             ->schema([EmbeddedSchema::make('composer')]);
     }
@@ -55,45 +55,45 @@ class TicketInfolist
     public static function side(): array
     {
         return [
-            Section::make(__('Suivi'))
+            Section::make(__('filament-tma::common.follow_up'))
                 ->columnSpanFull()
-                ->headerActions([Help::title('tma.comprendre.la-main', __('Qui doit agir ?'))])
+                ->headerActions([Help::title('tma.comprendre.la-main', __('filament-tma::tickets.help.who_acts'))])
                 ->schema([
                     TextEntry::make('agent_mode')->hiddenLabel()
                         ->state(fn ($record): ?string => Context::current()->forSubject($record)->isAgent()
-                            ? __('Vous intervenez ici au nom du Support.')
+                            ? __('filament-tma::common.acting_for_support')
                             : null)
                         ->visible(fn ($record): bool => Context::current()->forSubject($record)->isAgent())
                         ->badge()->color('info')->icon('heroicon-m-lifebuoy')
-                        ->hintAction(Help::action('tma.agents', __('Membre du Support'))),
-                    TextEntry::make('state')->label(__('État'))->badge()
+                        ->hintAction(Help::action('tma.agents', __('filament-tma::common.support_member'))),
+                    TextEntry::make('state')->label(__('filament-tma::common.state'))->badge()
                         ->helperText(fn (Ticket $record): ?string => $record->state->getDescription()),
-                    TextEntry::make('waiting_on')->label(__('En attente de'))
+                    TextEntry::make('waiting_on')->label(__('filament-tma::common.waiting_for'))
                         ->state(fn (Ticket $record): ?string => $record->waitingOnFor(auth()->user()))
                         ->placeholder('—'),
-                    TextEntry::make('priority')->label(__('Priorité'))->badge(),
+                    TextEntry::make('priority')->label(__('filament-tma::common.priority'))->badge(),
                     // « Demandeur », ou « Adressé à » quand le Support écrit au client ; au nom d'un client, qui l'a écrit.
                     TextEntry::make('requester.name')->label(fn (Ticket $record): string => $record->opening->requesterLabel())
                         ->helperText(fn (Ticket $record): ?string => match (true) {
-                            $record->opening === TicketOpening::OnBehalf && $record->createdBy !== null => __('Créé par :author en son nom.', ['author' => $record->createdBy->name]),
-                            $record->opening === TicketOpening::Notice => __('Pour information : pas de réponse attendue.'),
+                            $record->opening === TicketOpening::OnBehalf && $record->createdBy !== null => __('filament-tma::tickets.created_on_behalf', ['author' => $record->createdBy->name]),
+                            $record->opening === TicketOpening::Notice => __('filament-tma::tickets.for_information'),
                             default => null,
                         }),
-                    TextEntry::make('assignee.name')->label(__('Contact au Support'))->placeholder('—'),
-                    TextEntry::make('paused_until')->label(__('Reprise le'))->dateTime('d/m/Y H:i')
+                    TextEntry::make('assignee.name')->label(__('filament-tma::common.support_contact'))->placeholder('—'),
+                    TextEntry::make('paused_until')->label(__('filament-tma::common.resumes_on'))->dateTime('d/m/Y H:i')
                         ->visible(fn (Ticket $record): bool => $record->paused_until !== null),
-                    TextEntry::make('sourceInstance.name')->label(__('Application'))
+                    TextEntry::make('sourceInstance.name')->label(__('filament-tma::common.application'))
                         ->visible(fn (): bool => Tma::isMaster()),
-                    TextEntry::make('task.number')->label(__('À partir de la tâche'))
+                    TextEntry::make('task.number')->label(__('filament-tma::tickets.from_task'))
                         ->formatStateUsing(fn (Ticket $record): string => $record->task->number.' — '.$record->task->title)
                         ->url(fn (Ticket $record): ?string => TaskResource::canView($record->task) ? TaskResource::getUrl('view', ['record' => $record->task]) : null)
                         ->visible(fn (Ticket $record): bool => $record->task !== null),
-                    TextEntry::make('sync_status')->label(__('Synchro'))->badge()
-                        ->hintAction(Help::action('tma.synchronisation.erreurs', __('Que veut dire ce statut ?')))
+                    TextEntry::make('sync_status')->label(__('filament-tma::common.sync'))->badge()
+                        ->hintAction(Help::action('tma.synchronisation.erreurs', __('filament-tma::common.status_help')))
                         ->visible(fn (Ticket $record): bool => $record->isShared())
                         ->helperText(fn (Ticket $record): ?string => $record->last_sync_error),
-                    TextEntry::make('created_at')->label(__('Créé le'))->dateTime('d/m/Y H:i'),
-                    TextEntry::make('last_activity_at')->label(__('Dernière activité'))->since(),
+                    TextEntry::make('created_at')->label(__('filament-tma::tickets.created_at'))->dateTime('d/m/Y H:i'),
+                    TextEntry::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->since(),
                 ]),
             RecipientsSection::make(),
         ];

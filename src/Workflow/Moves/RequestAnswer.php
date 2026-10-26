@@ -30,7 +30,7 @@ class RequestAnswer extends Move
 
     public function label(): string
     {
-        return __('Demander des précisions');
+        return __('filament-tma::workflow.ticket.request_answer.label');
     }
 
     public function color(): string
@@ -65,7 +65,7 @@ class RequestAnswer extends Move
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('question', __('Question'), help: ['tma.tickets.question-reponse', __('Que devient le ticket ?')])];
+        return [$this->messageField('question', __('filament-tma::workflow.ticket.request_answer.message'), help: ['tma.tickets.question-reponse', __('filament-tma::workflow.ticket.request_answer.help')])];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void

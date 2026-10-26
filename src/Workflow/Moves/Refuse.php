@@ -22,7 +22,7 @@ class Refuse extends Move
 
     public function label(): string
     {
-        return __('Refuser');
+        return __('filament-tma::workflow.ticket.refuse.label');
     }
 
     public function color(): string

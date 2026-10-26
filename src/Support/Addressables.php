@@ -41,7 +41,7 @@ final class Addressables
             $key = self::keyFor($recipient->actor);
 
             if (! array_key_exists($key, $known)) {
-                $groups[__('Autres destinataires')][$key] = self::label($recipient->actor);
+                $groups[__('filament-tma::recipients.others')][$key] = self::label($recipient->actor);
             }
         }
 
@@ -130,7 +130,7 @@ final class Addressables
     public static function label(Actor $actor): string
     {
         if (self::isGateway($actor)) {
-            return __(':support (toute l’équipe)', ['support' => Terms::support()]);
+            return __('filament-tma::recipients.whole_support', ['support' => Terms::support()]);
         }
 
         return $actor->team() !== null ? "{$actor->name} ({$actor->team()})" : $actor->name;
@@ -167,7 +167,7 @@ final class Addressables
 
         if (Tma::serviceDeskAvailable()) {
             if (self::gateway() !== null) {
-                $support[self::SUPPORT] = __(':support (toute l’équipe)', ['support' => Terms::support()]);
+                $support[self::SUPPORT] = __('filament-tma::recipients.whole_support', ['support' => Terms::support()]);
             }
 
             foreach (self::supportMembers() as $agent) {
