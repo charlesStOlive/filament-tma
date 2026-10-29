@@ -26,10 +26,11 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 /**
- * Le tableau de bord : le suivi des temps d'un mois (le mois en cours d'abord, puis le précédent, le suivant), en jours
- * et heures (« 1 j 3 h », une journée de `time.day_minutes`). Une ligne pour la TMA (dans le maître, une par
- * application cliente), puis une par projet ; sous chacune, en petit, ses tickets ou ses tâches et leur temps du mois.
- * Pour un projet, en plus, son temps cumulé et sa fourchette.
+ * Le tableau de bord : le suivi des temps d'un mois (le mois en cours d'abord, puis le précédent, le suivant). Une ligne
+ * pour la TMA (dans le maître, une par application cliente), puis une par projet ; sous chacune, en petit, ses tickets
+ * ou ses tâches et leur temps du mois. Pour un projet, en plus, son temps cumulé et sa fourchette. Les sommes (une
+ * ligne, le cumul, le total du mois) sont en jours quel que soit `time.display_unit`, un ticket ou une tâche en
+ * `Duration::AUTO` (jours, heures ou minutes selon sa durée).
  *
  * Tous les temps, quels que soient les destinataires : le widget ne s'affiche qu'avec le droit
  * `tma.task.time-report`. Les temps viennent des saisies dans le maître, des totaux reçus chez le client
@@ -39,6 +40,12 @@ class TimeReportWidget extends TableWidget
 {
     /** Les tickets ou les tâches nommés sous une ligne, avant « et N autres ». */
     public const ITEMS = 5;
+
+    /** L'unité des sommes : une ligne, le cumul d'un projet, le total du mois (« 1,75 j »). */
+    protected const SUM_UNIT = Duration::DAYS;
+
+    /** L'unité d'un ticket ou d'une tâche, sous une ligne : « 1,2 j », « 2,5 h », « 30 min ». */
+    protected const ITEM_UNIT = Duration::AUTO;
 
     protected static ?int $sort = 21;
 
@@ -68,7 +75,7 @@ class TimeReportWidget extends TableWidget
         return $table
             ->records(fn (): array => $this->rows())
             ->heading(__('filament-tma::widgets.time_report.heading'))
-            ->description(fn (): string => __('filament-tma::widgets.time_report.total', ['month' => $this->monthLabel(), 'total' => Duration::format($this->monthTotal())]))
+            ->description(fn (): string => __('filament-tma::widgets.time_report.total', ['month' => $this->monthLabel(), 'total' => Duration::format($this->monthTotal(), self::SUM_UNIT)]))
             ->paginated(false)
             ->recordUrl(fn (array $record): ?string => $record['url'])
             ->columns([
@@ -78,12 +85,12 @@ class TimeReportWidget extends TableWidget
                     ->weight(FontWeight::Medium)
                     ->wrap(),
                 TextColumn::make('minutes')->label(__('filament-tma::widgets.time_report.month_time'))
-                    ->formatStateUsing(fn (int $state): string => Duration::format($state))
+                    ->formatStateUsing(fn (int $state): string => Duration::format($state, self::SUM_UNIT))
                     ->weight(FontWeight::SemiBold)
                     ->alignEnd(),
                 TextColumn::make('total')->label(__('filament-tma::widgets.time_report.cumulative'))
                     ->state(fn (array $record): ?string => $record['total'] === null ? null
-                        : Duration::format($record['total']).($record['estimate'] !== null ? ' / '.$record['estimate'] : ''))
+                        : Duration::format($record['total'], self::SUM_UNIT).($record['estimate'] !== null ? ' / '.$record['estimate'] : ''))
                     ->color(fn (array $record): ?string => $record['over'] ? 'danger' : 'gray')
                     ->placeholder('—')
                     ->alignEnd(),
@@ -220,7 +227,7 @@ class TimeReportWidget extends TableWidget
     protected function items(array $record): HtmlString
     {
         $items = collect($record['items']);
-        $lines = $items->take(self::ITEMS)->map(fn (array $item): string => e($item['label']).' · <strong>'.e(Duration::format($item['minutes'])).'</strong>');
+        $lines = $items->take(self::ITEMS)->map(fn (array $item): string => e($item['label']).' · <strong>'.e(Duration::format($item['minutes'], self::ITEM_UNIT)).'</strong>');
 
         if ($items->count() > self::ITEMS) {
             $lines->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));

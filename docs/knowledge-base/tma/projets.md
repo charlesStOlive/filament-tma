@@ -42,8 +42,8 @@ cours. Le petit nombre sur l'onglet : les tâches en cours de vos projets.
 
 ## Le temps d'un projet
 
-Le temps d'un projet est la **somme du temps de ses tâches**, au total et par mois, toujours en jours et heures
-(« 1 j 3 h », une journée de 7 heures). C'est sur lui que s'appuiera la facturation par projet. Voir
+Le temps d'un projet est la **somme du temps de ses tâches**, au total et par mois, en jours
+(« 1,43 j », une journée de 7 heures). C'est sur lui que s'appuiera la facturation par projet. Voir
 [Le temps passé](#modal-tma.temps).
 
 ## La liste des tâches

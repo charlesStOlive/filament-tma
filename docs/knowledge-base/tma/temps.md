@@ -9,13 +9,19 @@ order: 50
 Le temps se saisit **chez le Support seulement**, sur un ticket ou une tâche projet. Les applications
 clientes en voient le total, et le détail par mois.
 
-Il s'affiche en **jours et heures** : « 1 j 3 h », « 3 h 30 », « 45 min ». Une journée vaut 7 heures (réglable :
-`time.day_minutes` ; `time.display_unit` pour un autre affichage).
+Partout (fiches, tableau de bord, courriels, bilans), il s'affiche dans une seule unité, avec deux décimales au plus :
+
+- le temps d'un **ticket**, d'une **tâche** ou d'une **saisie** s'adapte à sa durée : en **jours** dès une journée
+  (« 1,5 j »), en **heures** en dessous (« 2,5 h »), en **minutes** jusqu'à 30 minutes (« 30 min ») ;
+- une **somme** (un projet, la TMA, un forfait, le total d'un mois) est en **jours** : « 2,55 j », « 0,5 j »
+  (`time.display_unit` la passe en heures, `hours`, ou en minutes, `minutes`).
+
+Une journée vaut 7 heures (réglable : `time.day_minutes`).
 
 ## Le bloc « Temps passé »
 
-Dans le volet de droite de la fiche, un seul bloc : les **totaux** en tête (« Cette tâche : 6 h 01 · Tout le projet :
-1 j 5 h », « Ce ticket : 2 h »), puis, chez le Support, **une ligne par saisie** : qui, le jour (jour/mois), la durée, et
+Dans le volet de droite de la fiche, un seul bloc : les **totaux** en tête (« Cette tâche : 6,02 h · Tout le projet :
+1,71 j », « Ce ticket : 2 h »), puis, chez le Support, **une ligne par saisie** : qui, le jour (jour/mois), la durée, et
 les icônes **Modifier** et **Supprimer** ; dessous, en petit, le message ou la note sur lequel porte le temps.
 
 - Chez le Support, il vient **en tête** du volet.
@@ -31,7 +37,7 @@ Dans ce bloc : **Saisir du temps** :
   clic (½ j donne 3 h 30) ;
 - **Le** : le jour de l'intervention ; c'est lui qui range le temps dans son mois ;
 - **Durée** : des **jours**, des **heures** et des **minutes** (« 2 j 2 h 5 min », chacun facultatif) ; le total
-  s'affiche dessous (« Soit 2 j 2 h 05 » ; une journée vaut 7 heures, réglable) ;
+  s'affiche dessous (« Soit 2,3 j », « Soit 2,5 h » ; une journée vaut 7 heures, réglable) ;
 - **Sur** : un message ou une note de la fiche ; sur une tâche projet, aussi **un nouveau message** ;
 - **Ce qui a été fait** (tâche projet, pour un nouveau message) : écrit dans l'historique de la tâche, avec le temps ;
 - **Facturable** ou non.

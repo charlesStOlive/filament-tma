@@ -30,7 +30,7 @@ return [
             'tickets_help' => 'The tickets you are a recipient of will appear here.',
         ],
         'description' => [
-            'projects' => 'Those you take part in; the time spent, in days and hours.',
+            'projects' => 'Those you take part in, and their time spent.',
             'tickets' => 'Those you are a recipient of; those waiting for you first.',
         ],
         'more' => [

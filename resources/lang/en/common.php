@@ -76,6 +76,8 @@ return [
         'hours' => 'hours',
         'days_short' => 'd',
         'days' => 'days',
+        'decimal_separator' => '.',
+        'thousands_separator' => ',',
     ],
     'due_date' => 'Planned due date',
     'state' => 'State',

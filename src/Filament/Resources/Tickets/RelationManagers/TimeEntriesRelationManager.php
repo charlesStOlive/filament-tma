@@ -78,7 +78,7 @@ class TimeEntriesRelationManager extends RelationManager
                     TextColumn::make('actor.name')->label(__('filament-tma::common.agent'))->weight(FontWeight::Medium)->limit(24),
                     TextColumn::make('worked_on')->label(__('filament-tma::common.date_on'))->date('d/m')->color('gray')->grow(false),
                     TextColumn::make('minutes')->label(__('filament-tma::common.duration'))
-                        ->formatStateUsing(fn (int $state): string => Duration::format($state))
+                        ->formatStateUsing(fn (int $state): string => Duration::format($state, Duration::AUTO))
                         ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
                 ]),
                 TextColumn::make('details')->label(__('filament-tma::common.detail'))
@@ -143,11 +143,12 @@ class TimeEntriesRelationManager extends RelationManager
     }
 
     /**
-     * Les totaux, sur une ligne : « Cette tâche : 6 h 01 · Tout le projet : 12 h » ; « Ce ticket : 2 h ».
+     * Les totaux, sur une ligne : « Cette tâche : 6 h · Tout le projet : 1,71 j » ; « Ce ticket : 2 h ». Un ticket ou une
+     * tâche en `Duration::AUTO`, le projet (une somme) dans l'unité de l'application.
      */
     public static function totals(Trackable $subject): string
     {
-        $own = Duration::format(TimeTotals::for($subject)['total_minutes']);
+        $own = Duration::format(TimeTotals::for($subject)['total_minutes'], Duration::AUTO);
 
         if (! $subject instanceof ProjectTask) {
             return __('filament-tma::tickets.time_totals.ticket', ['time' => $own]);

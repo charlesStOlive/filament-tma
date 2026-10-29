@@ -29,7 +29,7 @@ class ShowTicketCommand extends Command
                 $this->line("<options=bold>{$t['ref']} — {$t['title']}</>");
                 $this->line(__('filament-tma::commands.show.state', [
                     'state' => $t['state_label'], 'side' => $t['waiting_on'] ?? $t['in_hands_of'] ?? '—', 'priority' => $t['priority'] ?? '—',
-                    'time' => Duration::format((int) $t['time_minutes']),
+                    'time' => Duration::format((int) $t['time_minutes'], Duration::AUTO),
                 ]));
                 $this->line($t['kind'] === 'task'
                     ? __('filament-tma::commands.show.project', ['p' => $t['project'] ?? '—', 'a' => $t['assignee'] ?? '—'])

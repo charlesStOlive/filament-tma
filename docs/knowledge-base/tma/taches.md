@@ -101,11 +101,11 @@ ses tickets.
 
 - Les **projets** où vous participez, avec leurs tâches en cours : l'onglet **Projets** du premier tableau (voir
   [Les projets](#modal-tma.projets)).
-- **Suivi des temps** : le temps passé sur un mois (le mois en cours d'abord), en jours et heures. Une ligne pour la
-  **TMA** (chez le Support, une par application cliente), puis une par **projet** ; sous chacune, en petit, ses
-  tickets ou ses tâches et leur temps du mois. Pour un projet, en plus, son temps cumulé et sa fourchette (en rouge
-  au-delà). Les flèches passent au mois précédent (s'il y a du temps avant) et au suivant (jusqu'au mois en cours) ; le
-  nom du mois ramène au mois en cours.
+- **Suivi des temps** : le temps passé sur un mois (le mois en cours d'abord). Une ligne pour la **TMA** (chez le
+  Support, une par application cliente), puis une par **projet**, en **jours** ; sous chacune, en petit, ses tickets
+  ou ses tâches et leur temps du mois, en heures, en jours ou en minutes selon leur durée. Pour un projet, en plus, son
+  temps cumulé (en jours) et sa fourchette (en rouge au-delà). Les flèches passent au mois précédent (s'il y a du temps
+  avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en cours.
 
 Le suivi des temps montre **tous** les temps, quels que soient les destinataires : il ne s'affiche qu'avec le droit
 « Voir le suivi des temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des

@@ -30,7 +30,7 @@ return [
             'tickets_help' => 'Les tickets dont vous êtes destinataire apparaîtront ici.',
         ],
         'description' => [
-            'projects' => 'Ceux où vous participez ; le temps passé, en jours et heures.',
+            'projects' => 'Ceux où vous participez, et leur temps passé.',
             'tickets' => 'Ceux dont vous êtes destinataire ; ceux qui vous attendent d’abord.',
         ],
         'more' => [

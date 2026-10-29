@@ -239,8 +239,8 @@ final class Notifier
 
         if ($minutesBefore !== null && $minutes !== $minutesBefore) {
             $lines[] = $minutes > $minutesBefore
-                ? __('filament-tma::notifications.task.time_added', ['total' => Duration::format($minutes), 'added' => Duration::format($minutes - $minutesBefore)])
-                : __('filament-tma::notifications.task.time_total', ['total' => Duration::format($minutes)]);
+                ? __('filament-tma::notifications.task.time_added', ['total' => Duration::format($minutes, Duration::AUTO), 'added' => Duration::format($minutes - $minutesBefore, Duration::AUTO)])
+                : __('filament-tma::notifications.task.time_total', ['total' => Duration::format($minutes, Duration::AUTO)]);
         }
 
         if ($lines === []) {

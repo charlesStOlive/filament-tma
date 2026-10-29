@@ -51,7 +51,7 @@ use UnitEnum;
  * Les projets : un titre, une application destinataire, une fourchette en jours, des participants, N tâches projet.
  * Le maître les crée et les modifie (dans un volet glissant, depuis la liste, la fiche du projet ou celle d'une de ses
  * tâches : `editAction()`) ; l'application cliente voit ceux qu'elle a reçus avec leurs tâches publiées. Le temps d'un
- * projet est la somme de celui de ses tâches (`Project::timeTotals()`), en jours et heures.
+ * projet est la somme de celui de ses tâches (`Project::timeTotals()`).
  *
  * Droits (filament-permission-manager) : `tma.project.*`.
  */

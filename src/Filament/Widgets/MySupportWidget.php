@@ -39,7 +39,7 @@ use Illuminate\Support\Collection;
  *   secondaire ; ceux qui vous attendent d'abord, puis les plus récemment actifs. Le petit nombre de l'onglet : ceux qui
  *   vous attendent.
  * - **Projets** : les projets pas terminés où l'on participe (nommé, ou destinataire d'une de leurs tâches), avec leur
- *   fourchette et leur temps, en jours et heures, et les questions du Support qui vous y attendent (application
+ *   fourchette et leur temps, et les questions du Support qui vous y attendent (application
  *   cliente, `Workflow\Questions`). Le petit nombre de l'onglet : ces questions s'il y en a, sinon leurs tâches en
  *   cours.
  *

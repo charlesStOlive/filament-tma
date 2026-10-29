@@ -96,7 +96,7 @@ final class TaskDeleteActions
         $parts = array_filter([
             $messages > 0 ? trans_choice('filament-tma::tasks.delete.messages', $messages, ['count' => $messages]) : null,
             $notes > 0 ? trans_choice('filament-tma::tasks.delete.notes', $notes, ['count' => $notes]) : null,
-            $minutes > 0 ? __('filament-tma::tasks.delete.time', ['time' => Duration::format($minutes)]) : null,
+            $minutes > 0 ? __('filament-tma::tasks.delete.time', ['time' => Duration::format($minutes, Duration::AUTO)]) : null,
         ]);
 
         $lines = [$parts === []

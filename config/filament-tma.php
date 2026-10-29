@@ -106,14 +106,16 @@ return [
     |--------------------------------------------------------------------------
     |
     | Les durées sont enregistrées en minutes. Une journée vaut `day_minutes` (7 h par défaut).
-    | display_unit : l'affichage des durées — `days_hours` (« 1 j 3 h », d'office), `hours` (« 10 h »), `days`
-    | (« 1,43 j ») ou `minutes`.
+    | display_unit : l'unité des sommes (un projet, la TMA, un forfait, un mois), partout (fiches, widgets, courriels,
+    | bilans, commandes) — `days` (« 2,55 j », d'office), `hours` (« 17,5 h ») ou `minutes` (« 1 050 min »). Le temps
+    | d'un ticket, d'une tâche ou d'une saisie s'adapte : en jours dès une journée, en heures en dessous, en minutes
+    | jusqu'à 30 min (`Duration::AUTO`). Jours et heures : deux décimales.
     |
     */
 
     'time' => [
         'day_minutes' => 420,
-        'display_unit' => 'days_hours',
+        'display_unit' => 'days',
     ],
 
     /*

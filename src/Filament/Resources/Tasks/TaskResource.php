@@ -185,7 +185,7 @@ class TaskResource extends Resource implements HasKnowledgeBase
                         ->extraAttributes(['style' => 'width: 15rem']),
                     Stack::make([
                         TextColumn::make('time')->label(__('filament-tma::common.time'))
-                            ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes']))
+                            ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'], Duration::AUTO))
                             ->icon('heroicon-m-clock')->weight(FontWeight::SemiBold),
                         TextColumn::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->sortable()
                             ->since()->tooltip(fn (ProjectTask $record): string => Dates::format($record->last_activity_at))->color('gray')->size(TextSize::ExtraSmall),

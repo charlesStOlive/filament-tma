@@ -76,6 +76,8 @@ return [
         'hours' => 'heures',
         'days_short' => 'j',
         'days' => 'jours',
+        'decimal_separator' => ',',
+        'thousands_separator' => ' ',
     ],
     'due_date' => 'Échéance prévue',
     'state' => 'État',

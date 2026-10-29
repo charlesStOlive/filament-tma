@@ -78,7 +78,7 @@ class WeeklyDigest extends Notification implements ShouldQueue
         return array_filter([
             __('filament-tma::common.state') => $task->state->getLabel(),
             __('filament-tma::notifications.weekly.due') => $task->due_on?->format('d/m/Y'),
-            __('filament-tma::common.time_spent') => (int) $task->time_total_minutes > 0 ? Duration::format((int) $task->time_total_minutes) : null,
+            __('filament-tma::common.time_spent') => (int) $task->time_total_minutes > 0 ? Duration::format((int) $task->time_total_minutes, Duration::AUTO) : null,
             __('filament-tma::notifications.weekly.your_turn') => $questions > 0 ? trans_choice('filament-tma::notifications.weekly.question_count', $questions, ['n' => $questions]) : null,
         ], fn (?string $value): bool => filled($value));
     }

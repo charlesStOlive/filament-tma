@@ -53,14 +53,14 @@ class LogTimeCommand extends Command
             function (array $result): void {
                 $this->components->info(__('filament-tma::commands.log_time.done', [
                     'ticket' => $result['ticket'],
-                    'time' => Duration::format((int) $result['time_entry']['minutes']),
+                    'time' => Duration::format((int) $result['time_entry']['minutes'], Duration::AUTO),
                     'date' => $result['time_entry']['worked_on'],
                     'summary' => match (true) {
                         filled($result['summary_entry'] ?? null) => __('filament-tma::commands.log_time.with_summary'),
                         filled($result['entry'] ?? null) => __('filament-tma::commands.log_time.on_entry', ['entry' => $result['entry']]),
                         default => '',
                     },
-                    'total' => Duration::format((int) $result['time_total_minutes']),
+                    'total' => Duration::format((int) $result['time_total_minutes'], Duration::AUTO),
                 ]));
             },
         );

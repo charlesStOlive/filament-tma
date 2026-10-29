@@ -69,7 +69,7 @@ class AgentTimeEntries extends Component implements HasActions, HasSchemas, HasT
                     TextColumn::make('actor')->label(__('filament-tma::common.agent'))->weight(FontWeight::Medium)->limit(24),
                     TextColumn::make('worked_on')->label(__('filament-tma::common.date_on'))->date('d/m')->color('gray')->grow(false),
                     TextColumn::make('minutes')->label(__('filament-tma::common.duration'))
-                        ->formatStateUsing(fn (int $state): string => Duration::format($state))
+                        ->formatStateUsing(fn (int $state): string => Duration::format($state, Duration::AUTO))
                         ->weight(FontWeight::SemiBold)->alignEnd()->grow(false),
                 ]),
                 TextColumn::make('details')->label(__('filament-tma::common.detail'))

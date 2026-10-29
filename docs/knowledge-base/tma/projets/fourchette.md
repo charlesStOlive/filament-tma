@@ -12,7 +12,7 @@ Le Support estime un projet **en jours** : **au moins** et **au plus**, avec des
 demi-journée). Elle s'affiche « 1–3 j » ; « 2 j » quand les deux bornes sont égales ; « jusqu'à 3 j » ou « au moins
 1 j » avec une seule borne.
 
-Le **temps passé** sur le projet (la somme de celui de ses tâches) s'affiche à côté, en jours et heures : « 1 j 3 h ».
+Le **temps passé** sur le projet (la somme de celui de ses tâches) s'affiche à côté, en jours : « 1,43 j ».
 Une journée vaut 7 heures (réglable, `time.day_minutes`). Au-delà du haut de la fourchette, il passe en rouge.
 
 ## Les participants

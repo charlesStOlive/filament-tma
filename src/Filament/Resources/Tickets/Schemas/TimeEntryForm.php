@@ -89,9 +89,9 @@ final class TimeEntryForm
                             $fail(__('filament-tma::time.form.max_24h', ['max' => Duration::format(self::MAX_MINUTES)]));
                         }
                     }),
-                // Le total, tel qu'il s'affichera (« Soit 1 j 2 h », une journée de 7 h).
+                // Le total, tel qu'il s'affichera (« Soit 1,29 j », « Soit 2,5 h », une journée de 7 h).
                 Text::make(fn (Get $get): string => __('filament-tma::time.form.total', [
-                    'total' => Duration::format(self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $get(self::MINUTES)])),
+                    'total' => Duration::format(self::minutes([self::DAYS => $get(self::DAYS), self::HOURS => $get(self::HOURS), self::MINUTES => $get(self::MINUTES)]), Duration::AUTO),
                     'day' => Duration::format(Duration::dayMinutes(), Duration::HOURS),
                 ]))->color('gray')->columnSpanFull(),
             ]),

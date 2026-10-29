@@ -54,7 +54,7 @@ class ListTicketsCommand extends Command
                     [__('filament-tma::common.number'), __('filament-tma::common.title'), __('filament-tma::common.state'), __('filament-tma::common.waiting_for'), __('filament-tma::common.application'), __('filament-tma::common.support_contact'), __('filament-tma::common.time')],
                     collect($tickets)->map(fn (array $t): array => [
                         $t['ref'], Str::limit(($t['kind'] === 'task' && filled($t['project'] ?? null) ? "[{$t['project']}] " : '').$t['title'], 50), $t['state_label'], $t['waiting_on'] ?? $t['in_hands_of'] ?? '—',
-                        $t['application'] ?? '—', $t['assignee'] ?? '—', Duration::format((int) $t['time_minutes']),
+                        $t['application'] ?? '—', $t['assignee'] ?? '—', Duration::format((int) $t['time_minutes'], Duration::AUTO),
                     ])->all(),
                 );
             },

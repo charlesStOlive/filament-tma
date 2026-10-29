@@ -5,8 +5,10 @@ namespace CharlesStOlive\FilamentTma\Support;
 use InvalidArgumentException;
 
 /**
- * Les durées : stockées en minutes, saisies en minutes, heures ou jours (CDC §10.1), affichées d'ordinaire en jours et
- * heures (« 1 j 3 h »). Une journée vaut `filament-tma.time.day_minutes` (420 : 7 h).
+ * Les durées : stockées en minutes, saisies en minutes, heures ou jours (CDC §10.1). Une somme (un projet, la TMA, un
+ * forfait, un mois) s'affiche dans l'unité de `filament-tma.time.display_unit` : jours (« 2,55 j », d'office), heures
+ * (« 17,5 h ») ou minutes (« 1 050 min »). Le temps d'un ticket, d'une tâche ou d'une saisie s'affiche en `AUTO`.
+ * Une journée vaut `filament-tma.time.day_minutes` (420 : 7 h).
  */
 final class Duration
 {
@@ -16,8 +18,14 @@ final class Duration
 
     public const DAYS = 'days';
 
-    /** L'affichage en jours et heures : « 1 j 3 h 30 », « 3 h 30 », « 45 min ». */
-    public const DAYS_HOURS = 'days_hours';
+    /** L'unité qui s'adapte : en jours dès une journée, en heures en dessous, en minutes jusqu'à 30 min. */
+    public const AUTO = 'auto';
+
+    /** En `AUTO`, les minutes jusque-là (« 30 min » plutôt que « 0,5 h »). */
+    private const AUTO_MINUTES_UP_TO = 30;
+
+    /** Les décimales des jours et des heures : « 2,55 j », « 2,08 h ». */
+    private const PRECISION = 2;
 
     public static function dayMinutes(): int
     {
@@ -38,16 +46,26 @@ final class Duration
         return (int) round($minutes);
     }
 
-    /** « 1 j 3 h », « 2 h 30 », « 1,5 j », « 45 min » selon l'unité d'affichage (par défaut celle de la config). */
+    /**
+     * « 2,55 j », « 17,5 h », « 1 050 min » selon l'unité d'affichage (par défaut celle de la config, les jours si elle
+     * n'en est pas une, comme l'ancien `days_hours`). Une durée trop petite pour les décimales s'écrit « < 0,01 j ».
+     */
     public static function format(int $minutes, ?string $unit = null): string
     {
-        $unit ??= (string) config('filament-tma.time.display_unit', self::DAYS_HOURS);
+        $unit ??= (string) config('filament-tma.time.display_unit', self::DAYS);
+
+        if ($unit === self::AUTO) {
+            $unit = match (true) {
+                abs($minutes) >= self::dayMinutes() => self::DAYS,
+                abs($minutes) > self::AUTO_MINUTES_UP_TO => self::HOURS,
+                default => self::MINUTES,
+            };
+        }
 
         return match ($unit) {
-            self::DAYS => self::days($minutes / self::dayMinutes()),
-            self::MINUTES => $minutes.' '.__('filament-tma::time.form.minutes_suffix'),
-            self::HOURS => self::hours($minutes),
-            default => self::daysAndHours($minutes),
+            self::MINUTES => self::number($minutes, 0).' '.__('filament-tma::time.form.minutes_suffix'),
+            self::HOURS => self::decimal($minutes / 60).' '.__('filament-tma::time.form.hours_suffix'),
+            default => self::decimal($minutes / self::dayMinutes()).' '.__('filament-tma::common.units.days_short'),
         };
     }
 
@@ -72,38 +90,26 @@ final class Duration
         };
     }
 
-    /** « 1 j 3 h 30 » : les jours (de `day_minutes`), puis les heures et les minutes ; « 0 h » pour rien. */
-    private static function daysAndHours(int $minutes): string
-    {
-        $days = intdiv($minutes, self::dayMinutes());
-        $rest = $minutes % self::dayMinutes();
-
-        $parts = array_filter([
-            $days > 0 ? $days.' '.__('filament-tma::common.units.days_short') : null,
-            match (true) {
-                $rest >= 60 => self::hours($rest),
-                $rest > 0 => $rest.' '.__('filament-tma::time.form.minutes_suffix'),
-                default => null,
-            },
-        ]);
-
-        return $parts === [] ? '0 '.__('filament-tma::time.form.hours_suffix') : implode(' ', $parts);
-    }
-
-    /** « 2 h 30 ». */
-    private static function hours(int $minutes): string
-    {
-        return intdiv($minutes, 60).' '.__('filament-tma::time.form.hours_suffix').($minutes % 60 > 0 ? ' '.str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT) : '');
-    }
-
     /** @return array<string, string> */
     public static function units(): array
     {
         return [self::MINUTES => __('filament-tma::time.units.minutes'), self::HOURS => __('filament-tma::common.units.hours'), self::DAYS => __('filament-tma::common.units.days')];
     }
 
-    private static function number(float $value): string
+    /** Un nombre de jours ou d'heures : deux décimales au plus ; « < 0,01 » plutôt que « 0 » pour une durée. */
+    private static function decimal(float $value): string
     {
-        return rtrim(rtrim(number_format($value, 2, ',', ' '), '0'), ',');
+        return $value != 0 && round(abs($value), self::PRECISION) == 0
+            ? '< '.self::number(10 ** -self::PRECISION)
+            : self::number($value);
+    }
+
+    /** « 2,55 », « 1 050 » : les séparateurs de la langue, sans zéro inutile après la virgule. */
+    private static function number(float $value, int $precision = self::PRECISION): string
+    {
+        $decimal = __('filament-tma::common.units.decimal_separator');
+        $number = number_format($value, $precision, $decimal, __('filament-tma::common.units.thousands_separator'));
+
+        return $precision > 0 ? rtrim(rtrim($number, '0'), $decimal) : $number;
     }
 }

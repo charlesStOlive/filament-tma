@@ -13,7 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Les tâches d'un projet, leur temps en jours et heures ; une ligne ouvre la tâche, « Nouvelle tâche » en crée une dans
+ * Les tâches d'un projet, leur temps ; une ligne ouvre la tâche, « Nouvelle tâche » en crée une dans
  * ce projet (maître).
  */
 class TasksRelationManager extends RelationManager
@@ -42,7 +42,7 @@ class TasksRelationManager extends RelationManager
                 TextColumn::make('starts_on')->label(__('filament-tma::common.start'))->date('d/m/Y')->placeholder('—')->sortable(),
                 TextColumn::make('due_on')->label(__('filament-tma::common.due_date'))->date('d/m/Y')->placeholder('—')->sortable(),
                 TextColumn::make('time')->label(__('filament-tma::common.time'))
-                    ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'])),
+                    ->state(fn (ProjectTask $record): string => Duration::format(TimeTotals::for($record)['total_minutes'], Duration::AUTO)),
             ])
             ->headerActions([
                 Action::make('newTask')
