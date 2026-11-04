@@ -105,7 +105,13 @@ ses tickets.
   Support, une par application cliente), puis une par **projet**, en **jours** ; sous chacune, en petit, ses tickets
   ou ses tâches et leur temps du mois, en heures, en jours ou en minutes selon leur durée. Pour un projet, en plus, son
   temps cumulé (en jours) et sa fourchette (en rouge au-delà). Les flèches passent au mois précédent (s'il y a du temps
-  avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en cours.
+  avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en cours. Le bouton **Par tâche**
+  garde la même présentation (la TMA, puis les projets, et leurs tickets ou tâches dessous), mais sur les 10 derniers
+  tickets et tâches où du temps a été passé, avec tout leur temps, quel que soit le mois ; **Par mois** revient au
+  mois.
+- Le bouton **Copier** (le presse-papiers, à droite) met le tableau montré dans le presse-papiers, **en HTML** (collé
+  dans un courriel ou un document, il reste un tableau ; ailleurs, c'est son code) ou **en Markdown** (le code). Par
+  mois, la copie reprend tous les tickets et les tâches de chaque ligne, pas seulement les cinq premiers.
 
 Le suivi des temps montre **tous** les temps, quels que soient les destinataires : il ne s'affiche qu'avec le droit
 « Voir le suivi des temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des
