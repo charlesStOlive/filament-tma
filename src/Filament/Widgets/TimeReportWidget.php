@@ -35,12 +35,14 @@ use Illuminate\Support\Str;
  * - **Par mois** (`BY_MONTH`) : le temps d'un mois (le mois en cours d'abord, puis le précédent, le suivant). Une ligne
  *   pour la TMA (dans le maître, une par application cliente), puis une par projet ; sous chacune, en petit, ses
  *   tickets ou ses tâches et leur temps du mois. Pour un projet, en plus, son temps cumulé et sa fourchette.
- * - **Par tâche** (`BY_TASK`) : les derniers tickets et tâches où du temps a été passé (`LAST_TASKS`), regroupés de la
- *   même façon (la TMA, puis les projets), avec leur temps de tous les mois.
+ * - **Par projet** (`BY_PROJECT`) : les derniers projets où du temps a été passé (`LAST_PROJECTS`), sans la TMA, avec
+ *   leur temps de tous les mois et leur fourchette ; sous chacun, en petit, une ligne par mois : ses tâches (le numéro
+ *   et le début du titre) et le temps du mois, « Octobre 2026 (T-0001 Maquettes, T-0002 Export) · 5 h ».
  *
- * Les sommes (une ligne du mois, le cumul, le total) sont en jours quel que soit `time.display_unit`, un ticket ou une
- * tâche en `Duration::AUTO` (jours, heures ou minutes selon sa durée). Le bouton « Copier » met le tableau montré dans
- * le presse-papiers, en HTML ou en Markdown (`Support\CopyableTable`), tickets et tâches de chaque ligne compris.
+ * Les sommes (une ligne du tableau, le cumul, le total) sont en jours quel que soit `time.display_unit`, un ticket, une
+ * tâche ou un mois sous une ligne en `Duration::AUTO` (jours, heures ou minutes selon sa durée). Le bouton « Copier »
+ * met le tableau montré dans le presse-papiers, en HTML ou en Markdown (`Support\CopyableTable`), le détail de chaque
+ * ligne compris.
  *
  * Tous les temps, quels que soient les destinataires : le widget ne s'affiche qu'avec le droit
  * `tma.task.time-report`. Les temps viennent des saisies dans le maître, des totaux reçus chez le client
@@ -50,23 +52,29 @@ class TimeReportWidget extends TableWidget
 {
     public const BY_MONTH = 'month';
 
-    public const BY_TASK = 'task';
+    public const BY_PROJECT = 'project';
 
-    /** Les tickets et les tâches de `BY_TASK` : les plus récemment travaillés. */
-    public const LAST_TASKS = 10;
+    /** Les projets de `BY_PROJECT` : les plus récemment travaillés. */
+    public const LAST_PROJECTS = 5;
 
-    /** Les tickets ou les tâches nommés sous une ligne, avant « et N autres ». */
+    /** Les tickets ou les tâches nommés sous une ligne (par projet, dans un mois), avant « et N autres ». */
     public const ITEMS = 5;
+
+    /** Les mois sous une ligne de `BY_PROJECT`, avant « N mois plus tôt ». */
+    public const MONTHS = 6;
+
+    /** Le début du titre d'un ticket ou d'une tâche, dans un mois de `BY_PROJECT`. */
+    protected const TITLE_START = 20;
 
     /** L'unité des sommes : une ligne, le cumul d'un projet, le total du mois (« 1,75 j »). */
     protected const SUM_UNIT = Duration::DAYS;
 
-    /** L'unité d'un ticket ou d'une tâche, sous une ligne : « 1,2 j », « 2,5 h », « 30 min ». */
+    /** L'unité d'un ticket, d'une tâche ou d'un mois, sous une ligne : « 1,2 j », « 2,5 h », « 30 min ». */
     protected const ITEM_UNIT = Duration::AUTO;
 
     protected static ?int $sort = 21;
 
-    /** L'affichage (`BY_MONTH`, `BY_TASK`). */
+    /** L'affichage (`BY_MONTH`, `BY_PROJECT`). */
     public string $mode = self::BY_MONTH;
 
     /** Le mois suivi (`Y-m`). */
@@ -75,8 +83,8 @@ class TimeReportWidget extends TableWidget
     /** @var array<string, array<string, mixed>>|null les lignes du mois, le temps d'une requête */
     protected ?array $rows = null;
 
-    /** @var array<string, array<string, mixed>>|null les lignes de `BY_TASK`, le temps d'une requête */
-    protected ?array $taskRows = null;
+    /** @var array<string, array<string, mixed>>|null les lignes de `BY_PROJECT`, le temps d'une requête */
+    protected ?array $projectRows = null;
 
     public static function canView(): bool
     {
@@ -96,16 +104,16 @@ class TimeReportWidget extends TableWidget
     /** Un autre affichage (la propriété vient du navigateur : par mois si elle n'en est pas un). */
     public function updatedMode(): void
     {
-        if (! in_array($this->mode, [self::BY_MONTH, self::BY_TASK], true)) {
+        if (! in_array($this->mode, [self::BY_MONTH, self::BY_PROJECT], true)) {
             $this->mode = self::BY_MONTH;
         }
 
         $this->flushCachedTableRecords();
     }
 
-    public function byTask(): bool
+    public function byProject(): bool
     {
-        return $this->mode === self::BY_TASK;
+        return $this->mode === self::BY_PROJECT;
     }
 
     public function table(Table $table): Table
@@ -113,21 +121,21 @@ class TimeReportWidget extends TableWidget
         return $table
             ->records(fn (): array => $this->records())
             ->heading(__('filament-tma::widgets.time_report.heading'))
-            ->description(fn (): ?string => $this->records() === [] && $this->byTask() ? null : $this->caption())
+            ->description(fn (): ?string => $this->records() === [] && $this->byProject() ? null : $this->caption())
             ->paginated(false)
             ->recordUrl(fn (array $record): ?string => $record['url'])
             ->columns([
-                TextColumn::make('title')->label(__('filament-tma::widgets.time_report.scope'))
+                TextColumn::make('title')->label(fn (): string => $this->scopeLabel())
                     ->description(fn (array $record): ?string => $record['context'], position: 'above')
                     ->description(fn (array $record): HtmlString => $this->items($record))
                     ->weight(FontWeight::Medium)
                     ->wrap(),
                 TextColumn::make('minutes')
-                    ->label(fn (): string => $this->byTask() ? __('filament-tma::widgets.time_report.task_time') : __('filament-tma::widgets.time_report.month_time'))
+                    ->label(fn (): string => $this->minutesLabel())
                     ->formatStateUsing(fn (int $state): string => Duration::format($state, self::SUM_UNIT))
                     ->weight(FontWeight::SemiBold)
                     ->alignEnd(),
-                TextColumn::make('total')->label(__('filament-tma::widgets.time_report.cumulative'))
+                TextColumn::make('total')->label(fn (): string => $this->totalLabel())
                     ->state(fn (array $record): ?string => $this->cumulative($record))
                     ->color(fn (array $record): ?string => $record['over'] ? 'danger' : 'gray')
                     ->placeholder('—')
@@ -136,7 +144,7 @@ class TimeReportWidget extends TableWidget
             ->headerActions([
                 ActionGroup::make([
                     $this->modeAction(self::BY_MONTH, __('filament-tma::widgets.time_report.by_month'), 'heroicon-m-calendar-days'),
-                    $this->modeAction(self::BY_TASK, __('filament-tma::widgets.time_report.by_task'), 'heroicon-m-queue-list'),
+                    $this->modeAction(self::BY_PROJECT, __('filament-tma::widgets.time_report.by_project'), 'heroicon-m-rectangle-stack'),
                 ])->buttonGroup(),
                 Action::make('previousMonth')
                     ->label(__('filament-tma::widgets.time_report.previous'))
@@ -144,7 +152,7 @@ class TimeReportWidget extends TableWidget
                     ->iconButton()
                     ->icon('heroicon-m-chevron-left')
                     ->disabled(fn (): bool => ! $this->hasMonthBefore())
-                    ->visible(fn (): bool => ! $this->byTask())
+                    ->visible(fn (): bool => ! $this->byProject())
                     ->action(fn () => $this->showMonth($this->shiftMonth(-1))),
                 Action::make('currentMonth')
                     ->label(fn (): string => $this->monthLabel())
@@ -153,7 +161,7 @@ class TimeReportWidget extends TableWidget
                     ->outlined()
                     ->color('gray')
                     ->size(Size::Small)
-                    ->visible(fn (): bool => ! $this->byTask())
+                    ->visible(fn (): bool => ! $this->byProject())
                     ->action(fn () => $this->showMonth(static::currentMonth())),
                 Action::make('nextMonth')
                     ->label(__('filament-tma::widgets.time_report.next'))
@@ -161,7 +169,7 @@ class TimeReportWidget extends TableWidget
                     ->iconButton()
                     ->icon('heroicon-m-chevron-right')
                     ->disabled(fn (): bool => $this->month() >= static::currentMonth())
-                    ->visible(fn (): bool => ! $this->byTask())
+                    ->visible(fn (): bool => ! $this->byProject())
                     ->action(fn () => $this->showMonth($this->shiftMonth(1))),
                 ActionGroup::make([
                     Action::make('copyHtml')->label(__('filament-tma::widgets.time_report.copy_html'))
@@ -179,8 +187,8 @@ class TimeReportWidget extends TableWidget
                     ->visible(fn (): bool => $this->records() !== []),
             ])
             ->emptyStateIcon('heroicon-o-clock')
-            ->emptyStateHeading(fn (): string => $this->byTask()
-                ? __('filament-tma::widgets.time_report.empty_tasks')
+            ->emptyStateHeading(fn (): string => $this->byProject()
+                ? __('filament-tma::widgets.time_report.empty_projects')
                 : __('filament-tma::widgets.time_report.empty', ['month' => mb_strtolower($this->monthLabel())]))
             ->emptyStateDescription(null);
     }
@@ -199,22 +207,44 @@ class TimeReportWidget extends TableWidget
     /** @return array<string, array<string, mixed>> les lignes de l'affichage montré */
     public function records(): array
     {
-        return $this->byTask() ? $this->taskRows() : $this->rows();
+        return $this->byProject() ? $this->projectRows() : $this->rows();
     }
 
-    /** La phrase sous le titre : « Octobre 2026 : 1,75 j au total. », ou le total des derniers tickets et tâches. */
+    /** « TMA et projets », ou par projet « Projets ». */
+    protected function scopeLabel(): string
+    {
+        return $this->byProject() ? __('filament-tma::widgets.time_report.projects') : __('filament-tma::widgets.time_report.scope');
+    }
+
+    /** « Temps du mois », ou par projet « Temps total ». */
+    protected function minutesLabel(): string
+    {
+        return $this->byProject() ? __('filament-tma::widgets.time_report.total_time') : __('filament-tma::widgets.time_report.month_time');
+    }
+
+    /** « Cumul / fourchette », ou par projet « Fourchette » (le temps total est déjà à côté). */
+    protected function totalLabel(): string
+    {
+        return $this->byProject() ? __('filament-tma::widgets.time_report.estimate') : __('filament-tma::widgets.time_report.cumulative');
+    }
+
+    /** La phrase sous le titre : « Octobre 2026 : 1,75 j au total. », ou le total des derniers projets. */
     protected function caption(): string
     {
         $total = Duration::format((int) collect($this->records())->sum('minutes'), self::SUM_UNIT);
 
-        return $this->byTask()
-            ? __('filament-tma::widgets.time_report.tasks_total', ['total' => $total])
+        return $this->byProject()
+            ? __('filament-tma::widgets.time_report.projects_total', ['total' => $total])
             : __('filament-tma::widgets.time_report.total', ['month' => $this->monthLabel(), 'total' => $total]);
     }
 
-    /** Le cumul d'un projet, et sa fourchette : « 1,93 j / 1–2 j ». */
+    /** Le cumul d'un projet, et sa fourchette : « 1,93 j / 1–2 j » ; par projet, la fourchette seule. */
     protected function cumulative(array $record): ?string
     {
+        if ($this->byProject()) {
+            return $record['estimate'];
+        }
+
         return $record['total'] === null ? null
             : Duration::format($record['total'], self::SUM_UNIT).($record['estimate'] !== null ? ' / '.$record['estimate'] : '');
     }
@@ -228,18 +258,27 @@ class TimeReportWidget extends TableWidget
 
     /**
      * Le tableau montré, à copier : une ligne en gras pour la TMA ou un projet, puis tous ses tickets ou ses tâches (pas
-     * seulement les `ITEMS` premiers).
+     * seulement les `ITEMS` premiers) ; par projet, tous ses mois, et dans chacun ses tâches, titres entiers.
      */
     public function copyableTable(): CopyableTable
     {
         $table = new CopyableTable(__('filament-tma::widgets.time_report.heading'), $this->caption(), [
-            ['label' => __('filament-tma::widgets.time_report.scope')],
-            ['label' => $this->byTask() ? __('filament-tma::widgets.time_report.task_time') : __('filament-tma::widgets.time_report.month_time'), 'end' => true],
-            ['label' => __('filament-tma::widgets.time_report.cumulative'), 'end' => true],
+            ['label' => $this->scopeLabel()],
+            ['label' => $this->minutesLabel(), 'end' => true],
+            ['label' => $this->totalLabel(), 'end' => true],
         ]);
 
         foreach ($this->records() as $row) {
             $table->row([$row['title'].($row['context'] !== null ? ' · '.$row['context'] : ''), Duration::format($row['minutes'], self::SUM_UNIT), $this->cumulative($row)], strong: true);
+
+            if ($this->byProject()) {
+                foreach ($row['months'] as $month => $spent) {
+                    $items = collect($spent['items'])->map(fn (array $item): string => $item['number'].' '.$item['title'])->implode(', ');
+                    $table->row([static::monthName($month).' ('.$items.')', Duration::format($spent['minutes'], self::ITEM_UNIT), null], indent: true);
+                }
+
+                continue;
+            }
 
             foreach ($row['items'] as $item) {
                 $table->row([$item['number'].' '.$item['title'], Duration::format($item['minutes'], self::ITEM_UNIT), null], indent: true);
@@ -286,22 +325,24 @@ class TimeReportWidget extends TableWidget
     }
 
     /**
-     * Les lignes de `BY_TASK` (`grouped()`) : les derniers tickets et tâches, et leur temps de tous les mois.
+     * Les lignes de `BY_PROJECT` : les `LAST_PROJECTS` projets les plus récemment travaillés, le plus récent d'abord,
+     * sans la TMA ; chacun avec son temps de tous les mois et, sous lui, ses mois (`monthsOf()`).
      *
-     * @return array<string, array{title: string, context: ?string, minutes: int, items: array<int, array{number: string, title: string, minutes: int}>, total: ?int, estimate: ?string, over: bool, url: ?string}>
+     * @return array<string, array{title: string, context: ?string, minutes: int, months: array<string, array{minutes: int, items: array<int, array{number: string, title: string, minutes: int}>}>, estimate: ?string, over: bool, url: ?string}>
      */
-    public function taskRows(): array
+    public function projectRows(): array
     {
-        if ($this->taskRows !== null) {
-            return $this->taskRows;
-        }
+        return $this->projectRows ??= $this->tasksSpent()
+            ->groupBy(fn (array $spent): string => 'project-'.($spent['subject']->project_id ?? 0))
+            ->sortByDesc(fn (Collection $spent): string => (string) $spent->max('recency'))
+            ->take(self::LAST_PROJECTS)
+            ->map(function (Collection $spent): array {
+                $months = $this->monthsOf($spent);
+                $minutes = (int) array_sum(array_column($months, 'minutes'));
 
-        $spent = $this->lastSpent();
-
-        return $this->taskRows = $this->grouped(
-            $spent->filter(fn (array $spent): bool => $spent['subject'] instanceof Ticket)->values(),
-            $spent->filter(fn (array $spent): bool => $spent['subject'] instanceof ProjectTask)->values(),
-        );
+                return [...$this->projectRow($spent->first()['subject']->project, $minutes), 'minutes' => $minutes, 'months' => $months];
+            })
+            ->all();
     }
 
     /**
@@ -335,14 +376,10 @@ class TimeReportWidget extends TableWidget
                 $total = $project?->timeTotals()['total_minutes'];
 
                 return [
-                    'title' => $project?->title ?? __('filament-tma::common.no_project'),
-                    'context' => Tma::isMaster() ? $project?->targetInstance?->name : null,
+                    ...$this->projectRow($project, (int) $total),
                     'minutes' => (int) $spent->sum('minutes'),
                     'items' => $this->itemsOf($spent),
                     'total' => $total,
-                    'estimate' => $project?->estimateLabel(),
-                    'over' => $project !== null && $project->isOverEstimate((int) $total),
-                    'url' => $project !== null && ProjectResource::canView($project) ? ProjectResource::getUrl('view', ['record' => $project]) : null,
                 ];
             })
             ->sortByDesc('minutes')
@@ -352,51 +389,83 @@ class TimeReportWidget extends TableWidget
     }
 
     /**
-     * Les derniers tickets et tâches où du temps a été passé (pas ceux supprimés), le plus récent d'abord, et tout leur
-     * temps : dans le maître, d'après les saisies (le dernier jour saisi, puis la dernière saisie) ; chez le client,
-     * d'après les totaux reçus (le dernier mois, puis la dernière activité).
+     * Une ligne d'un projet, sans ses temps : sa fourchette, en rouge si son temps total la dépasse.
      *
-     * @return Collection<int, array{subject: Trackable, minutes: int}>
+     * @return array{title: string, context: ?string, estimate: ?string, over: bool, url: ?string}
      */
-    protected function lastSpent(): Collection
+    protected function projectRow(?Project $project, int $total): array
     {
-        $models = [Ticket::class => [], ProjectTask::class => ['project.targetInstance']];
+        return [
+            'title' => $project?->title ?? __('filament-tma::common.no_project'),
+            'context' => Tma::isMaster() ? $project?->targetInstance?->name : null,
+            'estimate' => $project?->estimateLabel(),
+            'over' => $project !== null && $project->isOverEstimate($total),
+            'url' => $project !== null && ProjectResource::canView($project) ? ProjectResource::getUrl('view', ['record' => $project]) : null,
+        ];
+    }
+
+    /**
+     * Toutes les tâches où du temps a été passé (pas celles supprimées), et leur temps mois par mois : dans le maître,
+     * d'après les saisies ; chez le client, d'après les totaux reçus. `recency` range de la plus récemment travaillée à
+     * la moins (maître : le dernier jour saisi, puis la dernière saisie ; client : le dernier mois, puis la dernière
+     * activité).
+     *
+     * @return Collection<int, array{subject: ProjectTask, by_month: array<string, int>, recency: string}>
+     */
+    protected function tasksSpent(): Collection
+    {
+        $query = ProjectTask::query()->with('project.targetInstance');
 
         if (! Tma::isMaster()) {
-            return collect($models)
-                ->flatMap(fn (array $with, string $model): Collection => $model::query()->with($with)->where('time_total_minutes', '>', 0)->get())
-                ->map(fn (Trackable $subject): array => [
-                    'subject' => $subject,
-                    'minutes' => (int) $subject->time_total_minutes,
-                    'month' => (string) collect((array) $subject->time_by_month)->filter()->keys()->max(),
-                    'activity' => $subject->last_activity_at?->getTimestamp() ?? 0,
+            return $query->whereNotNull('time_by_month')->get()
+                ->map(fn (ProjectTask $task): array => [
+                    'subject' => $task,
+                    'by_month' => array_filter(array_map('intval', (array) $task->time_by_month)),
+                    'recency' => sprintf('%s %010d', collect((array) $task->time_by_month)->filter()->keys()->max(), $task->last_activity_at?->getTimestamp() ?? 0),
                 ])
-                ->sortBy([['month', 'desc'], ['activity', 'desc']])
-                ->take(self::LAST_TASKS)
-                ->map(fn (array $spent): array => ['subject' => $spent['subject'], 'minutes' => $spent['minutes']])
+                ->filter(fn (array $spent): bool => $spent['by_month'] !== [])
                 ->values();
         }
 
-        $latest = TimeEntry::query()
-            ->whereHasMorph('subject', array_keys($models))
-            ->select(['subject_type', 'subject_id'])
-            ->selectRaw('sum(minutes) as minutes, max(worked_on) as last_worked_on, max(created_at) as last_created_at')
-            ->groupBy('subject_type', 'subject_id')
-            ->havingRaw('sum(minutes) > 0')
-            ->orderByDesc('last_worked_on')
-            ->orderByDesc('last_created_at')
-            ->limit(self::LAST_TASKS)
-            ->get();
+        $days = TimeEntry::query()
+            ->whereHasMorph('subject', [ProjectTask::class])
+            ->select(['subject_id', 'worked_on'])
+            ->selectRaw('sum(minutes) as minutes, max(created_at) as last_created_at')
+            ->groupBy('subject_id', 'worked_on')
+            ->get()
+            ->groupBy('subject_id');
 
-        $subjects = collect($models)
-            ->flatMap(fn (array $with, string $model): Collection => $model::query()->with($with)
-                ->whereKey($latest->where('subject_type', (new $model)->getMorphClass())->pluck('subject_id')->all())->get())
-            ->keyBy(fn (Trackable $subject): string => $subject->getMorphClass().'-'.$subject->getKey());
+        $tasks = $query->whereKey($days->keys()->all())->get()->keyBy(fn (ProjectTask $task): int => $task->getKey());
 
-        return $latest
-            ->map(fn (TimeEntry $spent): array => ['subject' => $subjects[$spent->subject_type.'-'.$spent->subject_id] ?? null, 'minutes' => (int) $spent->minutes])
-            ->filter(fn (array $spent): bool => $spent['subject'] !== null)
+        return $days
+            ->map(fn (Collection $days, int $id): array => [
+                'subject' => $tasks[$id] ?? null,
+                'by_month' => $days->groupBy(fn (TimeEntry $day): string => $day->worked_on->format('Y-m'))
+                    ->map(fn (Collection $days): int => (int) $days->sum('minutes'))
+                    ->filter()
+                    ->all(),
+                'recency' => (string) $days->max(fn (TimeEntry $day): string => $day->worked_on->toDateString().' '.$day->last_created_at),
+            ])
+            ->filter(fn (array $spent): bool => $spent['subject'] !== null && $spent['by_month'] !== [])
             ->values();
+    }
+
+    /**
+     * Les mois d'une ligne de `BY_PROJECT`, du plus ancien au plus récent : leur temps et leurs tâches.
+     *
+     * @param  Collection<int, array{subject: ProjectTask, by_month: array<string, int>}>  $spent
+     * @return array<string, array{minutes: int, items: array<int, array{number: string, title: string, minutes: int}>}>
+     */
+    protected function monthsOf(Collection $spent): array
+    {
+        return $spent
+            ->flatMap(fn (array $spent): array => collect($spent['by_month'])
+                ->map(fn (int $minutes, string $month): array => ['month' => $month, 'subject' => $spent['subject'], 'minutes' => $minutes])
+                ->values()->all())
+            ->groupBy('month')
+            ->sortKeys()
+            ->map(fn (Collection $spent): array => ['minutes' => (int) $spent->sum('minutes'), 'items' => $this->itemsOf($spent)])
+            ->all();
     }
 
     /**
@@ -440,17 +509,50 @@ class TimeReportWidget extends TableWidget
     }
 
     /**
-     * Sous une ligne, en petit : ses tickets ou ses tâches et leur temps, « et N autres » au-delà de `ITEMS` (par tâche,
-     * tous : ils ne sont que `LAST_TASKS`).
+     * Sous une ligne, en petit : ses tickets ou ses tâches et leur temps, « et N autres » au-delà de `ITEMS` ; par
+     * projet, ses mois (`months()`).
      */
     protected function items(array $record): HtmlString
     {
-        $items = collect($record['items']);
-        $shown = $this->byTask() ? self::LAST_TASKS : self::ITEMS;
-        $lines = $items->take($shown)->map(fn (array $item): string => e($item['number'].' '.Str::limit($item['title'], 40)).' · <strong>'.e(Duration::format($item['minutes'], self::ITEM_UNIT)).'</strong>');
+        if ($this->byProject()) {
+            return $this->months($record);
+        }
 
-        if ($items->count() > $shown) {
-            $lines->push(e(trans_choice('filament-tma::common.and_others', $items->count() - $shown, ['n' => $items->count() - $shown])));
+        $items = collect($record['items']);
+        $lines = $items->take(self::ITEMS)->map(fn (array $item): string => e($item['number'].' '.Str::limit($item['title'], 40)).' · <strong>'.e(Duration::format($item['minutes'], self::ITEM_UNIT)).'</strong>');
+
+        if ($items->count() > self::ITEMS) {
+            $lines->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
+        }
+
+        return new HtmlString($lines->implode('<br>'));
+    }
+
+    /**
+     * Sous une ligne de `BY_PROJECT`, une ligne par mois, du plus ancien au plus récent : « Octobre 2026 (T-0001
+     * Maquettes, T-0002 Export) · 5 h », le début du titre seulement (en entier au survol), « et N autres » au-delà de
+     * `ITEMS`. Au-delà de `MONTHS` mois, les plus anciens sont réunis en tête : « 3 mois plus tôt · 2 j ».
+     */
+    protected function months(array $record): HtmlString
+    {
+        $months = collect($record['months']);
+        $earlier = $months->slice(0, max(0, $months->count() - self::MONTHS));
+
+        $lines = $months->slice($earlier->count())->map(function (array $spent, string $month): string {
+            $items = collect($spent['items']);
+            $names = $items->take(self::ITEMS)
+                ->map(fn (array $item): string => '<span title="'.e($item['number'].' '.$item['title']).'">'.e($item['number'].' '.Str::limit($item['title'], self::TITLE_START, '…')).'</span>');
+
+            if ($items->count() > self::ITEMS) {
+                $names->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
+            }
+
+            return e(static::monthName($month)).' ('.$names->implode(', ').') · <strong>'.e(Duration::format($spent['minutes'], self::ITEM_UNIT)).'</strong>';
+        });
+
+        if ($earlier->isNotEmpty()) {
+            $lines->prepend(e(trans_choice('filament-tma::widgets.time_report.earlier_months', $earlier->count(), ['n' => $earlier->count()]))
+                .' · <strong>'.e(Duration::format((int) $earlier->sum('minutes'), self::ITEM_UNIT)).'</strong>');
         }
 
         return new HtmlString($lines->implode('<br>'));
@@ -488,10 +590,16 @@ class TimeReportWidget extends TableWidget
         return [$start->toDateString(), $start->copy()->endOfMonth()->toDateString()];
     }
 
-    /** « Octobre 2026 ». */
+    /** Le mois montré : « Octobre 2026 ». */
     protected function monthLabel(): string
     {
-        return ucfirst(Carbon::createFromFormat('!Y-m', $this->month())->locale(app()->getLocale())->translatedFormat('F Y'));
+        return static::monthName($this->month());
+    }
+
+    /** « Octobre 2026 », pour « 2026-10 ». */
+    protected static function monthName(string $month): string
+    {
+        return ucfirst(Carbon::createFromFormat('!Y-m', $month)->locale(app()->getLocale())->translatedFormat('F Y'));
     }
 
     /** Le mois en cours, à l'heure de la personne. */

@@ -105,13 +105,16 @@ ses tickets.
   Support, une par application cliente), puis une par **projet**, en **jours** ; sous chacune, en petit, ses tickets
   ou ses tâches et leur temps du mois, en heures, en jours ou en minutes selon leur durée. Pour un projet, en plus, son
   temps cumulé (en jours) et sa fourchette (en rouge au-delà). Les flèches passent au mois précédent (s'il y a du temps
-  avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en cours. Le bouton **Par tâche**
-  garde la même présentation (la TMA, puis les projets, et leurs tickets ou tâches dessous), mais sur les 10 derniers
-  tickets et tâches où du temps a été passé, avec tout leur temps, quel que soit le mois ; **Par mois** revient au
-  mois.
+  avant) et au suivant (jusqu'au mois en cours) ; le nom du mois ramène au mois en cours.
+- Le bouton **Par projet** montre les 5 derniers projets où du temps a été passé (le plus récent d'abord, sans la
+  TMA), avec tout leur temps, quel que soit le mois, et leur fourchette (en rouge au-delà). Sous chacun, une ligne par
+  mois, du plus ancien au plus récent : ses tâches (le numéro et le début du titre, le titre entier au survol) et le
+  temps du mois, par exemple « Octobre 2026 (T-0001 Maquettes, T-0002 Export) · 5 h ». Au-delà de six mois, les plus
+  anciens sont réunis en tête (« 3 mois plus tôt »). **Par mois** revient au mois.
 - Le bouton **Copier** (le presse-papiers, à droite) met le tableau montré dans le presse-papiers, **en HTML** (collé
   dans un courriel ou un document, il reste un tableau ; ailleurs, c'est son code) ou **en Markdown** (le code). Par
-  mois, la copie reprend tous les tickets et les tâches de chaque ligne, pas seulement les cinq premiers.
+  mois, la copie reprend tous les tickets et les tâches de chaque ligne, pas seulement les cinq premiers ; par projet,
+  tous les mois, avec les titres entiers.
 
 Le suivi des temps montre **tous** les temps, quels que soient les destinataires : il ne s'affiche qu'avec le droit
 « Voir le suivi des temps (tableau de bord) » (`tma.task.time-report`). Chez le Support, les temps sont ceux des
