@@ -171,6 +171,9 @@ class InstanceResource extends Resource implements HasKnowledgeBase
         return Action::make('setupClient')
             ->label(__('filament-tma::instances.configure.label'))
             ->icon('heroicon-m-key')
+            // Elle remplace le jeton du compte de service et l'affiche : c'est modifier l'instance (`tma.instance.edit`),
+            // pas seulement la voir dans la liste.
+            ->visible(fn (Instance $record): bool => static::canEdit($record))
             ->modalHeading(fn (Instance $record): string => __('filament-tma::instances.configure.heading', ['name' => $record->name]))
             ->modalDescription(__('filament-tma::instances.configure.description'))
             ->modalSubmitActionLabel(__('filament-tma::instances.configure.submit'))
