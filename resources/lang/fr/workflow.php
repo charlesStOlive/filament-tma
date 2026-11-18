@@ -67,6 +67,12 @@ return [
             'description' => 'Hors du tour : le ticket est clos tout de suite, quel que soit celui qu’on attend.',
             'help' => 'Quand forcer la clôture ?',
         ],
+        'progress' => [
+            'label' => 'En cours',
+            'description' => 'Le Support dit où il en est et garde la main : le demandeur peut ajouter des notes, pas de message.',
+            'message' => 'Où en est la demande',
+            'help' => 'Que change « En cours » ?',
+        ],
         'submit_for_validation' => [
             'label' => 'Marquer comme résolu',
             'help' => 'Et ensuite ?',

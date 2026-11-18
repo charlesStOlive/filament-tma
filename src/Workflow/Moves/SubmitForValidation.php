@@ -60,18 +60,22 @@ class SubmitForValidation extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['message' => $this->messageRules(false), ...$this->fileRules()];
+        return ['message' => $this->messageRules(false), ...$this->commitRules(), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('message', __('filament-tma::common.what_was_done'), false, ['tma.tickets.validation', __('filament-tma::workflow.ticket.submit_for_validation.help')])];
+        return [
+            $this->messageField('message', __('filament-tma::common.what_was_done'), false, ['tma.tickets.validation', __('filament-tma::workflow.ticket.submit_for_validation.help')]),
+            $this->commitField(),
+        ];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
+        $commit = $this->commitMeta($data, 'message');
         $this->answering($ticket, $context);
         $ticket->validation_requested_at = now();
-        $this->writeComment($ticket, $data['message'] ?? null, $context, files: $data['files'] ?? []);
+        $this->writeComment($ticket, $data['message'] ?? null, $context, $commit, files: $data['files'] ?? []);
     }
 }

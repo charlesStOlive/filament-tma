@@ -37,8 +37,9 @@ n'y en a qu'un), et le Support répond dès « Nouveau ».
 Il n'y a pas de message à part :
 
 - le demandeur parle en répondant : **Répondre**, **Confirmer et clore**, **Retour au Support** ;
-- le Support, en demandant des précisions ou en marquant le ticket comme résolu.
+- le Support, en disant où il en est (**En cours** : il garde la main, voir [En cours](#modal-tma.tickets.en-cours)),
+  en demandant des précisions ou en marquant le ticket comme résolu.
 
-Pour tout le reste (un point d'étape, une précision, une piste), on écrit une **note** : lue de tous, elle prévient les
-destinataires comme un message. On peut aussi **relancer** celui qu'on attend, ou **modifier son dernier message** tant
+Pour tout le reste (une précision, une piste), on écrit une **note** : lue de tous, elle prévient les destinataires
+comme un message. Pendant qu'un ticket est en cours, le demandeur ne peut d'ailleurs écrire que des notes. On peut aussi **relancer** celui qu'on attend, ou **modifier son dernier message** tant
 qu'il est le dernier (voir [L'historique](#modal-tma.chronologie)).

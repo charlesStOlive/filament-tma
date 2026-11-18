@@ -60,18 +60,21 @@ class RequestAnswer extends Move
 
     public function rules(Ticket $ticket): array
     {
-        return ['question' => $this->messageRules(), ...$this->fileRules()];
+        return ['question' => $this->messageRules(), ...$this->commitRules(), ...$this->fileRules()];
     }
 
     public function formSchema(Ticket $ticket): array
     {
-        return [$this->messageField('question', __('filament-tma::workflow.ticket.request_answer.message'), help: ['tma.tickets.question-reponse', __('filament-tma::workflow.ticket.request_answer.help')])];
+        return [
+            $this->messageField('question', __('filament-tma::workflow.ticket.request_answer.message'), help: ['tma.tickets.question-reponse', __('filament-tma::workflow.ticket.request_answer.help')]),
+            $this->commitField(),
+        ];
     }
 
     public function apply(Ticket $ticket, array $data, Context $context): void
     {
         $this->answering($ticket, $context);
         $ticket->waiting_since = now();
-        $this->writeComment($ticket, $data['question'], $context, ['question' => true], files: $data['files'] ?? []);
+        $this->writeComment($ticket, $data['question'], $context, ['question' => true, ...$this->commitMeta($data, 'question')], files: $data['files'] ?? []);
     }
 }

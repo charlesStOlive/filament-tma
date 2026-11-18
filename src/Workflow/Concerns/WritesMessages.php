@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Workflow\Concerns;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
@@ -13,6 +14,8 @@ use CharlesStOlive\FilamentTma\Workflow\Timeline;
 use Closure;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Validation\ValidationException;
 
 /** Les messages qu'un mouvement demande (la question, la réponse, le motif) et qu'il écrit dans la chronologie. */
 trait WritesMessages
@@ -40,6 +43,39 @@ trait WritesMessages
             ->rows(3)
             ->maxLength(2000)
             ->hintAction(Help::action(...($help ?? ['tma.tickets.annuler', __('filament-tma::workflow.help.reason')])));
+    }
+
+    /** Le commit qui porte le message du Support, facultatif (`Support\Commit`). */
+    protected function commitField(): TextInput
+    {
+        return Commit::field();
+    }
+
+    /** @return array<string, array<int, string>> */
+    protected function commitRules(): array
+    {
+        return ['commit' => Commit::rules()];
+    }
+
+    /**
+     * Le commit des données du passage, à ranger dans son message (`meta.commit`) ; rien s'il n'y en a pas. Un commit
+     * porte un message : sans texte (`$messageField`), il n'aurait rien où se ranger.
+     *
+     * @return array<string, string>
+     */
+    protected function commitMeta(array $data, string $messageField): array
+    {
+        $commit = Commit::normalize(isset($data['commit']) ? (string) $data['commit'] : null);
+
+        if ($commit === null) {
+            return [];
+        }
+
+        if (Html::isBlank($data[$messageField] ?? null)) {
+            throw ValidationException::withMessages([$messageField => __('filament-tma::messages.commit.needs_message')]);
+        }
+
+        return ['commit' => $commit];
     }
 
     /** @return array<int, mixed> */

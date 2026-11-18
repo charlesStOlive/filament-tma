@@ -33,7 +33,8 @@ use Illuminate\Support\Str;
  *
  * - **Ticket.** Ses destinataires principaux voient tout dans la cloche. Quand le ticket attend l'un d'eux (le Support
  *   le lui ouvre, ou la main lui revient), c'est une action (`NoticeTone::Action`) : un courriel s'il a choisi l'e-mail
- *   direct, sinon son bilan du matin. Une fin de ticket (`NoticeTone::Outcome`) va dans la cloche et le bilan. Une
+ *   direct, sinon son bilan du matin. Une fin de ticket (`NoticeTone::Outcome`), et les nouvelles du Support qui garde
+ *   la main (« En cours », une information), vont dans la cloche et le bilan. Une
  *   relance faite à la main part toujours par courriel ; le rappel de ce qui ne bouge plus, seulement dans le bilan.
  * - **Tâche.** Chez le client, la cloche et le bilan de la semaine, jamais de courriel, sauf « Informer par courriel »
  *   (un message marqué `meta.notify`). Une question du Support (`Workflow\Questions`) engage, elle : à qui elle est
@@ -50,6 +51,12 @@ final class Notifier
 {
     /** Les passages qui terminent un ticket. */
     private const OUTCOMES = ['validate', 'refuse', 'cancel', 'force-close', 'auto-close'];
+
+    /**
+     * Les nouvelles du Support qui garde la main (« En cours ») : personne n'est attendu, chacun l'apprend dans la
+     * cloche et le bilan du matin.
+     */
+    private const UPDATES = ['progress'];
 
     /** Les noms des champs d'une tâche, pour dire ce qui a changé. */
     private const TASK_FIELDS = ['title', 'description', 'starts_on', 'due_on', 'project_id'];
@@ -126,7 +133,7 @@ final class Notifier
                     : $subject->isHandledHere() && Addressables::isSupportMember($user),
                 default => false,
             };
-            $target = $holds || $opened;
+            $target = ($holds || $opened) && ! in_array($move, self::UPDATES, true);
             $tone = match (true) {
                 $target => NoticeTone::Action,
                 // Une information du Support se lit comme une fin de ticket : la cloche et le bilan.
@@ -138,7 +145,7 @@ final class Notifier
                 'line' => self::moveLine($subject, $transition, $target),
                 'excerpt' => $excerpt,
                 ...($target ? self::expected($subject, $move, $transition->actor, $user) : []),
-            ], $role, $tone);
+            ], $role, $tone, inDigest: in_array($move, self::UPDATES, true));
         }
     }
 
@@ -502,7 +509,10 @@ final class Notifier
      *
      * @param  array<string, mixed>  $text  `line`, et selon le cas `excerpt`, `headline`, `action`, `closes_on`, `button`, `message`
      */
-    private static function send(Authenticatable $user, NoticeEvent $event, Trackable $subject, string $key, array $text, ?RecipientRole $role, NoticeTone $tone, bool $forceMail = false, ?NoticeMode $mode = null): void
+    /**
+     * @param  bool  $inDigest  une information qui va aussi dans le bilan (les nouvelles « En cours » d'un ticket)
+     */
+    private static function send(Authenticatable $user, NoticeEvent $event, Trackable $subject, string $key, array $text, ?RecipientRole $role, NoticeTone $tone, bool $forceMail = false, ?NoticeMode $mode = null, bool $inDigest = false): void
     {
         if (! method_exists($user, 'notify')) {
             return;
@@ -528,7 +538,7 @@ final class Notifier
                 $channels[] = NoticeChannels::MAIL;
             }
 
-            $mode = (! $mailed && $tone === NoticeTone::Action) || $tone === NoticeTone::Outcome || ($task && $tone === NoticeTone::Info)
+            $mode = (! $mailed && $tone === NoticeTone::Action) || $tone === NoticeTone::Outcome || ($task && $tone === NoticeTone::Info) || $inDigest
                 ? NoticeMode::Grouped
                 : NoticeMode::Immediate;
         }
@@ -696,6 +706,9 @@ final class Notifier
             $transition->move === 'submit-for-validation' => $holds ? __('filament-tma::notifications.moves.resolved_yours', $replace) : __('filament-tma::notifications.moves.resolved', $replace),
             $transition->move === 'transmit' => $holds ? __('filament-tma::notifications.moves.transmitted_to_you', $replace) : __('filament-tma::notifications.moves.transmitted', $replace),
             $transition->move === 'answer' => __('filament-tma::notifications.moves.answered', $replace),
+            $transition->move === 'progress' => $transition->from_state === Submitted::getMorphClass()
+                ? __('filament-tma::notifications.moves.started', $replace)
+                : __('filament-tma::notifications.moves.progress', $replace),
             $transition->move === 'reopen' => $holds ? __('filament-tma::notifications.moves.reopened_yours', $replace) : __('filament-tma::notifications.moves.reopened', $replace),
             $transition->move === 'pause' => __('filament-tma::notifications.moves.paused', $replace),
             in_array($transition->move, ['resume', 'auto-resume'], true) => __('filament-tma::notifications.moves.resumed'),

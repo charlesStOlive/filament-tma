@@ -22,8 +22,9 @@ précisions [En cours] → [En attente du demandeur] », puis la question. De m�
 - un passage qui a un **motif** (retirer, refuser, forcer la clôture, mettre en pause) est un bloc à lui, le motif
   pour texte.
 
-Un passage fait seul (une pause sans motif, une reprise) reste une ligne ; une relance écrite ensuite, même une minute
-après, reste un bloc à elle.
+Un passage fait seul (une pause sans motif, une reprise, « En cours » sans message) reste une ligne ; une relance
+écrite ensuite, même une minute après, reste un bloc à elle. Un passage qui garde l'état (« En cours » sur un ticket
+déjà en cours, « Prendre la main ») ne répète pas l'état : « — En cours ».
 
 ## Message, réponse, note
 
@@ -36,8 +37,10 @@ après, reste un bloc à elle.
 Sur une tâche projet, ce qui a été fait, écrit avec une saisie de temps, est un message comme les autres ; sur un
 ticket, le temps n'a pas de texte.
 
-Sur un ticket, un message va toujours avec un passage (une question, une réponse, « résolu »…) : il n'y a pas de
-message à part. Pour un point d'étape ou une précision, on écrit une note ; on peut aussi relancer. Un brouillon ne reçoit pas de message : sa demande est le premier.
+Sur un ticket, un message va toujours avec un passage (« En cours », une question, une réponse, « résolu »…) : il n'y a
+pas de message à part. Le Support écrit où il en est par **En cours**, sans rendre la main ; pour une précision, on
+écrit une note ; on peut aussi relancer. Un message du Support peut porter un **commit** (voir
+[Le commit d'un message](#modal-tma.chronologie.commits)). Un brouillon ne reçoit pas de message : sa demande est le premier.
 Sur un ticket terminé, on n'écrit plus de message ; les notes restent possibles. Sur une tâche, on écrit dès sa publication (pas avant) et encore une fois terminée ; plus une fois
 annulée. Voir [Les notes](#modal-tma.chronologie.notes).
 
@@ -60,7 +63,7 @@ rappelle au-dessus du texte).
 | --- | --- |
 | le demandeur, et on attend votre réponse | **Répondre** |
 | le demandeur, et le ticket est résolu | **Confirmer et clore** (avec un mot, si vous voulez), ou **Retour au Support** (en disant ce qui ne va pas) |
-| le Support, et c'est son tour | **Demander des précisions** ou **Marquer comme résolu** (passent la main au demandeur) ; pour un point d'étape, une note |
+| le Support, et c'est son tour | **En cours** (dit où il en est et garde la main), **Demander des précisions** ou **Marquer comme résolu** (passent la main au demandeur) ; un **commit** facultatif sous le texte |
 | quelqu'un dont ce n'est pas le tour | rien à envoyer : la zone le dit, et renvoie aux notes |
 
 Sur une tâche projet, **Envoyer le message** écrit un message, pour qui en a le droit.

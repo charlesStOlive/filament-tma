@@ -78,8 +78,8 @@ contact.
 | État | Le tour de | Passages normaux |
 |---|---|---|
 | **Brouillon** | son auteur | « Transmettre au Support » → Nouveau · « Retirer » → Annulé (sans motif) · pour un ticket préparé par le maître : « Publier chez EDM » → Nouveau |
-| **Nouveau** | Support | « Demander des précisions » (question) → En attente du demandeur · « Marquer comme résolu » → Résolu · « Mettre en pause » (date) → En pause · « Refuser » (motif) → Annulé |
-| **En cours** | Support | les mêmes, sauf « Refuser » (après une réponse du demandeur, un renvoi ou une pause) |
+| **Nouveau** | Support | « En cours » (message facultatif) → En cours · « Demander des précisions » (question) → En attente du demandeur · « Marquer comme résolu » → Résolu · « Mettre en pause » (date) → En pause · « Refuser » (motif) → Annulé |
+| **En cours** | Support | « En cours » (message) → En cours, l'état ne change pas · puis les mêmes que Nouveau, sauf « Refuser » |
 | **En pause** | Support | « Reprendre » → En cours, à la main ou à la date prévue |
 | **En attente du demandeur** | demandeur | « Répondre » (réponse) → En cours |
 | **Résolu** | demandeur | « Confirmer et clore » → Clos · « Retour au Support » (motif) → En cours |
@@ -97,7 +97,19 @@ la main quand c'est le tour du demandeur, ou clore sans lui, ce sont des forçag
   - Le demandeur, à son tour : « Répondre » ; sur un ticket résolu, « Confirmer et clore » (avec un mot facultatif) ou
     « Retour au Support » (avec ce qui ne va pas).
   - Le Support, à son tour : « Demander des précisions » ou « Marquer comme résolu », qui passent la main au demandeur.
-    Un point d'étape (« je regarde, je reviens vers vous ») s'écrit en **note**.
+  - **« En cours »** (18/11/2026, remplace « un point d'étape s'écrit en note ») : le Support dit où il en est sans
+    rendre la main. Depuis Nouveau, le passage mène à En cours, message facultatif ; En cours, il ajoute un message
+    (obligatoire) et l'état ne change pas (mouvement `progress`, `meta.progress`, comme « Prendre la main » qui garde
+    l'état). Le demandeur n'écrit pas de message pendant ce temps (ce n'est pas son tour) : il ajoute des notes. Le
+    dernier message du Support reste donc le dernier du ticket, et son auteur le modifie pour le tenir à jour. Les
+    destinataires l'apprennent pour information, dans la cloche et le bilan du matin, jamais comme « à faire ».
+    En ligne de commande, `tma:comment` sans `--note` sur un ticket écrit un « En cours » (§8).
+  - **Le commit d'un message** (18/11/2026) : un message du Support sur un ticket (« En cours », « Demander des
+    précisions », « Marquer comme résolu ») peut dire quel commit le porte, facultatif : son empreinte (7 à 40
+    caractères hexadécimaux) ou son lien (`meta.commit`, `Support\Commit`). Il exige un message, se change ou se
+    retire en modifiant le message, voyage avec lui jusqu'au client, s'affiche en tête du message (lien s'il y en a
+    un) et dans le volet du ticket (« Commits »). Pas de dépôt par application pour l'instant : une empreinte seule
+    n'a pas de lien.
   - Un brouillon ne reçoit pas de message : sa demande (titre, description) est le premier message.
   - Sur un ticket, le **temps n'a pas de texte** : il porte sur un message ou une note existants, ou sur la fiche
     entière (§10).
@@ -326,7 +338,7 @@ fournies).
 php artisan tma:list    [--client=] [--app=] [--state=] [--json]
 php artisan tma:show    {ref} [--json]
 php artisan tma:log     {ref} --hours=2 [--entry=] [--summary="…" (tâche)] [--date=] [--non-billable] [--json]
-php artisan tma:comment {ref} --body="…" [--note] [--json]
+php artisan tma:comment {ref} --body="…" [--note] [--commit=704f0e3] [--json]   # sur un ticket, sans --note : un « En cours » du Support
 ```
 
 - **Protection** : chaque appel exige un jeton personnel (`TMA_CLI_TOKEN` dans `.env`, ou

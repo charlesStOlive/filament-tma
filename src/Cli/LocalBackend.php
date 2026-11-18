@@ -86,8 +86,9 @@ final class LocalBackend implements Backend
     }
 
     /**
-     * Change une entrée : son texte et ses fichiers (`body`, `files` en base64, `remove_files`), l'archivage d'une
-     * note (`archived`), ou sa suppression (`delete`). Les droits sont ceux de `Timeline`.
+     * Change une entrée : son texte et ses fichiers (`body`, `files` en base64, `remove_files`), le commit d'un message
+     * du Support (`commit`, vide pour le retirer), l'archivage d'une note (`archived`), ou sa suppression (`delete`).
+     * Les droits sont ceux de `Timeline`.
      *
      * @param  array<string, mixed>  $data
      */
@@ -121,7 +122,8 @@ final class LocalBackend implements Backend
         // Les fichiers arrivent en base64 : rangés d'abord, ils comptent pour une note sans texte.
         Mirror::files($entry, (array) ($data['files'] ?? []));
         $timeline->edit($entry->refresh(), $data['body'] ?? null, $context, removeFiles: (array) ($data['remove_files'] ?? []),
-            private: isset($data['private']) ? (bool) $data['private'] : null);
+            private: isset($data['private']) ? (bool) $data['private'] : null,
+            commit: array_key_exists('commit', $data) ? (string) $data['commit'] : null);
     }
 
     public function list(array $filters): array
@@ -293,10 +295,26 @@ final class LocalBackend implements Backend
             ?? throw new InvalidArgumentException(__('filament-tma::commands.backend.entry_not_found', ['ref' => $ticket->number, 'entry' => $ulid]));
     }
 
-    public function comment(string $ref, string $body, bool $note): array
+    public function comment(string $ref, string $body, bool $note, ?string $commit = null): array
     {
         $ticket = $this->find($ref);
         $context = $this->context();
+
+        // Sur un ticket, un message va avec un passage : celui du Support qui garde la main, « En cours ».
+        if ($ticket instanceof Ticket && ! $note) {
+            $transition = Auditor::as($context, fn () => app(TicketWorkflow::class)->run($ticket, 'progress', array_filter([
+                'message' => self::toHtml($body),
+                'commit' => $commit,
+            ], fn (mixed $value): bool => $value !== null), $context));
+            $entry = $ticket->entries()->where('meta->transition', $transition->ulid)->firstOrFail();
+
+            return ['ticket' => $ticket->number, 'entry' => $entry->ulid, 'type' => $entry->type->value, 'state' => $ticket->refresh()->state::getMorphClass()];
+        }
+
+        if (filled($commit)) {
+            throw new InvalidArgumentException(__('filament-tma::messages.commit.support_only'));
+        }
+
         $entry = Auditor::as($context, fn () => app(Timeline::class)->add($ticket, $note ? EntryType::Note : EntryType::Comment, self::toHtml($body), $context));
 
         return ['ticket' => $ticket->number, 'entry' => $entry->ulid, 'type' => $entry->type->value];

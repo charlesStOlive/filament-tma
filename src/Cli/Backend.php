@@ -25,6 +25,11 @@ interface Backend
      */
     public function logTime(string $ref, int $minutes, ?string $workedOn, ?string $summary, bool $billable, bool $internal, ?string $entry = null): array;
 
-    /** @return array<string, mixed> */
-    public function comment(string $ref, string $body, bool $note): array;
+    /**
+     * Une note, ou un message. Sur un ticket, le message est un « En cours » du Support (`Workflow\Moves\Progress`),
+     * qu'un commit peut porter (`$commit`, empreinte ou lien).
+     *
+     * @return array<string, mixed>
+     */
+    public function comment(string $ref, string $body, bool $note, ?string $commit = null): array;
 }

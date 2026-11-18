@@ -16,9 +16,12 @@
     @if ($byOther)
         <span class="fi-tma-entry-instance">{{ __('filament-tma::timeline.by', ['name' => $actor?->name ?? __('filament-tma::common.system')]) }}</span>
     @endif
-    @if ($transition->from_state)
-        <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>
-        →
+    {{-- Un passage qui garde l'état (« En cours » sur un ticket déjà en cours, « Prendre la main ») ne le répète pas. --}}
+    @if ($transition->from_state !== $transition->to_state)
+        @if ($transition->from_state)
+            <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>
+            →
+        @endif
+        <x-filament::badge :color="$states[$transition->to_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->to_state]?->getLabel() ?? $transition->to_state }}</x-filament::badge>
     @endif
-    <x-filament::badge :color="$states[$transition->to_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->to_state]?->getLabel() ?? $transition->to_state }}</x-filament::badge>
 </span>

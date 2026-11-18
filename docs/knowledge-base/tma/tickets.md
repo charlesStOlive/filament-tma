@@ -29,7 +29,7 @@ répond pas, rien ne change et un message le dit : réessayez plus tard. Voir
 | --- | --- | --- |
 | Brouillon | son auteur | en préparation, invisible des autres |
 | Nouveau | le Support | transmis : attend la première réponse du Support |
-| En cours | le Support | la demande est traitée |
+| En cours | le Support | la demande est traitée ; le Support y écrit où il en est sans rendre la main |
 | En attente du demandeur | le demandeur | des précisions lui ont été demandées |
 | En pause | le Support | suspendu jusqu'à une date, puis repris tout seul |
 | Résolu | le demandeur | le travail est fait : il confirme, ou renvoie la demande |
@@ -42,14 +42,15 @@ permet d'agir à la place de l'autre. Voir [Qui doit agir ?](#modal-tma.comprend
 ## Les passages
 
 Les boutons ne montrent que les passages possibles **maintenant**, pour **vous** : en haut de la fiche, et dans la
-**zone Nouveau message**, sous l'historique, pour ceux qui portent un texte (Répondre, Demander des précisions, Marquer
-comme résolu, Confirmer et clore, Retour au Support). Voir [L'historique](#modal-tma.chronologie).
+**zone Nouveau message**, sous l'historique, pour ceux qui portent un texte (En cours, Répondre, Demander des précisions,
+Marquer comme résolu, Confirmer et clore, Retour au Support). Voir [L'historique](#modal-tma.chronologie).
 
 | Passage | Par | Depuis | Ce qu'il demande |
 | --- | --- | --- | --- |
 | Transmettre au Support | le demandeur | Brouillon | le contact au Support (d'office s'il n'y en a qu'un) |
 | Retirer la demande | le demandeur | Brouillon, Nouveau | un motif (sauf en brouillon) |
 | Refuser | le Support | Nouveau | un motif |
+| En cours | le Support | Nouveau, En cours | un message (facultatif depuis Nouveau) ; l'état reste En cours. Voir [En cours](#modal-tma.tickets.en-cours) |
 | Demander des précisions | le Support | Nouveau, En cours | la question |
 | Marquer comme résolu | le Support | Nouveau, En cours | ce qui a été fait (facultatif) |
 | Mettre en pause | le Support | Nouveau, En cours | la date de reprise |
@@ -63,8 +64,9 @@ comme résolu, Confirmer et clore, Retour au Support). Voir [L'historique](#moda
 [Les forçages](#modal-tma.tickets.forcages).
 
 Il n'y a pas de « prise en charge » : le ticket arrive chez le contact au Support choisi à la transmission, qui répond
-tout de suite. Un **message** va toujours avec un passage ; pour le reste, une note. Voir
-[L'historique](#modal-tma.chronologie).
+tout de suite. Un **message** va toujours avec un passage : **En cours** est celui du Support qui écrit sans rendre la
+main ; pour le reste, une note. Un message du Support peut dire quel **commit** le porte (voir
+[Le commit d'un message](#modal-tma.chronologie.commits)). Voir [L'historique](#modal-tma.chronologie).
 
 ## La liste
 

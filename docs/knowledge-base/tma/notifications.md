@@ -60,6 +60,7 @@ Desapp qui prévient ses destinataires, à la réception.
 | --- | --- | --- |
 | Un ticket **vous attend** : une demande arrive, on vous répond, une question, une solution à confirmer, une demande renvoyée, une pause qui finit, un ticket que le Support ouvre pour vous | la cloche, et un **courriel** si vous avez choisi l'**e-mail direct**, sinon votre **bilan du matin** | bilan du matin |
 | La **fin** d'un ticket : clos, refusé, retiré, clos d'office ou automatiquement | la cloche et le bilan du matin | bilan du matin |
+| Le Support donne des nouvelles (**En cours**) : rien ne vous attend | la cloche et le bilan du matin | bilan du matin |
 | Le reste sur un ticket : une note, une pause, une prise de main, un autre qui répond | la cloche | bilan du matin |
 | Une **relance** faite à la main | un courriel, **toujours**, et la cloche | — |
 | L'**avertissement** de clôture automatique | comme un ticket qui vous attend | — |

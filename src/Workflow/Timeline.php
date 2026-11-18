@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentTma\Events\EntryAdded;
 use CharlesStOlive\FilamentTma\Events\EntryChanged;
 use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -16,6 +17,7 @@ use CharlesStOlive\FilamentTma\Sync\MasterClient;
 use CharlesStOlive\FilamentTma\Sync\Mirror;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -23,8 +25,8 @@ use Illuminate\Validation\ValidationException;
  * message ou sa note, archiver une note, supprimer la sienne. Les droits sont contrôlés ici, quelle que soit
  * l'origine. Rien ici ne change l'état du ticket (CDC §9.4).
  *
- * Sur un ticket, un message va toujours avec un passage (addendum §3.2) : la question, la réponse, « résolu »… que
- * les mouvements écrivent eux-mêmes. À part, on écrit une note, ou on relance (`remind`). Sur une tâche projet, le
+ * Sur un ticket, un message va toujours avec un passage (addendum §3.2) : « En cours », la question, la réponse,
+ * « résolu »… que les mouvements écrivent eux-mêmes. À part, on écrit une note, ou on relance (`remind`). Sur une tâche projet, le
  * droit `comment` suffit.
  *
  * Tout ce qu'on écrit est lu des deux côtés : sur un ticket du Support, une application cliente l'envoie au maître
@@ -225,17 +227,26 @@ final class Timeline
     /**
      * Change le texte d'un message ou d'une note ; pour une note, ajoute des images (`$uploads`) ou en retire
      * (`$removeFiles`, par identifiant : `Uploads::uuidOf()`), et la garde pour soi ou la montre à tous (`$private`,
-     * null : sans changement).
+     * null : sans changement). Pour un message du Support sur un ticket, change le commit qui le porte (`$commit` :
+     * null, sans changement ; vide, plus de commit ; voir `Support\Commit`).
      *
      * @param  array<int, array{path: string, name?: string}>  $uploads
      * @param  array<int, string>  $removeFiles
      */
-    public function edit(Entry $entry, ?string $body, Context $context, array $uploads = [], array $removeFiles = [], ?bool $private = null): Entry
+    public function edit(Entry $entry, ?string $body, Context $context, array $uploads = [], array $removeFiles = [], ?bool $private = null, ?string $commit = null): Entry
     {
         $private = $entry->isNote() ? $private : null;
 
         if (! $this->canEdit($entry, $context)) {
             throw new AuthorizationException(__('filament-tma::common.cannot_edit_entry'));
+        }
+
+        if ($commit !== null) {
+            Validator::make(['commit' => $commit], ['commit' => Commit::rules()])->validate();
+
+            if (Commit::normalize($commit) !== null && ! Commit::allowedOn($entry)) {
+                throw ValidationException::withMessages(['commit' => __('filament-tma::messages.commit.support_only')]);
+            }
         }
 
         $remainingFiles = $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)
@@ -251,11 +262,18 @@ final class Timeline
                 'files' => Uploads::toBase64($uploads),
                 'remove_files' => $removeFiles,
                 'private' => $private,
+                'commit' => $commit,
             ], fn (mixed $value): bool => $value !== null), $uploads);
         }
 
-        return $this->change($entry, $context, EntryChanged::EDITED, function () use ($entry, $body, $uploads, $removeFiles, $private): void {
-            $entry->forceFill(['body' => (string) $body, 'edited_at' => now(), 'private' => $private ?? $entry->private])->save();
+        return $this->change($entry, $context, EntryChanged::EDITED, function () use ($entry, $body, $uploads, $removeFiles, $private, $commit): void {
+            $meta = $entry->meta ?? [];
+
+            if ($commit !== null) {
+                $meta = array_filter([...$meta, 'commit' => Commit::normalize($commit)], fn (mixed $value): bool => $value !== null);
+            }
+
+            $entry->forceFill(['body' => (string) $body, 'edited_at' => now(), 'private' => $private ?? $entry->private, 'meta' => $meta ?: null])->save();
             Uploads::attach($entry, $uploads);
             Uploads::remove($entry, $removeFiles);
         });

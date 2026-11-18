@@ -13,10 +13,10 @@ d'étape : elle prévient les destinataires comme un message.
 
 | | Message | Note |
 | --- | --- | --- |
-| Pour quoi | l'**échange**, avec un passage : questions, réponses, « résolu » | un commentaire à côté (point d'étape, piste, précision), sur un message ou sur le ticket, à tout moment |
+| Pour quoi | l'**échange**, avec un passage : « En cours », questions, réponses, « résolu » | un commentaire à côté (piste, précision), sur un message ou sur le ticket, à tout moment |
 | Qui la lit | tout le monde sur le ticket, des deux côtés | tout le monde, des deux côtés ; ou son auteur seul s'il la garde pour lui |
 | Où l'écrire | **Nouveau message**, sous l'historique | **Ajouter une note**, sous le message ou sous la demande |
-| Change l'état ? | une réponse, oui ; un simple message, non | non |
+| Change l'état ? | une réponse, oui ; un « En cours » sur un ticket déjà en cours, non | non |
 
 Par défaut, ce qu'on écrit dans une note, tout le monde peut le lire, demandeur compris.
 

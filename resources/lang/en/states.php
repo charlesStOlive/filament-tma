@@ -40,7 +40,7 @@ return [
             'description' => 'Abandoned or refused, with its reason.',
         ],
         'in_progress' => [
-            'description' => 'The request is being handled.',
+            'description' => 'The Support is handling the request; it can write where it stands without handing over.',
         ],
         'draft' => [
             'description' => 'Being prepared: visible to its author and its application only.',

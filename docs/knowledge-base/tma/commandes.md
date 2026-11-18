@@ -15,12 +15,14 @@ php artisan tma:show DES-0042 [--json]
 php artisan tma:log DES-0042 --hours=2 [--date=2026-10-07] [--non-billable]   # sur le ticket entier
 php artisan tma:log DES-0042 --minutes=30 --entry=01k…   # sur un message ou une note qui existe déjà
 php artisan tma:log T-0007 --days=0.5 --summary="…" [--internal]   # tâche : avec le message qui dit ce qui a été fait
-php artisan tma:comment DES-0042 --body="…" [--note]
+php artisan tma:comment DES-0042 --body="…" [--note] [--commit=704f0e3]
 ```
 
 Exemple : « Ajoute deux heures à DES-0042 avec un résumé de ce que j'ai fait » devient deux commandes :
 `tma:comment DES-0042 --note --body="…"`, puis `tma:log DES-0042 --hours=2 --entry=<ulid de la note>`. Sur un ticket, un
-message va toujours avec un passage : le temps n'a pas de texte, et `tma:comment` sans `--note` est refusé. Sur une
+message va toujours avec un passage : le temps n'a pas de texte, et `tma:comment` sans `--note` écrit, pour le Support,
+un message **En cours** (le ticket passe ou reste En cours, la main ne change pas), que `--commit` rattache à son
+commit (empreinte ou lien ; voir [Le commit d'un message](#modal-tma.chronologie.commits)). Sur une
 tâche projet, `tma:log --summary` (ou `--summary-file`) écrit le message qui dit ce qui a été fait, et le temps porte
 dessus (`--internal` : une note). Les notes sont lues de tous.
 

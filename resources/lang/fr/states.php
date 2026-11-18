@@ -40,7 +40,7 @@ return [
             'description' => 'Abandonné ou refusé, avec son motif.',
         ],
         'in_progress' => [
-            'description' => 'La demande est traitée.',
+            'description' => 'Le Support traite la demande ; il peut y écrire où il en est sans rendre la main.',
         ],
         'draft' => [
             'description' => 'En préparation : visible de son auteur et de son application seulement.',

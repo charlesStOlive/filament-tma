@@ -85,6 +85,8 @@ return [
         'transmitted_to_you' => ':who sent you a request.',
         'transmitted' => ':who sent the request to the Support.',
         'answered' => ':who answered.',
+        'started' => ':who started working on the request.',
+        'progress' => ':who gives news of the request in progress.',
         'reopened_yours' => ':who is sending the request back to you: the result is not right yet.',
         'reopened' => ':who sent the request back.',
         'paused' => ':who paused the request.',

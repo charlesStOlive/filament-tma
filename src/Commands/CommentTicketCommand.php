@@ -5,7 +5,11 @@ namespace CharlesStOlive\FilamentTma\Commands;
 use CharlesStOlive\FilamentTma\Commands\Concerns\UsesTmaBackend;
 use Illuminate\Console\Command;
 
-/** `tma:comment DES-0042 --body="…"` : un message ou, avec `--note`, une note sur le ticket entier. */
+/**
+ * `tma:comment DES-0042 --body="…"` : un message ou, avec `--note`, une note sur le ticket entier. Sur un ticket, le
+ * message est un « En cours » du Support (le ticket passe ou reste En cours, la main ne change pas), que `--commit`
+ * peut rattacher à son commit.
+ */
 class CommentTicketCommand extends Command
 {
     use UsesTmaBackend;
@@ -19,6 +23,7 @@ class CommentTicketCommand extends Command
             {--body= : Le texte}
             {--body-file= : Fichier du texte (- pour l’entrée standard)}
             {--note : Une note sur le ticket plutôt qu’un message}
+            {--commit= : Le commit qui porte le message (empreinte ou lien), sur un ticket}
             '.$this->backendOptions();
 
         parent::__construct();
@@ -36,8 +41,12 @@ class CommentTicketCommand extends Command
         }
 
         return $this->runWithBackend(
-            fn ($backend) => $backend->comment((string) $this->argument('ref'), $body, (bool) $this->option('note')),
-            fn (array $result) => $this->components->info(__('filament-tma::commands.comment.done', ['ticket' => $result['ticket'], 'type' => $result['type'] === 'note' ? __('filament-tma::commands.comment.note') : __('filament-tma::commands.comment.comment')])),
+            fn ($backend) => $backend->comment((string) $this->argument('ref'), $body, (bool) $this->option('note'), filled($this->option('commit')) ? (string) $this->option('commit') : null),
+            fn (array $result) => $this->components->info(__('filament-tma::commands.comment.done', ['ticket' => $result['ticket'], 'type' => match (true) {
+                $result['type'] === 'note' => __('filament-tma::commands.comment.note'),
+                isset($result['state']) => __('filament-tma::commands.comment.progress'),
+                default => __('filament-tma::commands.comment.comment'),
+            }])),
         );
     }
 }

@@ -101,10 +101,12 @@ class AgentController
             'files' => ['array'],
             'private' => ['boolean'],
             'reminder' => ['boolean'],
+            // `tma:comment --commit` : le commit qui porte le message « En cours » (`Support\Commit`).
+            'commit' => ['nullable', 'string', 'max:255'],
         ]);
 
         if (! isset($data['type'])) {
-            return $this->respond(fn () => $this->backend($request)->comment($ref, $data['body'], $data['note'] ?? false), 201);
+            return $this->respond(fn () => $this->backend($request)->comment($ref, $data['body'], $data['note'] ?? false, $data['commit'] ?? null), 201);
         }
 
         return $this->respond(function () use ($request, $ref, $data): array {
@@ -126,6 +128,8 @@ class AgentController
             'remove_files' => ['array'],
             'remove_files.*' => ['string'],
             'private' => ['boolean'],
+            // Le commit d'un message du Support : vide, il n'y en a plus (`Support\Commit`).
+            'commit' => ['nullable', 'string', 'max:255'],
             'archived' => ['boolean'],
             'delete' => ['boolean'],
         ]);

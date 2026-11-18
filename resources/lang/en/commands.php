@@ -68,6 +68,7 @@ return [
         'done' => ':ticket: :type added.',
         'note' => 'note',
         'comment' => 'comment',
+        'progress' => '“In progress” message',
     ],
     'notify' => [
         'what' => 'Specify --stale, --grouped, or both.',

@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Enums\TicketOpening;
 use CharlesStOlive\FilamentTma\Filament\Resources\Tasks\TaskResource;
 use CharlesStOlive\FilamentTma\Filament\Schemas\RecipientsSection;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Workflow\Context;
@@ -88,6 +89,12 @@ class TicketInfolist
                         ->formatStateUsing(fn (Ticket $record): string => $record->task->number.' — '.$record->task->title)
                         ->url(fn (Ticket $record): ?string => TaskResource::canView($record->task) ? TaskResource::getUrl('view', ['record' => $record->task]) : null)
                         ->visible(fn (Ticket $record): bool => $record->task !== null),
+                    // Les commits qui portent les messages du Support, du premier au dernier.
+                    TextEntry::make('commits')->label(__('filament-tma::messages.commit.list'))
+                        ->state(fn (Ticket $record): ?string => self::commits($record))
+                        ->html()
+                        ->hintAction(Help::action('tma.chronologie.commits', __('filament-tma::messages.commit.help')))
+                        ->visible(fn (Ticket $record): bool => Commit::forTicket($record)->isNotEmpty()),
                     TextEntry::make('sync_status')->label(__('filament-tma::common.sync'))->badge()
                         ->hintAction(Help::action('tma.synchronisation.erreurs', __('filament-tma::common.status_help')))
                         ->visible(fn (Ticket $record): bool => $record->isShared())
@@ -97,5 +104,15 @@ class TicketInfolist
                 ]),
             RecipientsSection::make(),
         ];
+    }
+
+    /** Les commits du ticket, chacun en lien quand on en a un, l'empreinte entière en infobulle. */
+    private static function commits(Ticket $ticket): ?string
+    {
+        $items = Commit::forTicket($ticket)->map(fn (array $commit): string => $commit['url'] !== null
+            ? '<a href="'.e($commit['url']).'" target="_blank" rel="noopener noreferrer" title="'.e($commit['commit']).'" class="fi-tma-commit">'.e($commit['label']).'</a>'
+            : '<span title="'.e($commit['commit']).'" class="fi-tma-commit">'.e($commit['label']).'</span>');
+
+        return $items->isEmpty() ? null : '<span class="fi-tma-commits">'.$items->implode(' ').'</span>';
     }
 }

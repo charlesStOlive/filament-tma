@@ -67,6 +67,12 @@ return [
             'description' => 'Out of turn: the ticket is closed right away, whoever it is waiting for.',
             'help' => 'When to force closing?',
         ],
+        'progress' => [
+            'label' => 'In progress',
+            'description' => 'The Support says where it stands and keeps the hand: the requester can add notes, not messages.',
+            'message' => 'Where the request stands',
+            'help' => 'What does “In progress” change?',
+        ],
         'submit_for_validation' => [
             'label' => 'Mark as resolved',
             'help' => 'And then?',

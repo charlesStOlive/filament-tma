@@ -30,8 +30,9 @@ notes. Voir [Qui doit agir ?](#modal-tma.comprendre.la-main)
 **Membre du Support** — Une personne du Support (`tma.ticket.handle`) ; reliée à un client, elle travaille aussi depuis
 son application, au nom du Support. Voir [Les membres du Support](#modal-tma.agents).
 
-**Message** — Ce qu'écrit un passage (une question, une réponse, « résolu »…), que tout le monde lit, demandeur
-compris : sur un ticket, il n'y a pas de message à part. Son auteur le modifie tant qu'il est le dernier message.
+**Message** — Ce qu'écrit un passage (« En cours », une question, une réponse, « résolu »…), que tout le monde lit,
+demandeur compris : sur un ticket, il n'y a pas de message à part. Son auteur le modifie tant qu'il est le dernier
+message. Un message du Support peut porter un **commit**.
 
 **Nom court** — Le nom court d'un client (« EDM »), qui forme « Publier chez EDM » et « Correspondants EDM ». Voir
 [Les mots du module](#modal-tma.comprendre.vocabulaire).

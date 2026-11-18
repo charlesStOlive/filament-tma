@@ -88,11 +88,13 @@
                         <span class="fi-tma-entry-instance">({{ $team }})</span>
                     @endif
                     — {{ $moveLabels[$transition->move] ?? $transition->move }}
-                    @if ($transition->from_state)
-                        <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>
-                        →
+                    @if ($transition->from_state !== $transition->to_state)
+                        @if ($transition->from_state)
+                            <x-filament::badge :color="$states[$transition->from_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->from_state]?->getLabel() ?? $transition->from_state }}</x-filament::badge>
+                            →
+                        @endif
+                        <x-filament::badge :color="$states[$transition->to_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->to_state]?->getLabel() ?? $transition->to_state }}</x-filament::badge>
                     @endif
-                    <x-filament::badge :color="$states[$transition->to_state]?->getColor() ?? 'gray'" size="sm">{{ $states[$transition->to_state]?->getLabel() ?? $transition->to_state }}</x-filament::badge>
                 </span>
                 <time datetime="{{ $transition->created_at->toIso8601String() }}">{{ \CharlesStOlive\FilamentTma\Support\Dates::format($transition->created_at) }}</time>
             </div>

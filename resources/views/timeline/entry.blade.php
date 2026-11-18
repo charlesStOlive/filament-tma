@@ -1,8 +1,8 @@
 @php
     /**
      * Un message : son auteur, le changement d'état fait avec lui s'il y en a un, sa date (et quand il a été modifié), le
-     * temps saisi dessus (maître), son texte, ses fichiers. Une question du Support dit où elle en est, et à qui elle est
-     * posée.
+     * temps saisi dessus (maître), le commit qui le porte (un message du Support), son texte, ses fichiers. Une question
+     * du Support dit où elle en est, et à qui elle est posée.
      *
      * @var \CharlesStOlive\FilamentTma\Models\Entry $entry
      * @var \CharlesStOlive\FilamentTma\Models\StateTransition|null $transition  le passage fait avec ce message
@@ -15,6 +15,8 @@
         'answered' => ['success', __('filament-tma::timeline.question.answered')],
         default => ['gray', __('filament-tma::common.question_withdrawn')],
     };
+    $commit = \CharlesStOlive\FilamentTma\Support\Commit::of($entry);
+    $commitUrl = $commit !== null ? \CharlesStOlive\FilamentTma\Support\Commit::url($commit) : null;
 @endphp
 <header class="fi-tma-entry-header">
     <strong>{{ $entry->author?->name }}</strong>
@@ -32,6 +34,12 @@
     @endif
     @if ($questionStatus !== null)
         <x-filament::badge :color="$questionColor" size="sm" icon="heroicon-m-question-mark-circle">{{ $questionLabel }}</x-filament::badge>
+    @endif
+    @if ($commit)
+        {{-- Le commit qui porte le message : un lien s'ouvre à part, une empreinte seule se lit. --}}
+        <x-filament::badge color="gray" size="sm" icon="heroicon-m-code-bracket" class="fi-tma-entry-commit"
+            :tag="$commitUrl ? 'a' : 'span'" :href="$commitUrl" :target="$commitUrl ? '_blank' : null"
+            :tooltip="__('filament-tma::messages.commit.tooltip', ['commit' => $commit])">{{ \CharlesStOlive\FilamentTma\Support\Commit::label($commit) }}</x-filament::badge>
     @endif
     @if ($entry->edited_at)
         <span class="fi-tma-entry-edited" title="{{ $entry->edited_at->timezone($timezone)->format('d/m/Y H:i') }}">{{ __('filament-tma::timeline.edited') }}</span>

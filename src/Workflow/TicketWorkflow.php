@@ -45,6 +45,7 @@ class TicketWorkflow
         foreach ([
             new Moves\Transmit,
             new Moves\Publish,
+            new Moves\Progress,
             new Moves\RequestAnswer,
             new Moves\SubmitForValidation,
             new Moves\Pause,

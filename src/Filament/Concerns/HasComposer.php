@@ -7,6 +7,7 @@ use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Filament\Actions\TimelineActions;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\Uploads;
@@ -32,8 +33,9 @@ use Illuminate\Validation\ValidationException;
  *
  * Sur un ticket, un message va toujours avec un passage (addendum §3.2) : seule la partie dont c'est le tour écrit, par
  * les passages que le moteur lui permet (`Move::replyField()`). Le demandeur « Répond », ou « Confirme et clôt » /
- * renvoie au Support un ticket résolu ; le Support « Demande des précisions » ou « Marque comme résolu ». Il n'y a pas
- * de message à part : hors de son tour, ou pour un point d'étape, la zone renvoie aux notes. Sur une tâche projet, on
+ * renvoie au Support un ticket résolu ; le Support passe le ticket « En cours » et y écrit sans rendre la main, ou
+ * « Demande des précisions », ou « Marque comme résolu » ; il peut dire quel commit porte son message. Hors de son tour,
+ * la zone renvoie aux notes. Sur une tâche projet, on
  * « Envoie le message », pour information ; dans le maître, le Support peut aussi « Poser une question » au client,
  * qui engage les personnes choisies (`Workflow\Questions`).
  *
@@ -70,6 +72,7 @@ trait HasComposer
                         ['undo', 'redo'],
                     ]),
                 TimelineActions::attachmentsField()->visible(fn (): bool => $this->composerCanWrite()),
+                Commit::field()->visible(fn (): bool => $this->composerTakesCommit()),
                 Actions::make($this->composerActions())->key('composerActions')->alignEnd()
                     ->visible(fn (): bool => $this->composerCanWrite()),
             ]);
@@ -139,6 +142,15 @@ trait HasComposer
         }
 
         return $actions;
+    }
+
+    /** Le Support peut joindre un commit à son message : un de ses passages en prend un (`Support\Commit`). */
+    protected function composerTakesCommit(): bool
+    {
+        $record = $this->getRecord();
+
+        return $record instanceof Ticket && collect($this->composerReplies())
+            ->contains(fn (Move $move): bool => array_key_exists('commit', $move->rules($record)));
     }
 
     /** « Envoyer le message » : sur une tâche, qui a le droit d'y écrire ; sur un ticket, jamais (un message va avec un passage). */
@@ -226,8 +238,9 @@ trait HasComposer
         $uploads = Uploads::fromForm($data);
         $ticket = $this->getRecord();
         $body = $data['body'] ?? null;
+        $commit = $data['commit'] ?? null;
 
-        $this->composerRun(function () use ($move, $ticket, $body, $uploads): void {
+        $this->composerRun(function () use ($move, $ticket, $body, $commit, $uploads): void {
             $workflow = app(TicketWorkflow::class);
             $context = Context::current();
 
@@ -236,7 +249,12 @@ trait HasComposer
                 throw ValidationException::withMessages(['body' => __('filament-tma::common.message_empty')]);
             }
 
-            $workflow->run($ticket, $move, [$move->replyField() => $body, 'files' => Uploads::toBase64($uploads)], $context);
+            $rules = $move->rules($ticket);
+            $workflow->run($ticket, $move, [
+                $move->replyField() => $body,
+                'files' => Uploads::toBase64($uploads),
+                ...(array_key_exists('commit', $rules) ? ['commit' => $commit] : []),
+            ], $context);
             Uploads::discard($uploads);
         });
     }

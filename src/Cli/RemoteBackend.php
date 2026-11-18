@@ -39,11 +39,12 @@ final class RemoteBackend implements Backend
         ]))->json('data', []);
     }
 
-    public function comment(string $ref, string $body, bool $note): array
+    public function comment(string $ref, string $body, bool $note, ?string $commit = null): array
     {
-        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/entries'), [
+        return Http::call(__('filament-tma::common.support'), fn () => Http::to($this->token)->post($this->url('tickets/'.rawurlencode($ref).'/entries'), array_filter([
             'body' => $body,
             'note' => $note,
-        ]))->json('data', []);
+            'commit' => $commit,
+        ], fn (mixed $value): bool => $value !== null)))->json('data', []);
     }
 }

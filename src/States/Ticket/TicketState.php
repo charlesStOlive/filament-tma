@@ -13,6 +13,7 @@ use Spatie\ModelStates\StateConfig;
  * Où en est un ticket (`Ticket::$state`). Chaque état dit à qui est le tour (`inHandsOf()`, addendum §3.1) :
  *
  *     draft ── transmettre, publier ──> submitted (le contact au Support est choisi à la transmission)
+ *     submitted ── en cours ──> in_progress (puis « En cours » y ajoute des messages, l'état ne change pas)
  *     submitted, in_progress ── demander des précisions ──> awaiting_requester ── répondre ──> in_progress
  *     submitted, in_progress ── marquer comme résolu ──> pending_validation ── confirmer ──> closed, renvoyer ──> in_progress
  *     submitted, in_progress ── mettre en pause ──> paused ── reprendre ──> in_progress
@@ -65,7 +66,8 @@ abstract class TicketState extends State implements HasFilamentState, HasFilamen
             ->allowTransition(Draft::class, AwaitingRequester::class)
             ->allowTransition(Draft::class, Closed::class)
             ->allowTransition([Draft::class, Submitted::class], Cancelled::class)
-            ->allowTransition([AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
+            // Le Support travaille sur la demande et le dit (« En cours ») ; le demandeur répond, une pause finit…
+            ->allowTransition([Submitted::class, AwaitingRequester::class, Paused::class, PendingValidation::class], InProgress::class)
             // Le Support répond dès qu'une demande arrive : plus de « prise en charge ».
             ->allowTransition([Submitted::class, InProgress::class], AwaitingRequester::class)
             ->allowTransition([Submitted::class, InProgress::class], Paused::class)

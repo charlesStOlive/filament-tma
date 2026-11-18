@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentTma\Models\Entry;
 use CharlesStOlive\FilamentTma\Models\ProjectTask;
 use CharlesStOlive\FilamentTma\Models\StateTransition;
 use CharlesStOlive\FilamentTma\Models\Ticket;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Html;
 use CharlesStOlive\FilamentTma\Support\Terms;
 use CharlesStOlive\FilamentTma\Support\TicketUrl;
@@ -83,6 +84,7 @@ final class TicketView
             'author' => $entry->author?->name,
             'edited_at' => $entry->edited_at?->toIso8601String(),
             'text' => Html::toText($entry->body),
+            'commit' => Commit::of($entry),
             'files' => $entry->getMedia(Entry::ATTACHMENTS_COLLECTION)->pluck('file_name')->all(),
             'replies' => $entry->replies->map(fn (Entry $reply): array => self::entry($reply))->all(),
         ];

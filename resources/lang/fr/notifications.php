@@ -85,6 +85,8 @@ return [
         'transmitted_to_you' => ':who vous a transmis une demande.',
         'transmitted' => ':who a transmis la demande au Support.',
         'answered' => ':who a répondu.',
+        'started' => ':who a commencé à traiter la demande.',
+        'progress' => ':who donne des nouvelles de la demande en cours.',
         'reopened_yours' => ':who vous renvoie la demande : le résultat ne convient pas encore.',
         'reopened' => ':who a renvoyé la demande.',
         'paused' => ':who a mis la demande en pause.',

@@ -40,9 +40,9 @@ attend **l'une des deux** : la fiche l'affiche à droite, dans **Suivi › En at
 permet d'agir à la place de l'autre, pas même celui d'un administrateur. L'autre partie peut écrire une **note**, ou
 modifier son dernier message s'il est encore le dernier.
 
-Un message va toujours avec un passage : le Support pose une question (« Demander des précisions ») ou marque le
-ticket comme résolu, le demandeur répond, confirme ou renvoie. Pour le reste (un point d'étape, une précision), on
-écrit une note.
+Un message va toujours avec un passage : le Support dit où il en est (« En cours », il garde la main), pose une
+question (« Demander des précisions ») ou marque le ticket comme résolu ; le demandeur répond, confirme ou renvoie.
+Pour le reste (une précision, une piste), on écrit une note.
 
 Exemple : le Support pose une question ; le ticket attend le demandeur. Le Support ne peut plus que lui écrire une note
 ou le relancer ; la réponse du demandeur (« Répondre ») lui rend la main.

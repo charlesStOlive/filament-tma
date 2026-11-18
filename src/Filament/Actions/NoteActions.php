@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentTma\Filament\Actions;
 use CharlesStOlive\FilamentTma\Contracts\Trackable;
 use CharlesStOlive\FilamentTma\Enums\EntryType;
 use CharlesStOlive\FilamentTma\Models\Entry;
+use CharlesStOlive\FilamentTma\Support\Commit;
 use CharlesStOlive\FilamentTma\Support\Help;
 use CharlesStOlive\FilamentTma\Support\Uploads;
 use CharlesStOlive\FilamentTma\Sync\SyncException;
@@ -184,14 +185,22 @@ final class NoteActions
             ->modalDescription(__('filament-tma::notes.message.edit_description'))
             ->modalWidth(Width::ThreeExtraLarge)
             ->modalSubmitActionLabel(__('filament-tma::common.save'))
-            ->fillForm(fn (Trackable $record, array $arguments): array => ['body' => self::message($record, $arguments, orFail: true)->body])
-            ->schema([self::bodyField(__('filament-tma::common.your_message'))->required()])
+            ->fillForm(fn (Trackable $record, array $arguments): array => [
+                'body' => ($message = self::message($record, $arguments, orFail: true))->body,
+                'commit' => Commit::of($message),
+            ])
+            ->schema(fn (Trackable $record, array $arguments): array => [
+                self::bodyField(__('filament-tma::common.your_message'))->required(),
+                // Un message du Support sur un ticket : le commit qui le porte.
+                ...(($message = self::message($record, $arguments)) !== null && Commit::allowedOn($message) ? [Commit::field()] : []),
+            ])
             ->visible(fn (Trackable $record, array $arguments): bool => ($message = self::message($record, $arguments)) !== null
                 && app(Timeline::class)->canEdit($message, Context::current()))
             ->action(function (Trackable $record, array $data, array $arguments, Action $action): void {
                 $message = self::message($record, $arguments, orFail: true);
+                $commit = Commit::allowedOn($message) ? (string) ($data['commit'] ?? '') : null;
 
-                self::run($action, fn (): Entry => app(Timeline::class)->edit($message, $data['body'] ?? null, Context::current()));
+                self::run($action, fn (): Entry => app(Timeline::class)->edit($message, $data['body'] ?? null, Context::current(), commit: $commit));
 
                 Notification::make()->success()->title(__('filament-tma::notes.message.edited'))->send();
             });
