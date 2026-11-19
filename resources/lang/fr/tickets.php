@@ -23,6 +23,7 @@ return [
         'ticket' => 'Ce ticket : :time',
         'task' => 'Cette tâche : :time',
         'task_and_project' => 'Cette tâche : :time · Tout le projet : :project',
+        'list' => 'Total',
     ],
     'model' => [
         'singular' => 'ticket',

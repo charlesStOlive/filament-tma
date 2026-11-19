@@ -83,6 +83,11 @@ raccourci s'éteint dès que les filtres ne sont plus les siens :
 On arrive sur **Mes demandes** dans une application cliente, sur **Actifs** chez le Support et pour ses membres. La colonne **En attente de** dit qui doit agir : **Vous**, le demandeur par son nom, ou le
 **Support**.
 
+La colonne **Temps passé** donne le temps du ticket (en minutes, en heures ou en jours selon sa durée ; chez le client,
+le total que le Support lui envoie) ; on peut trier la liste dessus. Sous la liste, le **Total** fait la somme des
+tickets montrés, en jours : il suit les filtres et les raccourcis (avec plusieurs pages, celle de la page et celle de
+toute la liste).
+
 ## Qui peut modifier un ticket
 
 - **La demande** (titre, description, priorité, pièces jointes) : son auteur, en brouillon puis **tant qu'aucun message

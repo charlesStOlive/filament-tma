@@ -62,5 +62,6 @@ return [
         'copy_markdown' => 'As Markdown',
         'copied' => 'Copied to the clipboard',
         'copy_failed' => 'The browser refused to copy',
+        'show_less' => 'Show less',
     ],
 ];

@@ -20,6 +20,7 @@ use CharlesStOlive\FilamentTma\Models\Instance;
 use CharlesStOlive\FilamentTma\Models\Ticket;
 use CharlesStOlive\FilamentTma\States\Ticket\Draft;
 use CharlesStOlive\FilamentTma\States\Ticket\TicketState;
+use CharlesStOlive\FilamentTma\Support\Duration;
 use CharlesStOlive\FilamentTma\Support\Orthography;
 use CharlesStOlive\FilamentTma\Support\Tma;
 use CharlesStOlive\FilamentTma\Support\TmaGate;
@@ -28,6 +29,7 @@ use CharlesStOlive\FilamentTma\Workflow\TicketWorkflow;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -58,6 +60,9 @@ class TicketResource extends Resource implements HasKnowledgeBase
     protected static ?string $slug = 'tma/tickets';
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    /** La colonne calculée de la liste : le temps passé sur le ticket, en minutes (`withTimeSpent()`). */
+    public const TIME_SPENT = 'time_spent_minutes';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-lifebuoy';
 
@@ -160,6 +165,7 @@ class TicketResource extends Resource implements HasKnowledgeBase
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => static::withTimeSpent($query))
             ->defaultSort('last_activity_at', 'desc')
             ->columns([
                 TextColumn::make('number')->label(__('filament-tma::common.number'))->searchable()->sortable(),
@@ -186,6 +192,17 @@ class TicketResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('sync_status')->label(__('filament-tma::common.sync'))->badge()
                     ->visible(fn (): bool => Tma::isMaster() || Tma::serviceDeskAvailable())
                     ->toggleable(isToggledHiddenByDefault: true),
+                // Le temps d'un ticket en unité automatique, la somme des tickets filtrés dans l'unité des sommes
+                // (`time.display_unit`), comme partout ailleurs.
+                TextColumn::make(self::TIME_SPENT)->label(__('filament-tma::common.time_spent'))
+                    ->state(fn (Ticket $record): ?int => ((int) $record->getAttribute(self::TIME_SPENT)) ?: null)
+                    ->formatStateUsing(fn (int $state): string => Duration::format($state, Duration::AUTO))
+                    ->placeholder('—')
+                    ->alignEnd()
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy(self::TIME_SPENT, $direction))
+                    ->summarize(Sum::make('total')->label(__('filament-tma::tickets.time_totals.list'))
+                        ->formatStateUsing(fn (mixed $state): string => Duration::format((int) $state)))
+                    ->toggleable(),
                 TextColumn::make('last_activity_at')->label(__('filament-tma::common.last_activity'))->since()->sortable(),
             ])
             ->filters([
@@ -211,6 +228,24 @@ class TicketResource extends Resource implements HasKnowledgeBase
             ->recordActions([
                 ViewAction::make(),
             ]);
+    }
+
+    /**
+     * Le temps passé sur chaque ticket, en minutes, dans la colonne `TIME_SPENT` de la liste (pour l'afficher, la trier
+     * et en faire la somme) : dans le maître, la somme de ses saisies ; chez le client, le total reçu
+     * (`time_total_minutes`, `Sync\TimeTotals`).
+     */
+    public static function withTimeSpent(Builder $query): Builder
+    {
+        if (Tma::isMaster()) {
+            return $query->withSum('timeEntries as '.self::TIME_SPENT, 'minutes');
+        }
+
+        if ($query->getQuery()->columns === null) {
+            $query->select($query->qualifyColumn('*'));
+        }
+
+        return $query->addSelect($query->qualifyColumn('time_total_minutes').' as '.self::TIME_SPENT);
     }
 
     /**

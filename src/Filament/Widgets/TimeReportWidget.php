@@ -509,8 +509,8 @@ class TimeReportWidget extends TableWidget
     }
 
     /**
-     * Sous une ligne, en petit : ses tickets ou ses tâches et leur temps, « et N autres » au-delà de `ITEMS` ; par
-     * projet, ses mois (`months()`).
+     * Sous une ligne, en petit : ses tickets ou ses tâches et leur temps, « et N autres » au-delà de `ITEMS` (un clic
+     * montre les autres, `expandable()`) ; par projet, ses mois (`months()`).
      */
     protected function items(array $record): HtmlString
     {
@@ -518,20 +518,16 @@ class TimeReportWidget extends TableWidget
             return $this->months($record);
         }
 
-        $items = collect($record['items']);
-        $lines = $items->take(self::ITEMS)->map(fn (array $item): string => e($item['number'].' '.Str::limit($item['title'], 40)).' · <strong>'.e(Duration::format($item['minutes'], self::ITEM_UNIT)).'</strong>');
+        $lines = collect($record['items'])->map(fn (array $item): string => e($item['number'].' '.Str::limit($item['title'], 40)).' · <strong>'.e(Duration::format($item['minutes'], self::ITEM_UNIT)).'</strong>');
 
-        if ($items->count() > self::ITEMS) {
-            $lines->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
-        }
-
-        return new HtmlString($lines->implode('<br>'));
+        return new HtmlString($this->expandable($lines, '<br>'));
     }
 
     /**
      * Sous une ligne de `BY_PROJECT`, une ligne par mois, du plus ancien au plus récent : « Octobre 2026 (T-0001
-     * Maquettes, T-0002 Export) · 5 h », le début du titre seulement (en entier au survol), « et N autres » au-delà de
-     * `ITEMS`. Au-delà de `MONTHS` mois, les plus anciens sont réunis en tête : « 3 mois plus tôt · 2 j ».
+     * Maquettes, T-0002 Export) · 5 h », le début du titre seulement (en entier au survol, avec son temps du mois),
+     * « et N autres » au-delà de `ITEMS` (un clic montre les autres, `expandable()`). Au-delà de `MONTHS` mois, les
+     * plus anciens sont réunis en tête : « 3 mois plus tôt · 2 j ».
      */
     protected function months(array $record): HtmlString
     {
@@ -539,15 +535,10 @@ class TimeReportWidget extends TableWidget
         $earlier = $months->slice(0, max(0, $months->count() - self::MONTHS));
 
         $lines = $months->slice($earlier->count())->map(function (array $spent, string $month): string {
-            $items = collect($spent['items']);
-            $names = $items->take(self::ITEMS)
-                ->map(fn (array $item): string => '<span title="'.e($item['number'].' '.$item['title']).'">'.e($item['number'].' '.Str::limit($item['title'], self::TITLE_START, '…')).'</span>');
+            $names = collect($spent['items'])
+                ->map(fn (array $item): string => '<span title="'.e($item['number'].' '.$item['title'].' · '.Duration::format($item['minutes'], self::ITEM_UNIT)).'">'.e($item['number'].' '.Str::limit($item['title'], self::TITLE_START, '…')).'</span>');
 
-            if ($items->count() > self::ITEMS) {
-                $names->push(e(trans_choice('filament-tma::common.and_others', $items->count() - self::ITEMS, ['n' => $items->count() - self::ITEMS])));
-            }
-
-            return e(static::monthName($month)).' ('.$names->implode(', ').') · <strong>'.e(Duration::format($spent['minutes'], self::ITEM_UNIT)).'</strong>';
+            return e(static::monthName($month)).' ('.$this->expandable($names, ', ').') · <strong>'.e(Duration::format($spent['minutes'], self::ITEM_UNIT)).'</strong>';
         });
 
         if ($earlier->isNotEmpty()) {
@@ -556,6 +547,33 @@ class TimeReportWidget extends TableWidget
         }
 
         return new HtmlString($lines->implode('<br>'));
+    }
+
+    /**
+     * Les `ITEMS` premiers morceaux (déjà en HTML), séparés par `$glue`, puis « et N autres » : un clic montre les autres
+     * à la suite, « Masquer » les replie (Alpine, sans appel au serveur). Le clic ne suit pas le lien de la ligne
+     * (`recordUrl`), qui l'entoure.
+     *
+     * @param  Collection<int, string>  $parts
+     */
+    protected function expandable(Collection $parts, string $glue): string
+    {
+        if ($parts->count() <= self::ITEMS) {
+            return $parts->implode($glue);
+        }
+
+        $others = $parts->count() - self::ITEMS;
+        $toggle = fn (string $label, string $open): string => '<button type="button" class="fi-link fi-color fi-size-sm"'
+            .' style="--text: var(--primary-600); --dark-text: var(--primary-400);"'
+            .' x-on:click.prevent.stop="open = '.$open.'">'.e($label).'</button>';
+
+        return '<span x-data="{ open: false }">'
+            .$parts->take(self::ITEMS)->implode($glue)
+            .'<span x-show="open" x-cloak>'.$glue.$parts->slice(self::ITEMS)->implode($glue).'</span>'
+            .$glue
+            .'<span x-show="! open">'.$toggle(trans_choice('filament-tma::common.and_others', $others, ['n' => $others]), 'true').'</span>'
+            .'<span x-show="open" x-cloak>'.$toggle(__('filament-tma::widgets.time_report.show_less'), 'false').'</span>'
+            .'</span>';
     }
 
     /** Du temps a été passé avant le mois montré : on peut y revenir. */

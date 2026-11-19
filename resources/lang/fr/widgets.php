@@ -62,5 +62,6 @@ return [
         'copy_markdown' => 'En Markdown',
         'copied' => 'Copié dans le presse-papiers',
         'copy_failed' => 'Le navigateur a refusé la copie',
+        'show_less' => 'Masquer',
     ],
 ];
